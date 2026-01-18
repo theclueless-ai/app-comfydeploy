@@ -85,9 +85,6 @@ export default function Home() {
 
     try {
       const formData = new FormData();
-      formData.append("deploymentId", workflow.deploymentId);
-      formData.append("inputs", JSON.stringify(workflow.inputs));
-
       // Add all input files
       Object.entries(inputs).forEach(([key, file]) => {
         formData.append(key, file);

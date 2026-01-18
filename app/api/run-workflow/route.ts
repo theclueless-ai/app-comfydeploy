@@ -4,34 +4,32 @@ import { uploadFile, runWorkflow } from "@/lib/comfydeploy";
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
-    const deploymentId = formData.get("deploymentId") as string;
-    const inputsJson = formData.get("inputs") as string;
+
+    // Get deployment ID from environment variable
+    const deploymentId = process.env.COMFYDEPLOY_DEPLOYMENT_ID;
 
     if (!deploymentId) {
       return NextResponse.json(
-        { error: "Missing deployment ID" },
-        { status: 400 }
+        { error: "COMFYDEPLOY_DEPLOYMENT_ID is not configured" },
+        { status: 500 }
       );
     }
 
-    const inputConfig = JSON.parse(inputsJson || "[]");
     const inputs: Record<string, any> = {};
 
     // Upload files and prepare inputs
     for (const key of formData.keys()) {
-      if (key !== "deploymentId" && key !== "inputs") {
-        const file = formData.get(key) as File;
-        if (file && file.size > 0) {
-          try {
-            const fileUrl = await uploadFile(file);
-            inputs[key] = fileUrl;
-          } catch (error) {
-            console.error(`Failed to upload ${key}:`, error);
-            return NextResponse.json(
-              { error: `Failed to upload ${key}` },
-              { status: 500 }
-            );
-          }
+      const file = formData.get(key) as File;
+      if (file && file.size > 0) {
+        try {
+          const fileUrl = await uploadFile(file);
+          inputs[key] = fileUrl;
+        } catch (error) {
+          console.error(`Failed to upload ${key}:`, error);
+          return NextResponse.json(
+            { error: `Failed to upload ${key}` },
+            { status: 500 }
+          );
         }
       }
     }

@@ -9,7 +9,7 @@ export const workflows: WorkflowConfig[] = [
     id: "model-product-fusion",
     name: "Model & Product Fusion",
     description: "Seamlessly blend a model with your product for stunning fashion visuals",
-    deploymentId: process.env.COMFYDEPLOY_DEPLOYMENT_ID || "",
+    deploymentId: "", // This will be read from server env in API route
     inputs: [
       {
         id: "model_image",
