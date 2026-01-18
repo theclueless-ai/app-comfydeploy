@@ -5,7 +5,7 @@ if (!process.env.COMFYDEPLOY_API_KEY) {
 }
 
 export const comfyDeployClient = new ComfyDeploy({
-  bearerAuth: process.env.COMFYDEPLOY_API_KEY,
+  bearer: process.env.COMFYDEPLOY_API_KEY,
 });
 
 export async function uploadFile(file: File): Promise<string> {
