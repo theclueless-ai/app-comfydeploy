@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { uploadFile, runWorkflow } from "@/lib/comfydeploy";
+import { fileToBase64, runWorkflow } from "@/lib/comfydeploy";
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,17 +17,19 @@ export async function POST(request: NextRequest) {
 
     const inputs: Record<string, any> = {};
 
-    // Upload files and prepare inputs
+    // Convert files to base64 and prepare inputs
     for (const key of formData.keys()) {
       const file = formData.get(key) as File;
       if (file && file.size > 0) {
         try {
-          const fileUrl = await uploadFile(file);
-          inputs[key] = fileUrl;
+          console.log(`Converting ${key} to base64:`, file.name, file.type, file.size);
+          const base64Data = await fileToBase64(file);
+          inputs[key] = base64Data;
+          console.log(`Successfully converted ${key}, base64 length:`, base64Data.length);
         } catch (error) {
-          console.error(`Failed to upload ${key}:`, error);
+          console.error(`Failed to convert ${key}:`, error);
           return NextResponse.json(
-            { error: `Failed to upload ${key}` },
+            { error: `Failed to process ${key}` },
             { status: 500 }
           );
         }
@@ -36,6 +38,11 @@ export async function POST(request: NextRequest) {
 
     // Construct webhook URL
     const webhookUrl = `${process.env.WEBHOOK_BASE_URL || request.nextUrl.origin}/api/webhook`;
+
+    console.log("Running workflow with:");
+    console.log("- Deployment ID:", deploymentId);
+    console.log("- Input keys:", Object.keys(inputs));
+    console.log("- Webhook URL:", webhookUrl);
 
     // Run the workflow
     const result = await runWorkflow(deploymentId, inputs, webhookUrl);
