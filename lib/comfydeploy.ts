@@ -5,6 +5,7 @@ if (!process.env.COMFYDEPLOY_API_KEY) {
 }
 
 export const comfyDeployClient = new ComfyDeployClient({
+  apiBase: "https://api.comfydeploy.com",
   apiToken: process.env.COMFYDEPLOY_API_KEY,
 });
 
