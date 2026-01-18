@@ -32,30 +32,68 @@ export async function runWorkflow(
   webhookUrl?: string
 ): Promise<{ runId: string }> {
   try {
-    console.log("Calling ComfyDeploy API with:");
-    console.log("- deployment_id:", deploymentId);
-    console.log("- inputs:", Object.keys(inputs));
-    console.log("- webhook:", webhookUrl);
+    const apiBase = comfyDeployClient.apiBase || "https://www.comfydeploy.com/api";
+    const url = `${apiBase}/run`;
 
-    const result = await comfyDeployClient.run({
+    const payload = {
       deployment_id: deploymentId,
       inputs,
       webhook: webhookUrl,
+    };
+
+    console.log("=== ComfyDeploy API Call ===");
+    console.log("URL:", url);
+    console.log("Method: POST");
+    console.log("Payload:", JSON.stringify(payload, null, 2));
+    console.log("API Token present:", !!process.env.COMFYDEPLOY_API_KEY);
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        authorization: `Bearer ${process.env.COMFYDEPLOY_API_KEY}`,
+      },
+      body: JSON.stringify(payload),
+      cache: "no-store",
     });
 
-    console.log("ComfyDeploy API response:", result);
+    console.log("Response status:", response.status);
+    console.log("Response statusText:", response.statusText);
+    console.log("Response headers:", Object.fromEntries(response.headers.entries()));
 
-    if (!result?.run_id) {
-      throw new Error("No run ID returned from ComfyDeploy");
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("API Error Response:", errorText);
+      throw new Error(`ComfyDeploy API error: ${response.status} ${response.statusText} - ${errorText}`);
     }
 
-    console.log("Workflow started successfully with run_id:", result.run_id);
+    const responseText = await response.text();
+    console.log("Response body:", responseText);
+
+    let result;
+    try {
+      result = JSON.parse(responseText);
+    } catch (parseError) {
+      console.error("Failed to parse response:", parseError);
+      throw new Error(`Invalid JSON response: ${responseText.substring(0, 200)}`);
+    }
+
+    console.log("Parsed result:", result);
+
+    if (!result?.run_id) {
+      throw new Error("No run ID in response");
+    }
+
+    console.log("✅ Workflow started successfully with run_id:", result.run_id);
 
     return {
       runId: result.run_id,
     };
   } catch (error) {
     console.error("Workflow run error:", error);
+    if (error instanceof Error) {
+      throw error;
+    }
     throw new Error("Failed to run workflow");
   }
 }
