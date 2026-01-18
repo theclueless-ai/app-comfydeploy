@@ -6,7 +6,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 const inter = Inter({ subsets: ["latin"], variable: "--font-geist-sans" });
 
 export const metadata: Metadata = {
-  title: "theclueless | Workflow Studio",
+  title: "Theclueless | Workflow Studio",
   description: "Execute stunning AI workflows with ComfyDeploy",
   keywords: ["AI", "fashion", "modeling", "workflows", "ComfyDeploy"],
 };

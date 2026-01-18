@@ -194,7 +194,7 @@ export default function Home() {
           <div className="mt-12 text-center">
             <p className="text-sm text-[rgb(var(--muted-foreground))]">
               Powered by{" "}
-              <span className="text-brand-pink font-semibold">ComfyDeploy</span>
+              <span className="text-brand-pink font-semibold">The Clueless AIGENCY S.L.</span>
             </p>
           </div>
         </div>

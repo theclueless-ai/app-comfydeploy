@@ -45,7 +45,6 @@ export async function runWorkflow(
     console.log("=== ComfyDeploy API Call ===");
     console.log("URL:", url);
     console.log("Method: POST");
-    console.log("Payload:", JSON.stringify(payload, null, 2));
     console.log("API Token present:", !!process.env.COMFYDEPLOY_API_KEY);
 
     const response = await fetch(url, {
