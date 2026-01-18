@@ -13,7 +13,7 @@ export default function Home() {
   const [isLoading, setIsLoading] = useState(false);
   const [runId, setRunId] = useState<string | null>(null);
   const [status, setStatus] = useState<RunStatus>(null);
-  const [resultImage, setResultImage] = useState<string>();
+  const [resultImages, setResultImages] = useState<Array<{ url: string; filename: string }>>([]);
   const [error, setError] = useState<string>();
 
   const workflow = getDefaultWorkflow();
@@ -30,10 +30,13 @@ export default function Home() {
         const webhookResponse = await fetch(`/api/webhook?runId=${runId}`);
         const webhookData = await webhookResponse.json();
 
+        console.log("Webhook data:", webhookData);
+
         if (webhookData.status === "completed") {
           setStatus("completed");
-          if (webhookData.outputs?.images?.[0]?.url) {
-            setResultImage(webhookData.outputs.images[0].url);
+          if (webhookData.images && webhookData.images.length > 0) {
+            setResultImages(webhookData.images);
+            console.log(`Received ${webhookData.images.length} images from webhook`);
           }
           clearInterval(pollInterval);
           setIsLoading(false);
@@ -53,10 +56,13 @@ export default function Home() {
         if (statusResponse.ok) {
           const statusData = await statusResponse.json();
 
+          console.log("Status data:", statusData);
+
           if (statusData.status === "completed") {
             setStatus("completed");
-            if (statusData.outputs?.images?.[0]) {
-              setResultImage(statusData.outputs.images[0]);
+            if (statusData.images && statusData.images.length > 0) {
+              setResultImages(statusData.images);
+              console.log(`Received ${statusData.images.length} images from status API`);
             }
             clearInterval(pollInterval);
             setIsLoading(false);
@@ -81,7 +87,7 @@ export default function Home() {
     setIsLoading(true);
     setStatus("queued");
     setError(undefined);
-    setResultImage(undefined);
+    setResultImages([]);
 
     try {
       const formData = new FormData();
@@ -150,7 +156,7 @@ export default function Home() {
               {status ? (
                 <ResultDisplay
                   status={status}
-                  imageUrl={resultImage}
+                  images={resultImages}
                   error={error}
                 />
               ) : (

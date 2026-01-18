@@ -15,9 +15,31 @@ export async function GET(
       );
     }
 
-    const status = await getRunStatus(runId);
+    const rawStatus = await getRunStatus(runId);
 
-    return NextResponse.json(status);
+    console.log("Raw status from ComfyDeploy:", rawStatus);
+
+    // Extract all images from outputs
+    const allImages: Array<{ url: string; filename: string }> = [];
+    if (rawStatus?.outputs) {
+      for (const output of rawStatus.outputs) {
+        if (output.data?.images) {
+          allImages.push(...output.data.images);
+        }
+      }
+    }
+
+    // Normalize status response
+    const normalizedStatus = {
+      runId,
+      status: rawStatus?.status === "success" ? "completed" : rawStatus?.status === "failed" ? "failed" : rawStatus?.status || "pending",
+      images: allImages.length > 0 ? allImages : undefined,
+    };
+
+    console.log("Normalized status:", normalizedStatus);
+    console.log(`Found ${allImages.length} images in status`);
+
+    return NextResponse.json(normalizedStatus);
   } catch (error) {
     console.error("Status check error:", error);
     return NextResponse.json(

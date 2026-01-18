@@ -7,28 +7,29 @@ import Image from "next/image";
 
 interface ResultDisplayProps {
   status: "queued" | "running" | "completed" | "failed" | null;
-  imageUrl?: string;
+  images?: Array<{
+    url: string;
+    filename: string;
+  }>;
   error?: string;
 }
 
-export function ResultDisplay({ status, imageUrl, error }: ResultDisplayProps) {
-  const [downloading, setDownloading] = useState(false);
+export function ResultDisplay({ status, images, error }: ResultDisplayProps) {
+  const [downloadingIndex, setDownloadingIndex] = useState<number | null>(null);
 
   if (!status) {
     return null;
   }
 
-  const handleDownload = async () => {
-    if (!imageUrl) return;
-
-    setDownloading(true);
+  const handleDownload = async (imageUrl: string, filename: string, index: number) => {
+    setDownloadingIndex(index);
     try {
       const response = await fetch(imageUrl);
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `theclueless-result-${Date.now()}.png`;
+      a.download = filename || `theclueless-result-${index + 1}.png`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -37,7 +38,7 @@ export function ResultDisplay({ status, imageUrl, error }: ResultDisplayProps) {
       console.error("Download failed:", error);
       alert("Failed to download image");
     } finally {
-      setDownloading(false);
+      setDownloadingIndex(null);
     }
   };
 
@@ -66,7 +67,7 @@ export function ResultDisplay({ status, imageUrl, error }: ResultDisplayProps) {
           {status === "completed" && (
             <>
               <CheckCircle2 className="w-5 h-5 text-green-500" />
-              <span className="text-sm font-medium">Completed</span>
+              <span className="text-sm font-medium">Completed - {images?.length || 0} {images?.length === 1 ? 'image' : 'images'}</span>
             </>
           )}
           {status === "failed" && (
@@ -86,34 +87,44 @@ export function ResultDisplay({ status, imageUrl, error }: ResultDisplayProps) {
           </div>
         )}
 
-        {status === "completed" && imageUrl && (
+        {status === "completed" && images && images.length > 0 && (
           <div className="space-y-4">
-            <div className="relative aspect-[4/3] w-full overflow-hidden rounded-lg">
-              <Image
-                src={imageUrl}
-                alt="Generated result"
-                fill
-                className="object-cover"
-              />
+            {/* Images Grid */}
+            <div className={cn(
+              "grid gap-4",
+              images.length === 1 ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2"
+            )}>
+              {images.map((image, index) => (
+                <div key={index} className="space-y-2">
+                  <div className="relative aspect-square w-full overflow-hidden rounded-lg border border-[rgb(var(--border))]">
+                    <Image
+                      src={image.url}
+                      alt={`Generated result ${index + 1}`}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                  <button
+                    onClick={() => handleDownload(image.url, image.filename, index)}
+                    disabled={downloadingIndex === index}
+                    className={cn(
+                      "w-full py-2 px-3 rounded-lg text-sm font-medium transition-all",
+                      "bg-[rgb(var(--secondary))] hover:bg-[rgb(var(--accent))]",
+                      "border border-[rgb(var(--border))]",
+                      "flex items-center justify-center gap-2",
+                      "disabled:opacity-50 disabled:cursor-not-allowed"
+                    )}
+                  >
+                    {downloadingIndex === index ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Download className="w-4 h-4" />
+                    )}
+                    Download {images.length > 1 ? `#${index + 1}` : ''}
+                  </button>
+                </div>
+              ))}
             </div>
-            <button
-              onClick={handleDownload}
-              disabled={downloading}
-              className={cn(
-                "w-full py-3 px-4 rounded-lg font-medium transition-all",
-                "bg-[rgb(var(--secondary))] hover:bg-[rgb(var(--accent))]",
-                "border border-[rgb(var(--border))]",
-                "flex items-center justify-center gap-2",
-                "disabled:opacity-50 disabled:cursor-not-allowed"
-              )}
-            >
-              {downloading ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Download className="w-4 h-4" />
-              )}
-              Download Result
-            </button>
           </div>
         )}
 
