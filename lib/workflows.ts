@@ -50,6 +50,32 @@ export const workflows: WorkflowConfig[] = [
           "Custom",
         ],
       },
+      {
+        id: "pose_selection",
+        name: "pose_selection",
+        type: "select",
+        label: "Pose Selection",
+        description: "Select a predefined pose",
+        required: false,
+        defaultValue: "Plano medio, torso de frente, brazos cruzados, cuerpo ligeramente girado hacia la derecha, mirando a la cámara con expresión segura",
+        options: [
+          "Plano medio, torso de frente, brazos cruzados, cuerpo ligeramente girado hacia la derecha, mirando a la cámara con expresión segura",
+          "Plano entero, de pie, postura recta con una mano en la cadera, cabeza ligeramente inclinada, expresión relajada y confiada",
+        ],
+      },
+      {
+        id: "background_selection",
+        name: "background_selection",
+        type: "select",
+        label: "Background Selection",
+        description: "Select a predefined background",
+        required: false,
+        defaultValue: "Fondo blanco liso de estudio, suave sombra bajo la modelo, iluminación profesional de moda",
+        options: [
+          "Fondo blanco liso de estudio, suave sombra bajo la modelo, iluminación profesional de moda",
+          "Estudio interior cálido con tonos marrones suaves, muebles de estilo vintage ligeramente desenfocados en el fondo",
+        ],
+      },
     ],
   },
   // Future workflows can be added here:
