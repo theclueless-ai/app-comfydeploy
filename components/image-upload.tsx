@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Upload, X, Image as ImageIcon } from "lucide-react";
+import { X } from "lucide-react";
 import { cn, formatBytes } from "@/lib/utils";
-import Image from "next/image";
 
 interface ImageUploadProps {
   label: string;
@@ -22,14 +21,12 @@ export function ImageUpload({
   accept = "image/*",
   required = false,
 }: ImageUploadProps) {
-  const [preview, setPreview] = useState<string | null>(null);
   const [dragActive, setDragActive] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const handleFile = (file: File | null) => {
     if (!file) {
       onChange(null);
-      setPreview(null);
       return;
     }
 
@@ -39,11 +36,6 @@ export function ImageUpload({
     }
 
     onChange(file);
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setPreview(reader.result as string);
-    };
-    reader.readAsDataURL(file);
   };
 
   const handleDrag = (e: React.DragEvent) => {
@@ -82,23 +74,23 @@ export function ImageUpload({
 
   return (
     <div className="w-full">
-      <label className="block text-sm font-medium mb-2">
+      <label className="block text-sm font-medium mb-2 text-gray-200">
         {label}
         {required && <span className="text-brand-pink ml-1">*</span>}
       </label>
       {description && (
-        <p className="text-sm text-[rgb(var(--muted-foreground))] mb-3">
+        <p className="text-sm text-gray-400 mb-3">
           {description}
         </p>
       )}
 
       <div
         className={cn(
-          "relative border-2 border-dashed rounded-lg transition-all",
+          "relative border-2 border-dashed rounded-lg transition-all p-4",
           dragActive
             ? "border-brand-pink bg-brand-pink/5"
-            : "border-[rgb(var(--border))] hover:border-brand-pink/50",
-          preview ? "p-0" : "p-8"
+            : "border-gray-700 hover:border-brand-pink/50",
+          value ? "bg-gray-800/50" : "bg-gray-800/30"
         )}
         onDragEnter={handleDrag}
         onDragLeave={handleDrag}
@@ -114,44 +106,32 @@ export function ImageUpload({
           id={`upload-${label}`}
         />
 
-        {preview ? (
-          <div className="relative group">
-            <div className="relative aspect-[4/3] w-full overflow-hidden rounded-lg">
-              <Image
-                src={preview}
-                alt={label}
-                fill
-                className="object-cover"
-              />
+        {value ? (
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-gray-200 truncate">
+                {value.name}
+              </p>
+              <p className="text-xs text-gray-400 mt-0.5">
+                {formatBytes(value.size)}
+              </p>
             </div>
-            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
-              <button
-                onClick={clearFile}
-                className="bg-white/90 hover:bg-white text-gray-900 rounded-full p-3 transition-colors"
-                type="button"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            {value && (
-              <div className="mt-2 text-xs text-[rgb(var(--muted-foreground))]">
-                {value.name} ({formatBytes(value.size)})
-              </div>
-            )}
+            <button
+              onClick={clearFile}
+              className="flex-shrink-0 p-1.5 rounded-md bg-gray-700 hover:bg-gray-600 text-gray-300 transition-colors"
+              type="button"
+              title="Remove file"
+            >
+              <X className="w-4 h-4" />
+            </button>
           </div>
         ) : (
           <label
             htmlFor={`upload-${label}`}
-            className="flex flex-col items-center justify-center cursor-pointer"
+            className="flex items-center justify-center cursor-pointer py-2"
           >
-            <div className="w-16 h-16 rounded-full bg-brand-pink/10 flex items-center justify-center mb-4">
-              <Upload className="w-8 h-8 text-brand-pink" />
-            </div>
-            <p className="text-sm font-medium mb-1">
+            <p className="text-sm text-gray-400">
               Click to upload or drag and drop
-            </p>
-            <p className="text-xs text-[rgb(var(--muted-foreground))]">
-              PNG, JPG, WEBP up to 10MB
             </p>
           </label>
         )}
