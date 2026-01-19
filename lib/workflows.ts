@@ -63,13 +63,11 @@ export const workflows: WorkflowConfig[] = [
             label: "Shot Type",
             options: ["Plano medio", "Plano entero"],
             required: true,
-            exclusiveWith: ["body_position"],
           },
           {
             id: "body_position",
             label: "Body Position",
             options: ["torso de frente", "de pie", "postura recta"],
-            exclusiveWith: ["shot_type"],
           },
           {
             id: "arm_position",
