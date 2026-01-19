@@ -83,7 +83,7 @@ export default function Home() {
     return () => clearInterval(pollInterval);
   }, [runId, status]);
 
-  const handleSubmit = async (inputs: Record<string, File>) => {
+  const handleSubmit = async (inputs: Record<string, File | string>) => {
     setIsLoading(true);
     setStatus("queued");
     setError(undefined);
@@ -91,9 +91,13 @@ export default function Home() {
 
     try {
       const formData = new FormData();
-      // Add all input files
-      Object.entries(inputs).forEach(([key, file]) => {
-        formData.append(key, file);
+      // Add all inputs (files and text values)
+      Object.entries(inputs).forEach(([key, value]) => {
+        if (value instanceof File) {
+          formData.append(key, value);
+        } else {
+          formData.append(key, value);
+        }
       });
 
       const response = await fetch("/api/run-workflow", {

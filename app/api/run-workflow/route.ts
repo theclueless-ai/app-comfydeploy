@@ -17,13 +17,15 @@ export async function POST(request: NextRequest) {
 
     const inputs: Record<string, any> = {};
 
-    // Convert files to base64 and prepare inputs
+    // Process inputs - handle both files and text values
     for (const key of formData.keys()) {
-      const file = formData.get(key) as File;
-      if (file && file.size > 0) {
+      const value = formData.get(key);
+
+      // Check if it's a File object
+      if (value instanceof File && value.size > 0) {
         try {
-          console.log(`Converting ${key} to base64:`, file.name, file.type, file.size);
-          const base64Data = await fileToBase64(file);
+          console.log(`Converting ${key} to base64:`, value.name, value.type, value.size);
+          const base64Data = await fileToBase64(value);
           inputs[key] = base64Data;
           console.log(`Successfully converted ${key}, base64 length:`, base64Data.length);
         } catch (error) {
@@ -33,6 +35,10 @@ export async function POST(request: NextRequest) {
             { status: 500 }
           );
         }
+      } else if (typeof value === 'string' && value.trim() !== '') {
+        // Handle text inputs (like select values)
+        inputs[key] = value;
+        console.log(`Added text input ${key}:`, value);
       }
     }
 

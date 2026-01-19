@@ -1,14 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ImageUpload } from "./image-upload";
+import { SelectInput } from "./select-input";
 import { WorkflowConfig } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Sparkles, Loader2 } from "lucide-react";
 
 interface WorkflowFormProps {
   workflow: WorkflowConfig;
-  onSubmit: (inputs: Record<string, File>) => Promise<void>;
+  onSubmit: (inputs: Record<string, File | string>) => Promise<void>;
   isLoading: boolean;
 }
 
@@ -17,7 +18,18 @@ export function WorkflowForm({
   onSubmit,
   isLoading,
 }: WorkflowFormProps) {
-  const [inputs, setInputs] = useState<Record<string, File | null>>({});
+  const [inputs, setInputs] = useState<Record<string, File | string | null>>({});
+
+  // Initialize default values for select inputs
+  useEffect(() => {
+    const defaultInputs: Record<string, File | string | null> = {};
+    workflow.inputs.forEach((input) => {
+      if (input.type === "select" && input.defaultValue) {
+        defaultInputs[input.id] = input.defaultValue;
+      }
+    });
+    setInputs(defaultInputs);
+  }, [workflow]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,10 +47,10 @@ export function WorkflowForm({
     // Filter out null values
     const validInputs = Object.entries(inputs).reduce(
       (acc, [key, value]) => {
-        if (value) acc[key] = value;
+        if (value !== null && value !== undefined) acc[key] = value;
         return acc;
       },
-      {} as Record<string, File>
+      {} as Record<string, File | string>
     );
 
     await onSubmit(validInputs);
@@ -54,7 +66,7 @@ export function WorkflowForm({
                 key={input.id}
                 label={input.label}
                 description={input.description}
-                value={inputs[input.id] || null}
+                value={(inputs[input.id] as File) || null}
                 onChange={(file) =>
                   setInputs((prev) => ({ ...prev, [input.id]: file }))
                 }
@@ -63,6 +75,23 @@ export function WorkflowForm({
               />
             );
           }
+
+          if (input.type === "select" && input.options) {
+            return (
+              <SelectInput
+                key={input.id}
+                label={input.label}
+                description={input.description}
+                value={(inputs[input.id] as string) || input.defaultValue || input.options[0]}
+                onChange={(value) =>
+                  setInputs((prev) => ({ ...prev, [input.id]: value }))
+                }
+                options={input.options}
+                required={input.required}
+              />
+            );
+          }
+
           return null;
         })}
       </div>

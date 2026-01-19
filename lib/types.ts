@@ -7,6 +7,7 @@ export interface WorkflowInput {
   required: boolean;
   placeholder?: string;
   options?: string[];
+  defaultValue?: string;
   accept?: string;
 }
 
