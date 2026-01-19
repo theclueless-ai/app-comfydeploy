@@ -53,81 +53,27 @@ export const workflows: WorkflowConfig[] = [
       {
         id: "pose_selection",
         name: "pose_selection",
-        type: "builder",
+        type: "select",
         label: "Pose Selection",
-        description: "Build your pose by selecting compatible elements",
+        description: "Select a predefined pose",
         required: false,
-        categories: [
-          {
-            id: "shot_type",
-            label: "Shot Type",
-            options: ["Plano medio", "Plano entero"],
-            required: true,
-          },
-          {
-            id: "body_position",
-            label: "Body Position",
-            options: ["torso de frente", "de pie", "postura recta"],
-          },
-          {
-            id: "arm_position",
-            label: "Arm Position",
-            options: ["brazos cruzados", "una mano en la cadera"],
-          },
-          {
-            id: "body_orientation",
-            label: "Body Orientation",
-            options: ["cuerpo ligeramente girado hacia la derecha", "cuerpo recto"],
-          },
-          {
-            id: "head_tilt",
-            label: "Head Position",
-            options: ["cabeza ligeramente inclinada", "cabeza recta"],
-          },
-          {
-            id: "expression",
-            label: "Expression & Gaze",
-            options: [
-              "mirando a la cámara con expresión segura",
-              "expresión relajada y confiada",
-            ],
-          },
+        defaultValue: "Plano medio, torso de frente, brazos cruzados, cuerpo ligeramente girado hacia la derecha, mirando a la cámara con expresión segura",
+        options: [
+          "Plano medio, torso de frente, brazos cruzados, cuerpo ligeramente girado hacia la derecha, mirando a la cámara con expresión segura",
+          "Plano entero, de pie, postura recta con una mano en la cadera, cabeza ligeramente inclinada, expresión relajada y confiada",
         ],
       },
       {
         id: "background_selection",
         name: "background_selection",
-        type: "builder",
+        type: "select",
         label: "Background Selection",
-        description: "Customize your background by selecting elements",
+        description: "Select a predefined background",
         required: false,
-        categories: [
-          {
-            id: "background_type",
-            label: "Background Type",
-            options: [
-              "Fondo blanco liso de estudio",
-              "Estudio interior cálido con tonos marrones suaves",
-            ],
-            required: true,
-          },
-          {
-            id: "shadow_effect",
-            label: "Shadow Effects",
-            options: ["suave sombra bajo la modelo"],
-          },
-          {
-            id: "lighting",
-            label: "Lighting",
-            options: ["iluminación profesional de moda"],
-          },
-          {
-            id: "additional_elements",
-            label: "Additional Elements",
-            options: [
-              "muebles de estilo vintage ligeramente desenfocados en el fondo",
-            ],
-          },
+        defaultValue: "Fondo blanco liso de estudio, suave sombra bajo la modelo, iluminación profesional de moda",
+        options: [
+          "Fondo blanco liso de estudio, suave sombra bajo la modelo, iluminación profesional de moda",
+          "Estudio interior cálido con tonos marrones suaves, muebles de estilo vintage ligeramente desenfocados en el fondo",
         ],
       },
     ],
