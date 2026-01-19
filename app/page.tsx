@@ -138,7 +138,7 @@ export default function Home() {
           </div>
 
           {/* Main Content */}
-          <div className="grid md:grid-cols-2 gap-8">
+          <div className="grid md:grid-cols-2 gap-8 items-start">
             {/* Input Section */}
             <div
               className={cn(
@@ -156,7 +156,7 @@ export default function Home() {
             </div>
 
             {/* Result Section */}
-            <div className="animate-slide-up" style={{ animationDelay: "100ms" }}>
+            <div className="animate-slide-up sticky top-4" style={{ animationDelay: "100ms" }}>
               {status ? (
                 <ResultDisplay
                   status={status}
@@ -166,9 +166,9 @@ export default function Home() {
               ) : (
                 <div
                   className={cn(
-                    "rounded-xl border p-8 h-full flex items-center justify-center",
+                    "rounded-xl border p-8 flex items-center justify-center",
                     "bg-[rgb(var(--card))] border-[rgb(var(--border))]/50",
-                    "border-dashed"
+                    "border-dashed min-h-[300px]"
                   )}
                 >
                   <div className="text-center">
