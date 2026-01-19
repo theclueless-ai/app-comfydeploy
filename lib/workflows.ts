@@ -7,8 +7,8 @@ import { WorkflowConfig } from "./types";
 export const workflows: WorkflowConfig[] = [
   {
     id: "model-product-fusion",
-    name: "Model & Product Fusion",
-    description: "Seamlessly blend a model with your product for stunning fashion visuals",
+    name: "AI Fashion Commerce",
+    description: "Real-time image generation for high-volume fashion e-commerce production.",
     deploymentId: "", // This will be read from server env in API route
     inputs: [
       {
