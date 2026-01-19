@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { ImageUpload } from "./image-upload";
 import { SelectInput } from "./select-input";
+import { BuilderInput } from "./builder-input";
 import { WorkflowConfig } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Sparkles, Loader2 } from "lucide-react";
@@ -87,6 +88,22 @@ export function WorkflowForm({
                   setInputs((prev) => ({ ...prev, [input.id]: value }))
                 }
                 options={input.options}
+                required={input.required}
+              />
+            );
+          }
+
+          if (input.type === "builder" && input.categories) {
+            return (
+              <BuilderInput
+                key={input.id}
+                label={input.label}
+                description={input.description}
+                value={(inputs[input.id] as string) || ""}
+                onChange={(value) =>
+                  setInputs((prev) => ({ ...prev, [input.id]: value }))
+                }
+                categories={input.categories}
                 required={input.required}
               />
             );

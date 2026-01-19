@@ -1,7 +1,15 @@
+export interface BuilderCategory {
+  id: string;
+  label: string;
+  options: string[];
+  required?: boolean;
+  exclusiveWith?: string[]; // IDs of other categories that are mutually exclusive
+}
+
 export interface WorkflowInput {
   id: string;
   name: string;
-  type: "image" | "text" | "number" | "select";
+  type: "image" | "text" | "number" | "select" | "builder";
   label: string;
   description?: string;
   required: boolean;
@@ -9,6 +17,7 @@ export interface WorkflowInput {
   options?: string[];
   defaultValue?: string;
   accept?: string;
+  categories?: BuilderCategory[];
 }
 
 export interface WorkflowConfig {
