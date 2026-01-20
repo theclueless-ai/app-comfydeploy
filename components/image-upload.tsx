@@ -126,7 +126,7 @@ export function ImageUpload({
             className="flex items-center justify-center cursor-pointer py-1"
           >
             <p className="text-xs text-gray-400">
-              Type your URL or drop a file
+              Click to upload image
             </p>
           </label>
         )}
