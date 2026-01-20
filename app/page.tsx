@@ -138,7 +138,7 @@ export default function Home() {
           </div>
 
           {/* Main Content */}
-          <div className="grid md:grid-cols-2 gap-6 items-start">
+          <div className="grid md:grid-cols-[380px_1fr] gap-6 items-start">
             {/* Input Section */}
             <div
               className={cn(
