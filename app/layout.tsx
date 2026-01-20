@@ -1,9 +1,19 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 
-const inter = Inter({ subsets: ["latin"], variable: "--font-geist-sans" });
+const gtFlexaMono = localFont({
+  src: "../public/GT-Flexa-Mono-Medium.ttf",
+  variable: "--font-gt-flexa-mono",
+  display: "swap",
+});
+
+const workSans = localFont({
+  src: "../public/WorkSans-SemiBold.ttf",
+  variable: "--font-work-sans",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Theclueless | Workflow Studio",
@@ -18,7 +28,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.variable}>
+      <body className={`${gtFlexaMono.variable} ${workSans.variable}`}>
         <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>

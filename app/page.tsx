@@ -129,7 +129,7 @@ export default function Home() {
         <div className="max-w-5xl mx-auto">
           {/* Hero Section */}
           <div className="text-center mb-12 animate-fade-in">
-            <h2 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-brand-pink via-brand-pink-light to-brand-pink bg-clip-text text-transparent">
+            <h2 className="font-work-sans text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-brand-pink via-brand-pink-light to-brand-pink bg-clip-text text-transparent">
               {workflow.name}
             </h2>
             <p className="text-lg text-[rgb(var(--muted-foreground))] max-w-2xl mx-auto">

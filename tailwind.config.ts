@@ -42,7 +42,9 @@ const config: Config = {
         },
       },
       fontFamily: {
-        sans: ["var(--font-geist-sans)", "system-ui", "sans-serif"],
+        sans: ["var(--font-gt-flexa-mono)", "system-ui", "sans-serif"],
+        "gt-flexa": ["var(--font-gt-flexa-mono)", "monospace"],
+        "work-sans": ["var(--font-work-sans)", "sans-serif"],
       },
       animation: {
         "fade-in": "fadeIn 0.5s ease-in-out",
