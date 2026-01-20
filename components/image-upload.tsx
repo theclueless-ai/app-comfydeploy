@@ -131,7 +131,7 @@ export function ImageUpload({
             className="flex items-center justify-center cursor-pointer py-2"
           >
             <p className="text-sm text-gray-400">
-              Click to upload or drag and drop
+              Click to upload image
             </p>
           </label>
         )}
