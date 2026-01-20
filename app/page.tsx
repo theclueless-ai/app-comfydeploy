@@ -141,7 +141,7 @@ export default function Home() {
     <div className="min-h-screen bg-[rgb(var(--background))]">
       <Header />
 
-      <main className="container mx-auto px-6 py-8">
+      <main className="container mx-auto px-2 py-8">
         <div className="max-w-7xl mx-auto">
           {/* Hero Section */}
           <div className="mb-6 animate-fade-in">
