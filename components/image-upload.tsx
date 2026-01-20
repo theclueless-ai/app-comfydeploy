@@ -84,7 +84,7 @@ export function ImageUpload({
           "relative border border-solid rounded-md transition-all px-3 py-2",
           dragActive
             ? "border-brand-pink bg-brand-pink/5"
-            : "border-[rgb(var(--border))] hover:border-brand-pink/50",
+            : "border-[rgb(var(--border-input))] hover:border-brand-pink/50",
           "bg-[rgb(var(--input))]"
         )}
         onDragEnter={handleDrag}

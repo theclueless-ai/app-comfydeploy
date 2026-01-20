@@ -33,7 +33,7 @@ export function SelectInput({
           required={required}
           className={cn(
             "w-full px-3 py-2 pr-8",
-            "bg-[rgb(var(--input))] border border-[rgb(var(--border))] rounded-md",
+            "bg-[rgb(var(--input))] border border-[rgb(var(--border-input))] rounded-md",
             "text-[rgb(var(--muted-foreground))] text-xs",
             "focus:outline-none focus:ring-1 focus:ring-brand-pink focus:border-transparent",
             "transition-all duration-200",

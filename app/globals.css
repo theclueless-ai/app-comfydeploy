@@ -32,7 +32,8 @@
   --accent: 245 245 245;
   --accent-foreground: 10 10 10;
   --border: 229 229 229;
-  --input: 229 229 229;
+  --border-input: 0 0 0 0;
+  --input: 255 255 255;
   --ring: 255 156 224;
 }
 
@@ -50,6 +51,7 @@
   --accent: 30 30 30;
   --accent-foreground: 250 250 250;
   --border: 40 40 40;
+  --border-input: 40 40 40;
   --input: 40 40 40;
   --ring: 255 156 224;
 }
