@@ -33,12 +33,12 @@ export function SelectInput({
           required={required}
           className={cn(
             "w-full px-3 py-2 pr-8",
-            "bg-gray-800/50 border border-gray-700 rounded-md",
-            "text-gray-200 text-xs",
+            "bg-white border border-gray-700 rounded-md",
+            "text-gray-400 text-xs",
             "focus:outline-none focus:ring-1 focus:ring-brand-pink focus:border-transparent",
             "transition-all duration-200",
             "appearance-none cursor-pointer",
-            "hover:bg-gray-800/70"
+            "hover:border-brand-pink/50"
           )}
         >
           {options.map((option) => (

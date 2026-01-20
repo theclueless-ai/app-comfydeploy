@@ -85,7 +85,7 @@ export function ImageUpload({
           dragActive
             ? "border-brand-pink bg-brand-pink/5"
             : "border-gray-700 hover:border-brand-pink/50",
-          value ? "bg-gray-800/50" : "bg-gray-800/30"
+          value ? "bg-white" : "bg-white"
         )}
         onDragEnter={handleDrag}
         onDragLeave={handleDrag}
