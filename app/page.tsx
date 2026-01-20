@@ -4,8 +4,11 @@ import { useState, useEffect } from "react";
 import { Header } from "@/components/header";
 import { WorkflowForm } from "@/components/workflow-form";
 import { ResultDisplay } from "@/components/result-display";
+import { Gallery } from "@/components/gallery";
 import { getDefaultWorkflow } from "@/lib/workflows";
 import { cn } from "@/lib/utils";
+import { useHistory } from "@/hooks/use-history";
+import { History } from "lucide-react";
 
 type RunStatus = "queued" | "running" | "completed" | "failed" | null;
 
@@ -15,8 +18,10 @@ export default function Home() {
   const [status, setStatus] = useState<RunStatus>(null);
   const [resultImages, setResultImages] = useState<Array<{ url: string; filename: string }>>([]);
   const [error, setError] = useState<string>();
+  const [showGallery, setShowGallery] = useState(false);
 
   const workflow = getDefaultWorkflow();
+  const { history, totalImages, addToHistory, clearHistory } = useHistory();
 
   // Poll for webhook results
   useEffect(() => {
@@ -82,6 +87,17 @@ export default function Home() {
 
     return () => clearInterval(pollInterval);
   }, [runId, status]);
+
+  // Save to history when run completes successfully
+  useEffect(() => {
+    if (status === "completed" && resultImages.length > 0 && runId) {
+      addToHistory({
+        runId,
+        images: resultImages,
+        workflowName: workflow.name,
+      });
+    }
+  }, [status, resultImages, runId, workflow.name, addToHistory]);
 
   const handleSubmit = async (inputs: Record<string, File | string>) => {
     setIsLoading(true);
@@ -193,6 +209,30 @@ export default function Home() {
               )}
             </div>
           </div>
+
+          {/* Gallery Section */}
+          {totalImages > 0 && (
+            <div className="mt-8">
+              <button
+                onClick={() => setShowGallery(!showGallery)}
+                className={cn(
+                  "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all mb-4",
+                  showGallery
+                    ? "bg-brand-pink text-gray-900"
+                    : "bg-gray-800 text-gray-300 hover:bg-gray-700"
+                )}
+              >
+                <History className="w-4 h-4" />
+                {showGallery ? "Hide" : "Show"} History ({totalImages} image{totalImages !== 1 ? "s" : ""})
+              </button>
+
+              {showGallery && (
+                <div className="animate-slide-up">
+                  <Gallery history={history} onClearHistory={clearHistory} />
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Info Section */}
           <div className="mt-8 text-center">
