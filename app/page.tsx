@@ -237,10 +237,9 @@ export default function Home() {
           {/* Info Section */}
           <div className="mt-8 text-center">
             <p className="text-xs text-[rgb(var(--muted-foreground))]">
-              Powered by{" "}
-              <span className="text-brand-pink font-semibold">The Clueless AIGENCY S.L.</span>
+              COPYRIGHT 2026 © THE CLUELESS AIGENCY S.L.
               <br />
-              <span className="text-brand-pink font-semibold">hello@theclueless.ai</span>
+              <span className="text-brand-pink">hello@theclueless.ai</span>
             </p>
           </div>
         </div>
