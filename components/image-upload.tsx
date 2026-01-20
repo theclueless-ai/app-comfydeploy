@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import { X } from "lucide-react";
-import { cn, formatBytes } from "@/lib/utils";
+import { cn, formatBytes, compressImage } from "@/lib/utils";
 
 interface ImageUploadProps {
   label: string;
@@ -22,9 +22,10 @@ export function ImageUpload({
   required = false,
 }: ImageUploadProps) {
   const [dragActive, setDragActive] = useState(false);
+  const [isCompressing, setIsCompressing] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleFile = (file: File | null) => {
+  const handleFile = async (file: File | null) => {
     if (!file) {
       onChange(null);
       return;
@@ -35,7 +36,24 @@ export function ImageUpload({
       return;
     }
 
-    onChange(file);
+    // Check file size (warn if > 5MB before compression)
+    const maxSizeBeforeCompression = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSizeBeforeCompression) {
+      alert(`File is too large (${formatBytes(file.size)}). Please use an image smaller than 10MB.`);
+      return;
+    }
+
+    try {
+      setIsCompressing(true);
+      // Compress image if it's larger than 2MB
+      const compressedFile = await compressImage(file, 2, 2048, 0.85);
+      onChange(compressedFile);
+    } catch (error) {
+      console.error("Image compression error:", error);
+      alert("Failed to process image. Please try a different image.");
+    } finally {
+      setIsCompressing(false);
+    }
   };
 
   const handleDrag = (e: React.DragEvent) => {
@@ -101,11 +119,20 @@ export function ImageUpload({
           id={`upload-${label}`}
         />
 
-        {value ? (
+        {isCompressing ? (
+          <div className="flex items-center justify-center py-1">
+            <p className="text-xs text-[rgb(var(--muted-foreground))]">
+              Compressing image...
+            </p>
+          </div>
+        ) : value ? (
           <div className="flex items-center justify-between gap-2">
             <div className="flex-1 min-w-0">
               <p className="text-xs font-medium text-[rgb(var(--foreground))] truncate">
                 {value.name}
+              </p>
+              <p className="text-xs text-[rgb(var(--muted-foreground))]">
+                {formatBytes(value.size)}
               </p>
             </div>
             <button

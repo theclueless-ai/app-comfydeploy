@@ -64,7 +64,20 @@ export async function runWorkflow(
     if (!response.ok) {
       const errorText = await response.text();
       console.error("API Error Response:", errorText);
-      throw new Error(`ComfyDeploy API error: ${response.status} ${response.statusText} - ${errorText}`);
+
+      // Handle specific error codes
+      if (response.status === 413) {
+        throw new Error("Image files are too large. Please use smaller images (each image should be under 2MB after compression).");
+      }
+
+      // Try to parse error as JSON for better error messages
+      try {
+        const errorJson = JSON.parse(errorText);
+        throw new Error(errorJson.message || errorJson.error || `API error: ${response.status} ${response.statusText}`);
+      } catch {
+        // If not JSON, return generic error
+        throw new Error(`ComfyDeploy API error: ${response.status} ${response.statusText}`);
+      }
     }
 
     const responseText = await response.text();
@@ -75,7 +88,14 @@ export async function runWorkflow(
       result = JSON.parse(responseText);
     } catch (parseError) {
       console.error("Failed to parse response:", parseError);
-      throw new Error(`Invalid JSON response: ${responseText.substring(0, 200)}`);
+      console.error("Response text:", responseText.substring(0, 500));
+
+      // Check if this looks like an HTML error page (413 or other HTTP errors)
+      if (responseText.includes("Request Entity Too Large") || responseText.includes("<html")) {
+        throw new Error("Image files are too large. Please use smaller images (each image should be under 2MB).");
+      }
+
+      throw new Error(`Invalid JSON response from API. This may indicate the images are too large.`);
     }
 
     console.log("Parsed result:", result);

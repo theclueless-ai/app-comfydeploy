@@ -45,10 +45,20 @@ export async function POST(request: NextRequest) {
     // Construct webhook URL
     const webhookUrl = `${process.env.WEBHOOK_BASE_URL || request.nextUrl.origin}/api/webhook`;
 
+    // Calculate approximate payload size for debugging
+    const payloadSize = JSON.stringify({ deployment_id: deploymentId, inputs, webhook: webhookUrl }).length;
+    const payloadSizeMB = (payloadSize / (1024 * 1024)).toFixed(2);
+
     console.log("Running workflow with:");
     console.log("- Deployment ID:", deploymentId);
     console.log("- Input keys:", Object.keys(inputs));
     console.log("- Webhook URL:", webhookUrl);
+    console.log("- Approximate payload size:", `${payloadSizeMB} MB`);
+
+    // Warn if payload is very large
+    if (payloadSize > 10 * 1024 * 1024) {
+      console.warn("⚠️ Large payload detected! This may cause issues with the API.");
+    }
 
     // Run the workflow
     const result = await runWorkflow(deploymentId, inputs, webhookUrl);
