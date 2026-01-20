@@ -107,9 +107,6 @@ export function ImageUpload({
               <p className="text-xs font-medium text-gray-200 truncate">
                 {value.name}
               </p>
-              <p className="text-xs text-gray-400 mt-0.5">
-                {formatBytes(value.size)}
-              </p>
             </div>
             <button
               onClick={clearFile}
