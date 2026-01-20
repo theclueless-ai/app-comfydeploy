@@ -144,11 +144,11 @@ export default function Home() {
       <main className="container mx-auto px-4 py-8">
         <div className="max-w-5xl mx-auto">
           {/* Hero Section */}
-          <div className="text-center mb-6 animate-fade-in">
-            <h2 className="font-work-sans text-3xl md:text-4xl font-bold mb-2 bg-gradient-to-r from-brand-pink via-brand-pink-light to-brand-pink bg-clip-text text-transparent">
+          <div className="mb-6 animate-fade-in">
+            <h2 className="font-work-sans text-md md:text-xl font-bold mb-2 bg-gradient-to-r from-brand-pink via-brand-pink-light to-brand-pink bg-clip-text text-transparent">
               {workflow.name}
             </h2>
-            <p className="text-base text-[rgb(var(--muted-foreground))] max-w-2xl mx-auto">
+            <p className="text-xs text-[rgb(var(--muted-foreground))]">
               {workflow.description}
             </p>
           </div>
@@ -239,6 +239,8 @@ export default function Home() {
             <p className="text-xs text-[rgb(var(--muted-foreground))]">
               Powered by{" "}
               <span className="text-brand-pink font-semibold">The Clueless AIGENCY S.L.</span>
+              <br />
+              <span className="text-brand-pink font-semibold">hello@theclueless.ai</span>
             </p>
           </div>
         </div>

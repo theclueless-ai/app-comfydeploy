@@ -74,7 +74,7 @@ export function ImageUpload({
 
   return (
     <div className="w-full">
-      <label className="block text-xs font-medium mb-1 text-gray-400">
+      <label className="block text-xs font-medium mb-1 text-[rgb(var(--muted-foreground))]">
         {label}
         {required && <span className="text-brand-pink ml-1">*</span>}
       </label>
@@ -84,8 +84,8 @@ export function ImageUpload({
           "relative border border-solid rounded-md transition-all px-3 py-2",
           dragActive
             ? "border-brand-pink bg-brand-pink/5"
-            : "border-gray-700 hover:border-brand-pink/50",
-          value ? "bg-gray-800/50" : "bg-gray-800/30"
+            : "border-[rgb(var(--border-input))] hover:border-brand-pink/50",
+          "bg-[rgb(var(--input))]"
         )}
         onDragEnter={handleDrag}
         onDragLeave={handleDrag}
@@ -104,13 +104,13 @@ export function ImageUpload({
         {value ? (
           <div className="flex items-center justify-between gap-2">
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-gray-200 truncate">
+              <p className="text-xs font-medium text-[rgb(var(--foreground))] truncate">
                 {value.name}
               </p>
             </div>
             <button
               onClick={clearFile}
-              className="flex-shrink-0 p-1 rounded-md bg-gray-700 hover:bg-gray-600 text-gray-300 transition-colors"
+              className="flex-shrink-0 p-1 rounded-md bg-[rgb(var(--secondary))] hover:bg-[rgb(var(--accent))] text-[rgb(var(--foreground))] transition-colors"
               type="button"
               title="Remove file"
             >
@@ -122,7 +122,7 @@ export function ImageUpload({
             htmlFor={`upload-${label}`}
             className="flex items-center justify-center cursor-pointer py-1"
           >
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-[rgb(var(--muted-foreground))]">
               Click to upload image
             </p>
           </label>

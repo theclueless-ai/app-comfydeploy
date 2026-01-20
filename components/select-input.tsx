@@ -22,7 +22,7 @@ export function SelectInput({
 }: SelectInputProps) {
   return (
     <div className="space-y-1">
-      <label className="block text-xs font-medium text-gray-400">
+      <label className="block text-xs font-medium text-[rgb(var(--muted-foreground))]">
         {label}
         {required && <span className="text-brand-pink ml-1">*</span>}
       </label>
@@ -33,26 +33,26 @@ export function SelectInput({
           required={required}
           className={cn(
             "w-full px-3 py-2 pr-8",
-            "bg-gray-800/50 border border-gray-700 rounded-md",
-            "text-gray-200 text-xs",
+            "bg-[rgb(var(--input))] border border-[rgb(var(--border-input))] rounded-md",
+            "text-[rgb(var(--muted-foreground))] text-xs",
             "focus:outline-none focus:ring-1 focus:ring-brand-pink focus:border-transparent",
             "transition-all duration-200",
             "appearance-none cursor-pointer",
-            "hover:bg-gray-800/70"
+            "hover:border-brand-pink/50"
           )}
         >
           {options.map((option) => (
             <option
               key={option}
               value={option}
-              className="bg-gray-800 text-gray-200"
+              className="bg-[rgb(var(--secondary))] text-[rgb(var(--foreground))]"
             >
               {option}
             </option>
           ))}
         </select>
         <ChevronDown
-          className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
+          className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-[rgb(var(--muted-foreground))] pointer-events-none"
         />
       </div>
     </div>
