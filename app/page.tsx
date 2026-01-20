@@ -141,8 +141,8 @@ export default function Home() {
     <div className="min-h-screen bg-[rgb(var(--background))]">
       <Header />
 
-      <main className="container mx-auto px-4 py-8">
-        <div className="max-w-5xl mx-auto">
+      <main className="container mx-auto px-6 py-8">
+        <div className="max-w-7xl mx-auto">
           {/* Hero Section */}
           <div className="mb-6 animate-fade-in">
             <h2 className="font-work-sans text-md md:text-xl font-bold mb-2 bg-gradient-to-r from-brand-pink via-brand-pink-light to-brand-pink bg-clip-text text-transparent">
