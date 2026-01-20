@@ -125,29 +125,29 @@ export default function Home() {
     <div className="min-h-screen bg-[rgb(var(--background))]">
       <Header />
 
-      <main className="container mx-auto px-4 py-12">
+      <main className="container mx-auto px-4 py-8">
         <div className="max-w-5xl mx-auto">
           {/* Hero Section */}
-          <div className="text-center mb-12 animate-fade-in">
-            <h2 className="font-work-sans text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-brand-pink via-brand-pink-light to-brand-pink bg-clip-text text-transparent">
+          <div className="text-center mb-6 animate-fade-in">
+            <h2 className="font-work-sans text-3xl md:text-4xl font-bold mb-2 bg-gradient-to-r from-brand-pink via-brand-pink-light to-brand-pink bg-clip-text text-transparent">
               {workflow.name}
             </h2>
-            <p className="text-lg text-[rgb(var(--muted-foreground))] max-w-2xl mx-auto">
+            <p className="text-base text-[rgb(var(--muted-foreground))] max-w-2xl mx-auto">
               {workflow.description}
             </p>
           </div>
 
           {/* Main Content */}
-          <div className="grid md:grid-cols-2 gap-8 items-start">
+          <div className="grid md:grid-cols-2 gap-6 items-start">
             {/* Input Section */}
             <div
               className={cn(
-                "rounded-xl border p-6 md:p-8 animate-slide-up",
+                "rounded-lg border p-4 animate-slide-up",
                 "bg-[rgb(var(--card))] border-[rgb(var(--border))]",
                 "shadow-lg"
               )}
             >
-              <h3 className="text-xl font-semibold mb-6">Upload Images</h3>
+              <h3 className="text-sm font-semibold mb-3 text-gray-400">Upload Images</h3>
               <WorkflowForm
                 workflow={workflow}
                 onSubmit={handleSubmit}
@@ -166,15 +166,15 @@ export default function Home() {
               ) : (
                 <div
                   className={cn(
-                    "rounded-xl border p-8 flex items-center justify-center",
+                    "rounded-lg border p-6 flex items-center justify-center",
                     "bg-[rgb(var(--card))] border-[rgb(var(--border))]/50",
-                    "border-dashed min-h-[300px]"
+                    "border-dashed min-h-[250px]"
                   )}
                 >
                   <div className="text-center">
-                    <div className="w-16 h-16 rounded-full bg-brand-pink/10 flex items-center justify-center mx-auto mb-4">
+                    <div className="w-12 h-12 rounded-full bg-brand-pink/10 flex items-center justify-center mx-auto mb-3">
                       <svg
-                        className="w-8 h-8 text-brand-pink"
+                        className="w-6 h-6 text-brand-pink"
                         fill="none"
                         strokeLinecap="round"
                         strokeLinejoin="round"
@@ -185,7 +185,7 @@ export default function Home() {
                         <path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                       </svg>
                     </div>
-                    <p className="text-sm text-[rgb(var(--muted-foreground))]">
+                    <p className="text-xs text-[rgb(var(--muted-foreground))]">
                       Your result will appear here
                     </p>
                   </div>
@@ -195,8 +195,8 @@ export default function Home() {
           </div>
 
           {/* Info Section */}
-          <div className="mt-12 text-center">
-            <p className="text-sm text-[rgb(var(--muted-foreground))]">
+          <div className="mt-8 text-center">
+            <p className="text-xs text-[rgb(var(--muted-foreground))]">
               Powered by{" "}
               <span className="text-brand-pink font-semibold">The Clueless AIGENCY S.L.</span>
             </p>
