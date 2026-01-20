@@ -59,7 +59,7 @@
 }
 
 body {
-  @apply bg-[rgb(var(--background))] text-[rgb(var(--foreground))];
+  @apply bg-[rgb(var(--background))] text-[rgb(var(--foreground))] font-sans;
   font-feature-settings: "rlig" 1, "calt" 1;
 }
 
