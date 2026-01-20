@@ -4,13 +4,21 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 
 const gtFlexaMono = localFont({
-  src: "../public/GT-Flexa-Mono-Medium.ttf",
+  src: [{
+    path: "../public/GT-Flexa-Mono-Medium.ttf",
+    weight: "500",
+    style: "normal",
+  }],
   variable: "--font-gt-flexa-mono",
   display: "swap",
 });
 
 const workSans = localFont({
-  src: "../public/WorkSans-SemiBold.ttf",
+  src: [{
+    path: "../public/WorkSans-SemiBold.ttf",
+    weight: "600",
+    style: "normal",
+  }],
   variable: "--font-work-sans",
   display: "swap",
 });
