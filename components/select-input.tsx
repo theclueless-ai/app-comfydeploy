@@ -21,24 +21,21 @@ export function SelectInput({
   required = false,
 }: SelectInputProps) {
   return (
-    <div className="space-y-2">
-      <label className="block text-sm font-medium text-gray-200">
+    <div className="space-y-1">
+      <label className="block text-xs font-medium text-gray-400">
         {label}
         {required && <span className="text-brand-pink ml-1">*</span>}
       </label>
-      {description && (
-        <p className="text-sm text-gray-400">{description}</p>
-      )}
       <div className="relative">
         <select
           value={value}
           onChange={(e) => onChange(e.target.value)}
           required={required}
           className={cn(
-            "w-full px-4 py-3 pr-10",
-            "bg-gray-800/50 border border-gray-700 rounded-lg",
-            "text-gray-200 text-sm",
-            "focus:outline-none focus:ring-2 focus:ring-brand-pink focus:border-transparent",
+            "w-full px-3 py-2 pr-8",
+            "bg-gray-800/50 border border-gray-700 rounded-md",
+            "text-gray-200 text-xs",
+            "focus:outline-none focus:ring-1 focus:ring-brand-pink focus:border-transparent",
             "transition-all duration-200",
             "appearance-none cursor-pointer",
             "hover:bg-gray-800/70"
@@ -55,7 +52,7 @@ export function SelectInput({
           ))}
         </select>
         <ChevronDown
-          className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none"
+          className="absolute right-2 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none"
         />
       </div>
     </div>
