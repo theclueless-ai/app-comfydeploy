@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { X, Eye } from "lucide-react";
 import { BuilderCategory } from "@/lib/types";
@@ -24,10 +24,17 @@ export function BuilderInput({
 }: BuilderInputProps) {
   const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
   const [showPreview, setShowPreview] = useState(false);
+  const initializedRef = useRef(false);
 
-  // Initialize from value if exists
+  // Build the concatenated result
+  const buildResult = useCallback((): string => {
+    const selected = Object.values(selectedOptions).filter(Boolean);
+    return selected.join(", ");
+  }, [selectedOptions]);
+
+  // Initialize from value if exists (only once on mount)
   useEffect(() => {
-    if (value && value !== buildResult()) {
+    if (!initializedRef.current && value) {
       // Parse existing value (if needed for editing)
       const parts = value.split(", ");
       const newSelected: Record<string, string> = {};
@@ -40,15 +47,12 @@ export function BuilderInput({
         });
       });
 
-      setSelectedOptions(newSelected);
+      if (Object.keys(newSelected).length > 0) {
+        setSelectedOptions(newSelected);
+      }
+      initializedRef.current = true;
     }
-  }, []);
-
-  // Build the concatenated result
-  const buildResult = (): string => {
-    const selected = Object.values(selectedOptions).filter(Boolean);
-    return selected.join(", ");
-  };
+  }, [value, categories]);
 
   // Update parent component when selections change
   useEffect(() => {
@@ -56,7 +60,7 @@ export function BuilderInput({
     if (result !== value) {
       onChange(result);
     }
-  }, [selectedOptions]);
+  }, [buildResult, value, onChange]);
 
   // Check if an option is disabled due to exclusivity rules
   const isOptionDisabled = (categoryId: string, option: string): boolean => {

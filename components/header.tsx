@@ -20,7 +20,7 @@ export function Header() {
               className="h-auto"
               priority
             />
-            <p className="text-[#ff9ce0] text-2xl tracking-[-0.1em]">//</p>
+            <p className="text-[#ff9ce0] text-2xl tracking-[-0.1em]">{'//'}</p>
             <Image
               src={theme === "light" ? "/troop.jpeg" : "/Troop-white.png"}
               alt="Troop Logo"
