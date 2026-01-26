@@ -5,7 +5,8 @@ import { Header } from "@/components/header";
 import { WorkflowForm } from "@/components/workflow-form";
 import { ResultDisplay } from "@/components/result-display";
 import { Gallery } from "@/components/gallery";
-import { getDefaultWorkflow } from "@/lib/workflows";
+import { WorkflowTabs, WorkflowTab } from "@/components/workflow-tabs";
+import { getDefaultWorkflow, getVellumWorkflow } from "@/lib/workflows";
 import { cn } from "@/lib/utils";
 import { useHistory } from "@/hooks/use-history";
 import { History } from "lucide-react";
@@ -13,6 +14,7 @@ import { History } from "lucide-react";
 type RunStatus = "queued" | "running" | "completed" | "failed" | null;
 
 export default function Home() {
+  const [activeTab, setActiveTab] = useState<WorkflowTab>("fashion");
   const [isLoading, setIsLoading] = useState(false);
   const [runId, setRunId] = useState<string | null>(null);
   const [status, setStatus] = useState<RunStatus>(null);
@@ -20,12 +22,27 @@ export default function Home() {
   const [error, setError] = useState<string>();
   const [showGallery, setShowGallery] = useState(false);
 
-  const workflow = getDefaultWorkflow();
+  const fashionWorkflow = getDefaultWorkflow();
+  const vellumWorkflow = getVellumWorkflow();
+  const workflow = activeTab === "fashion" ? fashionWorkflow : vellumWorkflow;
+
   const { history, totalImages, addToHistory, clearHistory } = useHistory();
 
-  // Poll for webhook results
+  // Reset state when changing tabs
+  const handleTabChange = (tab: WorkflowTab) => {
+    if (tab !== activeTab) {
+      setActiveTab(tab);
+      setIsLoading(false);
+      setRunId(null);
+      setStatus(null);
+      setResultImages([]);
+      setError(undefined);
+    }
+  };
+
+  // Poll for webhook results (ComfyDeploy - Fashion workflow)
   useEffect(() => {
-    if (!runId || status === "completed" || status === "failed") {
+    if (!runId || status === "completed" || status === "failed" || activeTab !== "fashion") {
       return;
     }
 
@@ -86,7 +103,44 @@ export default function Home() {
     }, 3000);
 
     return () => clearInterval(pollInterval);
-  }, [runId, status]);
+  }, [runId, status, activeTab]);
+
+  // Poll for RunPod status (Vellum workflow)
+  useEffect(() => {
+    if (!runId || status === "completed" || status === "failed" || activeTab !== "vellum") {
+      return;
+    }
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const response = await fetch(`/api/vellum-status?jobId=${runId}`);
+        const data = await response.json();
+
+        console.log("Vellum status data:", data);
+
+        if (data.status === "completed") {
+          setStatus("completed");
+          if (data.images && data.images.length > 0) {
+            setResultImages(data.images);
+            console.log(`Received ${data.images.length} images from RunPod`);
+          }
+          clearInterval(pollInterval);
+          setIsLoading(false);
+        } else if (data.status === "failed") {
+          setStatus("failed");
+          setError(data.error || "Workflow failed");
+          clearInterval(pollInterval);
+          setIsLoading(false);
+        } else if (data.status === "running") {
+          setStatus("running");
+        }
+      } catch (error) {
+        console.error("Vellum polling error:", error);
+      }
+    }, 3000);
+
+    return () => clearInterval(pollInterval);
+  }, [runId, status, activeTab]);
 
   // Save to history when run completes successfully
   useEffect(() => {
@@ -99,7 +153,7 @@ export default function Home() {
     }
   }, [status, resultImages, runId, workflow.name, addToHistory]);
 
-  const handleSubmit = async (inputs: Record<string, File | string>) => {
+  const handleSubmit = async (inputs: Record<string, File | string | number>) => {
     setIsLoading(true);
     setStatus("queued");
     setError(undefined);
@@ -107,16 +161,19 @@ export default function Home() {
 
     try {
       const formData = new FormData();
-      // Add all inputs (files and text values)
+      // Add all inputs (files, text values, and numbers)
       Object.entries(inputs).forEach(([key, value]) => {
         if (value instanceof File) {
           formData.append(key, value);
         } else {
-          formData.append(key, value);
+          formData.append(key, String(value));
         }
       });
 
-      const response = await fetch("/api/run-workflow", {
+      // Use different API endpoints based on the active tab
+      const apiEndpoint = activeTab === "fashion" ? "/api/run-workflow" : "/api/run-vellum";
+
+      const response = await fetch(apiEndpoint, {
         method: "POST",
         body: formData,
       });
@@ -127,7 +184,9 @@ export default function Home() {
         throw new Error(data.error || "Failed to run workflow");
       }
 
-      setRunId(data.runId);
+      // ComfyDeploy returns runId, RunPod returns jobId
+      const id = data.runId || data.jobId;
+      setRunId(id);
       setStatus("running");
     } catch (error) {
       console.error("Submission error:", error);
@@ -143,6 +202,11 @@ export default function Home() {
 
       <main className="container mx-auto py-8">
         <div className="max-w-7xl mx-auto">
+          {/* Tabs Section */}
+          <div className="mb-6 animate-fade-in">
+            <WorkflowTabs activeTab={activeTab} onTabChange={handleTabChange} />
+          </div>
+
           {/* Hero Section */}
           <div className="mb-6 animate-fade-in">
             <h2 className="font-work-sans text-md md:text-xl font-bold mb-2 bg-gradient-to-r from-brand-pink via-brand-pink-light to-brand-pink bg-clip-text text-transparent tracking-tighter">
@@ -163,7 +227,9 @@ export default function Home() {
                 "shadow-lg"
               )}
             >
-              <h3 className="text-sm font-semibold mb-3 text-gray-400">Upload Images</h3>
+              <h3 className="text-sm font-semibold mb-3 text-gray-400">
+                {activeTab === "fashion" ? "Upload Images" : "Image Upscaling"}
+              </h3>
               <WorkflowForm
                 workflow={workflow}
                 onSubmit={handleSubmit}

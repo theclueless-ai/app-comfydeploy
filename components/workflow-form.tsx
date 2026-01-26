@@ -4,13 +4,14 @@ import { useState, useEffect } from "react";
 import { ImageUpload } from "./image-upload";
 import { SelectInput } from "./select-input";
 import { BuilderInput } from "./builder-input";
+import { SliderInput } from "./slider-input";
 import { WorkflowConfig } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Sparkles, Loader2 } from "lucide-react";
 
 interface WorkflowFormProps {
   workflow: WorkflowConfig;
-  onSubmit: (inputs: Record<string, File | string>) => Promise<void>;
+  onSubmit: (inputs: Record<string, File | string | number>) => Promise<void>;
   isLoading: boolean;
 }
 
@@ -19,13 +20,16 @@ export function WorkflowForm({
   onSubmit,
   isLoading,
 }: WorkflowFormProps) {
-  const [inputs, setInputs] = useState<Record<string, File | string | null>>({});
+  const [inputs, setInputs] = useState<Record<string, File | string | number | null>>({});
 
-  // Initialize default values for select inputs
+  // Initialize default values for select and slider inputs
   useEffect(() => {
-    const defaultInputs: Record<string, File | string | null> = {};
+    const defaultInputs: Record<string, File | string | number | null> = {};
     workflow.inputs.forEach((input) => {
       if (input.type === "select" && input.defaultValue) {
+        defaultInputs[input.id] = input.defaultValue;
+      }
+      if (input.type === "slider" && input.defaultValue !== undefined) {
         defaultInputs[input.id] = input.defaultValue;
       }
     });
@@ -51,7 +55,7 @@ export function WorkflowForm({
         if (value !== null && value !== undefined) acc[key] = value;
         return acc;
       },
-      {} as Record<string, File | string>
+      {} as Record<string, File | string | number>
     );
 
     await onSubmit(validInputs);
@@ -78,12 +82,13 @@ export function WorkflowForm({
           }
 
           if (input.type === "select" && input.options) {
+            const defaultVal = typeof input.defaultValue === 'string' ? input.defaultValue : input.options[0];
             return (
               <SelectInput
                 key={input.id}
                 label={input.label}
                 description={input.description}
-                value={(inputs[input.id] as string) || input.defaultValue || input.options[0]}
+                value={(inputs[input.id] as string) || defaultVal}
                 onChange={(value) =>
                   setInputs((prev) => ({ ...prev, [input.id]: value }))
                 }
@@ -104,6 +109,24 @@ export function WorkflowForm({
                   setInputs((prev) => ({ ...prev, [input.id]: value }))
                 }
                 categories={input.categories}
+                required={input.required}
+              />
+            );
+          }
+
+          if (input.type === "slider") {
+            return (
+              <SliderInput
+                key={input.id}
+                label={input.label}
+                description={input.description}
+                value={(inputs[input.id] as number) ?? (input.defaultValue as number) ?? 1}
+                onChange={(value) =>
+                  setInputs((prev) => ({ ...prev, [input.id]: value }))
+                }
+                min={input.min}
+                max={input.max}
+                step={input.step}
                 required={input.required}
               />
             );

@@ -78,14 +78,36 @@ export const workflows: WorkflowConfig[] = [
       },
     ],
   },
-  // Future workflows can be added here:
-  // {
-  //   id: "style-transfer",
-  //   name: "Style Transfer",
-  //   description: "Apply artistic styles to your images",
-  //   deploymentId: "your-deployment-id",
-  //   inputs: [...]
-  // },
+  {
+    id: "vellum-upscale",
+    name: "Vellum 2.0",
+    description: "AI-powered image upscaling with customizable scale factor.",
+    deploymentId: "", // Uses RunPod endpoint from env
+    backend: "runpod",
+    inputs: [
+      {
+        id: "input_image",
+        name: "input_image",
+        type: "image",
+        label: "Input Image",
+        description: "The image to upscale",
+        required: true,
+        accept: "image/*",
+      },
+      {
+        id: "scale_factor",
+        name: "scale_factor",
+        type: "slider",
+        label: "Scale Factor",
+        description: "How much to scale the image (0.1x to 3x)",
+        required: true,
+        defaultValue: 2,
+        min: 0.1,
+        max: 3,
+        step: 0.1,
+      },
+    ],
+  },
 ];
 
 export function getWorkflowById(id: string): WorkflowConfig | undefined {
@@ -94,4 +116,8 @@ export function getWorkflowById(id: string): WorkflowConfig | undefined {
 
 export function getDefaultWorkflow(): WorkflowConfig {
   return workflows[0];
+}
+
+export function getVellumWorkflow(): WorkflowConfig {
+  return workflows.find((w) => w.id === "vellum-upscale")!;
 }

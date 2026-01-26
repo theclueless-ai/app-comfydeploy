@@ -9,15 +9,19 @@ export interface BuilderCategory {
 export interface WorkflowInput {
   id: string;
   name: string;
-  type: "image" | "text" | "number" | "select" | "builder";
+  type: "image" | "text" | "number" | "select" | "builder" | "slider";
   label: string;
   description?: string;
   required: boolean;
   placeholder?: string;
   options?: string[];
-  defaultValue?: string;
+  defaultValue?: string | number;
   accept?: string;
   categories?: BuilderCategory[];
+  // Slider specific properties
+  min?: number;
+  max?: number;
+  step?: number;
 }
 
 export interface WorkflowConfig {
@@ -26,6 +30,8 @@ export interface WorkflowConfig {
   description: string;
   deploymentId: string;
   inputs: WorkflowInput[];
+  // Backend type: "comfydeploy" (default) or "runpod"
+  backend?: "comfydeploy" | "runpod";
 }
 
 export interface RunStatus {

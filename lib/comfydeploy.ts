@@ -1,13 +1,30 @@
 import { ComfyDeployClient } from "comfydeploy";
 
-if (!process.env.COMFYDEPLOY_API_KEY) {
-  throw new Error("COMFYDEPLOY_API_KEY is not set in environment variables");
+// Lazy initialization to avoid build-time errors
+let _comfyDeployClient: ComfyDeployClient | null = null;
+
+export function getComfyDeployClient(): ComfyDeployClient {
+  if (!_comfyDeployClient) {
+    if (!process.env.COMFYDEPLOY_API_KEY) {
+      throw new Error("COMFYDEPLOY_API_KEY is not set in environment variables");
+    }
+    _comfyDeployClient = new ComfyDeployClient({
+      apiBase: "https://api.comfydeploy.com",
+      apiToken: process.env.COMFYDEPLOY_API_KEY,
+    });
+  }
+  return _comfyDeployClient;
 }
 
-export const comfyDeployClient = new ComfyDeployClient({
-  apiBase: "https://api.comfydeploy.com",
-  apiToken: process.env.COMFYDEPLOY_API_KEY,
-});
+// Keep for backward compatibility but lazy load
+export const comfyDeployClient = {
+  get apiBase() {
+    return getComfyDeployClient().apiBase;
+  },
+  getRun(runId: string) {
+    return getComfyDeployClient().getRun(runId);
+  },
+};
 
 /**
  * Convert a File to base64 data URI format

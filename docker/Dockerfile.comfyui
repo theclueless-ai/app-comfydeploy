@@ -1,0 +1,60 @@
+# Custom ComfyUI Dockerfile for RunPod Serverless
+# This Dockerfile contains all the custom nodes required for the Vellum 2.0 workflow
+#
+# Build and push to your container registry:
+#   docker build -f docker/Dockerfile.comfyui -t your-registry/comfyui-vellum:latest .
+#   docker push your-registry/comfyui-vellum:latest
+#
+# Then configure your RunPod serverless endpoint to use this image
+
+FROM runpod/worker-comfyui:5.1.0-base
+
+# Install all required custom nodes using comfy-cli
+# These nodes are required for the Vellum 2.0 upscaling workflow
+
+# rgthree-comfy - Advanced node utilities and workflow helpers
+# https://github.com/rgthree/rgthree-comfy
+RUN comfy-node-install rgthree-comfy
+
+# ComfyUI-KJNodes - Collection of useful nodes for ComfyUI
+# https://github.com/kijai/ComfyUI-KJNodes
+RUN comfy-node-install comfyui-kjnodes
+
+# comfyui-deploy - Deployment and external input/output nodes
+# https://github.com/BennyKok/comfyui-deploy
+RUN comfy-node-install comfyui-deploy
+
+# ComfyUI_UltimateSDUpscale - Ultimate SD Upscale for high-quality image upscaling
+# https://github.com/ssitu/ComfyUI_UltimateSDUpscale
+RUN comfy-node-install comfyui-ultimatesdupscale
+
+# Masquerade Nodes - Mask manipulation and processing nodes
+# https://github.com/BadCafeCode/masquerade-nodes-comfyui
+RUN comfy-node-install masquerade-nodes-comfyui
+
+# ComfyUI ArtVenture - Art and image processing utilities
+# https://github.com/sipherxyz/comfyui-art-venture
+RUN comfy-node-install comfyui-art-venture
+
+# ComfyUI-mxToolkit - Additional utility nodes
+# https://github.com/Smirnov75/ComfyUI-mxToolkit
+RUN comfy-node-install comfyui-mxtoolkit
+
+# ComfyUI-post-processing-nodes - Post-processing effects and filters
+# https://github.com/EllangoK/ComfyUI-post-processing-nodes
+RUN comfy-node-install comfyui-post-processing-nodes
+
+# WAS Node Suite - Comprehensive node collection (revised version)
+# https://github.com/ltdrdata/was-node-suite-comfyui
+RUN comfy-node-install was-node-suite-comfyui
+
+# LF Nodes - Additional utility nodes by lucafoscili
+# https://github.com/lucafoscili/lf-nodes
+RUN comfy-node-install lf-nodes
+
+# Optional: Copy any static input files if needed
+# COPY input/ /comfyui/input/
+
+# Optional: Download models if needed
+# Example for upscale models:
+# RUN comfy model download --url https://huggingface.co/path/to/model.safetensors --relative-path models/upscale_models --filename model_name.safetensors
