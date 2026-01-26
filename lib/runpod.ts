@@ -40,9 +40,17 @@ export interface RunPodStatusResponse {
   error?: string;
 }
 
+/**
+ * Vellum 2.0 Workflow Inputs
+ * Maps to ComfyUI Deploy external nodes:
+ * - Node 681: ComfyUIDeployExternalImage (input_image)
+ * - Node 734: ComfyUIDeployExternalNumberSlider (strength_model) - LoRA strength
+ * - Node 689: ComfyUIDeployExternalTextAny (scale_by) - Scale factor "2", "4", "8"
+ */
 export interface VellumWorkflowInput {
-  inputImage: string; // Base64 data URI
-  scaleFactor: number; // 0.1 to 3
+  input_image: string;    // Base64 data URI
+  strength_model: number; // 0 to 1 (LoRA strength)
+  scale_by: string;       // "2", "4", or "8"
 }
 
 /**
@@ -62,17 +70,15 @@ export async function fileToBase64(file: File): Promise<string> {
 
 /**
  * Build the workflow payload for the Vellum 2.0 upscaling workflow
- * This formats the inputs for the ComfyUI workflow nodes:
- * - Node 681: ComfyUIDeployExternalImage (input_image)
- * - Node 689: ComfyUIDeployExternalTextAny (scale factor)
+ * Input names must match the ComfyUI Deploy external node IDs exactly
  */
 function buildWorkflowPayload(input: VellumWorkflowInput) {
   return {
     input: {
-      // The workflow input format for comfyui-deploy nodes
-      // These map to the external input nodes in the workflow
-      input_image: input.inputImage,
-      "Escalar por:": input.scaleFactor.toString(),
+      // These IDs must match the external node widget_values in the workflow
+      input_image: input.input_image,
+      strength_model: input.strength_model,
+      scale_by: input.scale_by,
     },
   };
 }
@@ -92,7 +98,8 @@ export async function runWorkflowAsync(
   console.log("=== RunPod API Call (async) ===");
   console.log("URL:", url);
   console.log("Endpoint ID:", endpointId);
-  console.log("Scale Factor:", input.scaleFactor);
+  console.log("Strength Model:", input.strength_model);
+  console.log("Scale By:", input.scale_by);
 
   const response = await fetch(url, {
     method: "POST",
@@ -133,7 +140,8 @@ export async function runWorkflowSync(
   console.log("=== RunPod API Call (sync) ===");
   console.log("URL:", url);
   console.log("Endpoint ID:", endpointId);
-  console.log("Scale Factor:", input.scaleFactor);
+  console.log("Strength Model:", input.strength_model);
+  console.log("Scale By:", input.scale_by);
   console.log("Timeout:", timeoutMs);
 
   const controller = new AbortController();

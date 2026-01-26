@@ -5,6 +5,7 @@ import { ImageUpload } from "./image-upload";
 import { SelectInput } from "./select-input";
 import { BuilderInput } from "./builder-input";
 import { SliderInput } from "./slider-input";
+import { ButtonGroupInput } from "./button-group-input";
 import { WorkflowConfig } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Sparkles, Loader2 } from "lucide-react";
@@ -22,7 +23,7 @@ export function WorkflowForm({
 }: WorkflowFormProps) {
   const [inputs, setInputs] = useState<Record<string, File | string | number | null>>({});
 
-  // Initialize default values for select and slider inputs
+  // Initialize default values for select, slider, and button-group inputs
   useEffect(() => {
     const defaultInputs: Record<string, File | string | number | null> = {};
     workflow.inputs.forEach((input) => {
@@ -30,6 +31,9 @@ export function WorkflowForm({
         defaultInputs[input.id] = input.defaultValue;
       }
       if (input.type === "slider" && input.defaultValue !== undefined) {
+        defaultInputs[input.id] = input.defaultValue;
+      }
+      if (input.type === "button-group" && input.defaultValue) {
         defaultInputs[input.id] = input.defaultValue;
       }
     });
@@ -127,6 +131,23 @@ export function WorkflowForm({
                 min={input.min}
                 max={input.max}
                 step={input.step}
+                required={input.required}
+              />
+            );
+          }
+
+          if (input.type === "button-group" && input.options) {
+            const defaultVal = typeof input.defaultValue === 'string' ? input.defaultValue : input.options[0];
+            return (
+              <ButtonGroupInput
+                key={input.id}
+                label={input.label}
+                description={input.description}
+                value={(inputs[input.id] as string) || defaultVal}
+                onChange={(value) =>
+                  setInputs((prev) => ({ ...prev, [input.id]: value }))
+                }
+                options={input.options}
                 required={input.required}
               />
             );

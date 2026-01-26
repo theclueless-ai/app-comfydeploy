@@ -9,7 +9,7 @@ export interface BuilderCategory {
 export interface WorkflowInput {
   id: string;
   name: string;
-  type: "image" | "text" | "number" | "select" | "builder" | "slider";
+  type: "image" | "text" | "number" | "select" | "builder" | "slider" | "button-group";
   label: string;
   description?: string;
   required: boolean;

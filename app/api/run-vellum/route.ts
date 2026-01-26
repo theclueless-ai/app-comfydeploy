@@ -14,21 +14,31 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get the scale factor
-    const scaleFactorStr = formData.get("scale_factor");
-    const scaleFactor = scaleFactorStr ? parseFloat(scaleFactorStr as string) : 2;
+    // Get the strength model (LoRA strength)
+    const strengthModelStr = formData.get("strength_model");
+    const strengthModel = strengthModelStr ? parseFloat(strengthModelStr as string) : 0.5;
 
-    // Validate scale factor
-    if (isNaN(scaleFactor) || scaleFactor < 0.1 || scaleFactor > 3) {
+    // Validate strength model
+    if (isNaN(strengthModel) || strengthModel < 0 || strengthModel > 1) {
       return NextResponse.json(
-        { error: "Scale factor must be between 0.1 and 3" },
+        { error: "Strength model must be between 0 and 1" },
+        { status: 400 }
+      );
+    }
+
+    // Get the scale by value
+    const scaleBy = formData.get("scale_by") as string;
+    if (!scaleBy || !["2", "4", "8"].includes(scaleBy)) {
+      return NextResponse.json(
+        { error: "Scale by must be 2, 4, or 8" },
         { status: 400 }
       );
     }
 
     console.log("=== Vellum 2.0 Workflow Request ===");
     console.log("Image:", imageFile.name, imageFile.type, imageFile.size);
-    console.log("Scale Factor:", scaleFactor);
+    console.log("Strength Model:", strengthModel);
+    console.log("Scale By:", scaleBy);
 
     // Convert image to base64
     const imageBase64 = await fileToBase64(imageFile);
@@ -36,8 +46,9 @@ export async function POST(request: NextRequest) {
 
     // Build workflow input
     const workflowInput: VellumWorkflowInput = {
-      inputImage: imageBase64,
-      scaleFactor: scaleFactor,
+      input_image: imageBase64,
+      strength_model: strengthModel,
+      scale_by: scaleBy,
     };
 
     // Run the workflow on RunPod
