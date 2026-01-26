@@ -1,5 +1,5 @@
 # Custom ComfyUI Dockerfile for RunPod Serverless - Vellum 2.0
-# This Dockerfile contains all custom nodes required for the Vellum upscaling workflow
+# This Dockerfile contains all custom nodes and models required for the Vellum upscaling workflow
 #
 # Build and push to your container registry:
 #   docker build -f docker/Dockerfile.comfyui -t your-registry/comfyui-vellum:latest .
@@ -14,13 +14,14 @@ FROM runpod/worker-comfyui:5.1.0-base
 ENV PYTHONUNBUFFERED=1
 ENV COMFYUI_PATH=/comfyui
 
-# Install all required custom nodes using comfy-cli
-# These nodes are required for the Vellum 2.0 upscaling workflow
+# ============================================================================
+# CUSTOM NODES INSTALLATION
+# ============================================================================
 
 # rgthree-comfy - Advanced node utilities and workflow helpers
 RUN comfy-node-install rgthree-comfy
 
-# ComfyUI-KJNodes - Collection of useful nodes for ComfyUI
+# ComfyUI-KJNodes - Collection of useful nodes (GrowMaskWithBlur, etc.)
 RUN comfy-node-install comfyui-kjnodes
 
 # comfyui-deploy - Deployment and external input/output nodes
@@ -29,23 +30,36 @@ RUN comfy-node-install comfyui-deploy
 # ComfyUI_UltimateSDUpscale - Ultimate SD Upscale for high-quality image upscaling
 RUN comfy-node-install comfyui-ultimatesdupscale
 
-# Masquerade Nodes - Mask manipulation and processing nodes
+# Masquerade Nodes - Mask manipulation (Cut By Mask, etc.)
 RUN comfy-node-install masquerade-nodes-comfyui
 
-# ComfyUI ArtVenture - Art and image processing utilities
+# ComfyUI ArtVenture - Art and image processing (ColorCorrect, etc.)
 RUN comfy-node-install comfyui-art-venture
 
-# ComfyUI-mxToolkit - Additional utility nodes
+# ComfyUI-mxToolkit - Utility nodes (mxSlider, etc.)
 RUN comfy-node-install comfyui-mxtoolkit
 
-# ComfyUI-post-processing-nodes - Post-processing effects and filters
+# ComfyUI-post-processing-nodes - Post-processing effects (FilmGrain, etc.)
 RUN comfy-node-install comfyui-post-processing-nodes
 
-# WAS Node Suite - Comprehensive node collection (revised version)
+# WAS Node Suite - Comprehensive node collection (Text to Number, etc.)
 RUN comfy-node-install was-node-suite-comfyui
 
-# LF Nodes - Additional utility nodes by lucafoscili
+# LF Nodes - Math operations (LF_MathOperation, etc.)
 RUN comfy-node-install lf-nodes
+
+# ComfyUI-DyPE - Dynamic Positional Encoding for FLUX (DyPE_FLUX node)
+RUN comfy-node-install comfyui-dype
+
+# ComfyUI_FaceParsing - Face parsing for mask generation
+# (FaceParsingLoader, FaceParsingInfer, FacePartMask nodes)
+WORKDIR /comfyui/custom_nodes
+RUN git clone https://github.com/Bwebbfx/ComfyUI_FaceParsing.git && \
+    cd ComfyUI_FaceParsing && \
+    if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; fi
+
+# Return to root
+WORKDIR /
 
 # ============================================================================
 # MODEL DOWNLOAD SCRIPT - Uses RunPod Network Volume for persistence
@@ -69,7 +83,8 @@ else\n\
     \n\
     # Create directory structure on network volume\n\
     mkdir -p "$MODELS_DIR/checkpoints"\n\
-    mkdir -p "$MODELS_DIR/loras"\n\
+    mkdir -p "$MODELS_DIR/unet"\n\
+    mkdir -p "$MODELS_DIR/loras/Vellum"\n\
     mkdir -p "$MODELS_DIR/upscale_models"\n\
     mkdir -p "$MODELS_DIR/vae"\n\
     mkdir -p "$MODELS_DIR/clip"\n\
@@ -116,44 +131,104 @@ download_model() {\n\
 }\n\
 \n\
 # ============================================================================\n\
-# REQUIRED MODELS FOR VELLUM 2.0 WORKFLOW\n\
+# 1. FLUX UNET MODEL (~12GB)\n\
 # ============================================================================\n\
+FLUX_FILE="$MODELS_DIR/unet/flux1-dev.safetensors"\n\
+if [ -n "$FLUX_UNET_URL" ]; then\n\
+    download_model "$FLUX_UNET_URL" "$FLUX_FILE" 10000000000\n\
+elif [ -n "$HF_TOKEN" ]; then\n\
+    download_model \\\n\
+        "https://huggingface.co/black-forest-labs/FLUX.1-dev/resolve/main/flux1-dev.safetensors" \\\n\
+        "$FLUX_FILE" 10000000000 "Authorization: Bearer $HF_TOKEN"\n\
+else\n\
+    echo "⚠️ FLUX model not configured. Set FLUX_UNET_URL or HF_TOKEN (requires HF access)"\n\
+fi\n\
 \n\
-# 1. CHECKPOINT: CyberRealistic XL v8.0\n\
-#    This is the main SDXL checkpoint for generation\n\
+# ============================================================================\n\
+# 2. CHECKPOINT: CyberRealistic XL v8.0 (~6GB)\n\
+# ============================================================================\n\
 CHECKPOINT_FILE="$MODELS_DIR/checkpoints/cyberrealisticXL_v80.safetensors"\n\
 if [ -n "$CHECKPOINT_URL" ]; then\n\
     download_model "$CHECKPOINT_URL" "$CHECKPOINT_FILE" 5000000000\n\
-elif [ -n "$HF_TOKEN" ]; then\n\
-    # Try from Civitai or Hugging Face if you have the URL\n\
-    echo "⚠️ Set CHECKPOINT_URL environment variable to download cyberrealisticXL_v80.safetensors"\n\
-    echo "   Or manually upload to: $CHECKPOINT_FILE"\n\
 else\n\
-    echo "⚠️ Checkpoint not configured. Set CHECKPOINT_URL or upload manually."\n\
+    echo "⚠️ Checkpoint not configured. Set CHECKPOINT_URL"\n\
+    echo "   Download from Civitai: https://civitai.com/models/547084"\n\
 fi\n\
 \n\
-# 2. UPSCALE MODEL: 4xFaceUpDAT\n\
-#    DAT upscaler optimized for faces\n\
-UPSCALE_FILE="$MODELS_DIR/upscale_models/4xFaceUpDAT.safetensors"\n\
-if [ -n "$UPSCALE_MODEL_URL" ]; then\n\
-    download_model "$UPSCALE_MODEL_URL" "$UPSCALE_FILE" 50000000\n\
+# ============================================================================\n\
+# 3. CLIP/TEXT ENCODERS\n\
+# ============================================================================\n\
+# T5 XXL FP16 (~10GB)\n\
+T5_FILE="$MODELS_DIR/clip/t5xxl_fp16.safetensors"\n\
+if [ ! -f "$T5_FILE" ] || [ $(stat -c%s "$T5_FILE" 2>/dev/null || echo 0) -lt 9000000000 ]; then\n\
+    echo "📥 Downloading T5 XXL encoder..."\n\
+    download_model \\\n\
+        "https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main/t5xxl_fp16.safetensors" \\\n\
+        "$T5_FILE" 9000000000\n\
 else\n\
-    # Try common sources\n\
+    echo "✅ T5 XXL encoder already exists"\n\
+fi\n\
+\n\
+# CLIP L (~250MB)\n\
+CLIP_FILE="$MODELS_DIR/clip/clip_l.safetensors"\n\
+if [ ! -f "$CLIP_FILE" ]; then\n\
+    echo "📥 Downloading CLIP L encoder..."\n\
+    download_model \\\n\
+        "https://huggingface.co/comfyanonymous/flux_text_encoders/resolve/main/clip_l.safetensors" \\\n\
+        "$CLIP_FILE" 200000000\n\
+else\n\
+    echo "✅ CLIP L encoder already exists"\n\
+fi\n\
+\n\
+# ============================================================================\n\
+# 4. VAE: FLUX AE (~300MB)\n\
+# ============================================================================\n\
+VAE_FILE="$MODELS_DIR/vae/ae.safetensors"\n\
+if [ ! -f "$VAE_FILE" ]; then\n\
+    echo "📥 Downloading FLUX VAE..."\n\
+    download_model \\\n\
+        "https://huggingface.co/black-forest-labs/FLUX.1-schnell/resolve/main/ae.safetensors" \\\n\
+        "$VAE_FILE" 200000000\n\
+else\n\
+    echo "✅ FLUX VAE already exists"\n\
+fi\n\
+\n\
+# ============================================================================\n\
+# 5. UPSCALE MODELS\n\
+# ============================================================================\n\
+# 4xFaceUpDAT (~70MB)\n\
+UPSCALE_DAT="$MODELS_DIR/upscale_models/4xFaceUpDAT.safetensors"\n\
+if [ -n "$UPSCALE_DAT_URL" ]; then\n\
+    download_model "$UPSCALE_DAT_URL" "$UPSCALE_DAT" 50000000\n\
+else\n\
     download_model \\\n\
         "https://huggingface.co/Phips/4xFaceUpDAT/resolve/main/4xFaceUpDAT.safetensors" \\\n\
-        "$UPSCALE_FILE" 50000000 || \\\n\
-    echo "⚠️ 4xFaceUpDAT not found. Set UPSCALE_MODEL_URL or upload manually."\n\
+        "$UPSCALE_DAT" 50000000 || \\\n\
+    echo "⚠️ 4xFaceUpDAT not found. Set UPSCALE_DAT_URL or upload manually"\n\
 fi\n\
 \n\
-# 3. LORA: Skin Texture\n\
-#    LoRA for enhanced skin texture details\n\
-LORA_FILE="$MODELS_DIR/loras/skintexture.safetensors"\n\
+# 1xSkinContrast-High-SuperUltraCompact (~1MB)\n\
+SKIN_CONTRAST="$MODELS_DIR/upscale_models/1xSkinContrast-High-SuperUltraCompact.pth"\n\
+if [ -n "$SKIN_CONTRAST_URL" ]; then\n\
+    download_model "$SKIN_CONTRAST_URL" "$SKIN_CONTRAST" 100000\n\
+else\n\
+    download_model \\\n\
+        "https://huggingface.co/Kim2091/AnimeSharp/resolve/main/1xSkinContrast-High-SuperUltraCompact.pth" \\\n\
+        "$SKIN_CONTRAST" 100000 || \\\n\
+    echo "⚠️ 1xSkinContrast not found. Set SKIN_CONTRAST_URL or upload manually"\n\
+fi\n\
+\n\
+# ============================================================================\n\
+# 6. LORA: Skin Texture\n\
+# ============================================================================\n\
+LORA_FILE="$MODELS_DIR/loras/Vellum/skintexture.safetensors"\n\
 if [ -n "$LORA_SKINTEXTURE_URL" ]; then\n\
     download_model "$LORA_SKINTEXTURE_URL" "$LORA_FILE" 1000000\n\
 elif [ -n "$HF_TOKEN" ]; then\n\
     download_model \\\n\
         "https://huggingface.co/g0tman1/skintexture.safetensors/resolve/main/skintexture.safetensors" \\\n\
-        "$LORA_FILE" 1000000 "Authorization: Bearer $HF_TOKEN"\n\
+        "$LORA_FILE" 1000000 "Authorization: Bearer $HF_TOKEN" || \\\n\
+    echo "⚠️ LoRA skintexture failed. Check HF_TOKEN or set LORA_SKINTEXTURE_URL"\n\
 else\n\
     echo "⚠️ LoRA skintexture not configured."\n\
     echo "   Set LORA_SKINTEXTURE_URL or HF_TOKEN environment variable"\n\
@@ -163,18 +238,31 @@ fi\n\
 # SUMMARY\n\
 # ============================================================================\n\
 echo ""\n\
-echo "📂 Models directory: $MODELS_DIR"\n\
+echo "========================================"\n\
+echo "📂 MODELS SUMMARY"\n\
+echo "========================================"\n\
+echo ""\n\
+echo "🔷 UNET (FLUX):"\n\
+ls -lah "$MODELS_DIR/unet/" 2>/dev/null || echo "   (empty)"\n\
 echo ""\n\
 echo "📦 Checkpoints:"\n\
 ls -lah "$MODELS_DIR/checkpoints/" 2>/dev/null || echo "   (empty)"\n\
 echo ""\n\
+echo "📝 CLIP/Text Encoders:"\n\
+ls -lah "$MODELS_DIR/clip/" 2>/dev/null || echo "   (empty)"\n\
+echo ""\n\
+echo "🎨 VAE:"\n\
+ls -lah "$MODELS_DIR/vae/" 2>/dev/null || echo "   (empty)"\n\
+echo ""\n\
 echo "🔼 Upscale Models:"\n\
 ls -lah "$MODELS_DIR/upscale_models/" 2>/dev/null || echo "   (empty)"\n\
 echo ""\n\
-echo "🎨 LoRAs:"\n\
-ls -lah "$MODELS_DIR/loras/" 2>/dev/null || echo "   (empty)"\n\
+echo "✨ LoRAs:"\n\
+ls -lah "$MODELS_DIR/loras/Vellum/" 2>/dev/null || echo "   (empty)"\n\
 echo ""\n\
+echo "========================================"\n\
 echo "✅ Model setup complete"\n\
+echo "========================================"\n\
 ' > /setup_models.sh && chmod +x /setup_models.sh
 
 # ============================================================================
