@@ -82,8 +82,8 @@ export const workflows: WorkflowConfig[] = [
     id: "vellum-upscale",
     name: "Vellum 2.0",
     description: "AI-powered image upscaling with skin texture enhancement.",
-    deploymentId: "", // Uses RunPod endpoint from env
-    backend: "runpod",
+    deploymentId: "", // Will use COMFYDEPLOY_VELLUM_DEPLOYMENT_ID from env
+    backend: "comfydeploy", // Changed from "runpod" to use ComfyDeploy temporarily
     inputs: [
       {
         id: "input_image",
