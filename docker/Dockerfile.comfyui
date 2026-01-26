@@ -28,7 +28,7 @@ RUN comfy-node-install comfyui-kjnodes
 RUN comfy-node-install comfyui-deploy
 
 # ComfyUI_UltimateSDUpscale - Ultimate SD Upscale for high-quality image upscaling
-RUN comfy-node-install comfyui-ultimatesdupscale
+RUN comfy-node-install comfyui_ultimatesdupscale
 
 # Masquerade Nodes - Mask manipulation (Cut By Mask, etc.)
 RUN comfy-node-install masquerade-nodes-comfyui
