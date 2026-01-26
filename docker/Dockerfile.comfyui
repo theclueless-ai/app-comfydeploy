@@ -1,60 +1,195 @@
-# Custom ComfyUI Dockerfile for RunPod Serverless
-# This Dockerfile contains all the custom nodes required for the Vellum 2.0 workflow
+# Custom ComfyUI Dockerfile for RunPod Serverless - Vellum 2.0
+# This Dockerfile contains all custom nodes required for the Vellum upscaling workflow
 #
 # Build and push to your container registry:
 #   docker build -f docker/Dockerfile.comfyui -t your-registry/comfyui-vellum:latest .
 #   docker push your-registry/comfyui-vellum:latest
 #
 # Then configure your RunPod serverless endpoint to use this image
+# IMPORTANT: Attach a Network Volume to persist models between cold starts
 
 FROM runpod/worker-comfyui:5.1.0-base
+
+# Environment variables
+ENV PYTHONUNBUFFERED=1
+ENV COMFYUI_PATH=/comfyui
 
 # Install all required custom nodes using comfy-cli
 # These nodes are required for the Vellum 2.0 upscaling workflow
 
 # rgthree-comfy - Advanced node utilities and workflow helpers
-# https://github.com/rgthree/rgthree-comfy
 RUN comfy-node-install rgthree-comfy
 
 # ComfyUI-KJNodes - Collection of useful nodes for ComfyUI
-# https://github.com/kijai/ComfyUI-KJNodes
 RUN comfy-node-install comfyui-kjnodes
 
 # comfyui-deploy - Deployment and external input/output nodes
-# https://github.com/BennyKok/comfyui-deploy
 RUN comfy-node-install comfyui-deploy
 
 # ComfyUI_UltimateSDUpscale - Ultimate SD Upscale for high-quality image upscaling
-# https://github.com/ssitu/ComfyUI_UltimateSDUpscale
 RUN comfy-node-install comfyui-ultimatesdupscale
 
 # Masquerade Nodes - Mask manipulation and processing nodes
-# https://github.com/BadCafeCode/masquerade-nodes-comfyui
 RUN comfy-node-install masquerade-nodes-comfyui
 
 # ComfyUI ArtVenture - Art and image processing utilities
-# https://github.com/sipherxyz/comfyui-art-venture
 RUN comfy-node-install comfyui-art-venture
 
 # ComfyUI-mxToolkit - Additional utility nodes
-# https://github.com/Smirnov75/ComfyUI-mxToolkit
 RUN comfy-node-install comfyui-mxtoolkit
 
 # ComfyUI-post-processing-nodes - Post-processing effects and filters
-# https://github.com/EllangoK/ComfyUI-post-processing-nodes
 RUN comfy-node-install comfyui-post-processing-nodes
 
 # WAS Node Suite - Comprehensive node collection (revised version)
-# https://github.com/ltdrdata/was-node-suite-comfyui
 RUN comfy-node-install was-node-suite-comfyui
 
 # LF Nodes - Additional utility nodes by lucafoscili
-# https://github.com/lucafoscili/lf-nodes
 RUN comfy-node-install lf-nodes
 
-# Optional: Copy any static input files if needed
-# COPY input/ /comfyui/input/
+# ============================================================================
+# MODEL DOWNLOAD SCRIPT - Uses RunPod Network Volume for persistence
+# ============================================================================
+# The network volume is mounted at /runpod-volume
+# Models are stored there and symlinked to /comfyui/models
+# This ensures models persist between cold starts and are only downloaded once
 
-# Optional: Download models if needed
-# Example for upscale models:
-# RUN comfy model download --url https://huggingface.co/path/to/model.safetensors --relative-path models/upscale_models --filename model_name.safetensors
+RUN echo '#!/bin/bash\n\
+set -e\n\
+echo "📦 Setting up models from Network Volume..."\n\
+\n\
+# Check if network volume is mounted\n\
+if [ ! -d "/runpod-volume" ]; then\n\
+    echo "⚠️ Network volume not mounted at /runpod-volume"\n\
+    echo "   Models will be downloaded to local storage (slower cold starts)"\n\
+    MODELS_DIR="/comfyui/models"\n\
+else\n\
+    echo "✅ Network volume detected"\n\
+    MODELS_DIR="/runpod-volume/models"\n\
+    \n\
+    # Create directory structure on network volume\n\
+    mkdir -p "$MODELS_DIR/checkpoints"\n\
+    mkdir -p "$MODELS_DIR/loras"\n\
+    mkdir -p "$MODELS_DIR/upscale_models"\n\
+    mkdir -p "$MODELS_DIR/vae"\n\
+    mkdir -p "$MODELS_DIR/clip"\n\
+    \n\
+    # Create symlink so ComfyUI uses network volume models\n\
+    rm -rf /comfyui/models 2>/dev/null || true\n\
+    ln -sfn "$MODELS_DIR" /comfyui/models\n\
+    echo "✅ Symlink created: /comfyui/models -> $MODELS_DIR"\n\
+fi\n\
+\n\
+# Function to download file if not exists or too small\n\
+download_model() {\n\
+    local url="$1"\n\
+    local dest="$2"\n\
+    local min_size="${3:-1000000}"  # Default 1MB minimum\n\
+    local auth_header="$4"\n\
+    \n\
+    if [ -f "$dest" ]; then\n\
+        local file_size=$(stat -c%s "$dest" 2>/dev/null || echo 0)\n\
+        if [ "$file_size" -gt "$min_size" ]; then\n\
+            echo "✅ $(basename $dest) already exists ($(numfmt --to=iec $file_size))"\n\
+            return 0\n\
+        else\n\
+            echo "⚠️ $(basename $dest) too small, re-downloading..."\n\
+            rm -f "$dest"\n\
+        fi\n\
+    fi\n\
+    \n\
+    echo "📥 Downloading $(basename $dest)..."\n\
+    if [ -n "$auth_header" ]; then\n\
+        wget --progress=bar:force:noscroll --header="$auth_header" -O "$dest" "$url" || {\n\
+            echo "❌ Failed to download $(basename $dest)"\n\
+            rm -f "$dest"\n\
+            return 1\n\
+        }\n\
+    else\n\
+        wget --progress=bar:force:noscroll -O "$dest" "$url" || {\n\
+            echo "❌ Failed to download $(basename $dest)"\n\
+            rm -f "$dest"\n\
+            return 1\n\
+        }\n\
+    fi\n\
+    echo "✅ Downloaded $(basename $dest)"\n\
+}\n\
+\n\
+# ============================================================================\n\
+# REQUIRED MODELS FOR VELLUM 2.0 WORKFLOW\n\
+# ============================================================================\n\
+\n\
+# 1. CHECKPOINT: CyberRealistic XL v8.0\n\
+#    This is the main SDXL checkpoint for generation\n\
+CHECKPOINT_FILE="$MODELS_DIR/checkpoints/cyberrealisticXL_v80.safetensors"\n\
+if [ -n "$CHECKPOINT_URL" ]; then\n\
+    download_model "$CHECKPOINT_URL" "$CHECKPOINT_FILE" 5000000000\n\
+elif [ -n "$HF_TOKEN" ]; then\n\
+    # Try from Civitai or Hugging Face if you have the URL\n\
+    echo "⚠️ Set CHECKPOINT_URL environment variable to download cyberrealisticXL_v80.safetensors"\n\
+    echo "   Or manually upload to: $CHECKPOINT_FILE"\n\
+else\n\
+    echo "⚠️ Checkpoint not configured. Set CHECKPOINT_URL or upload manually."\n\
+fi\n\
+\n\
+# 2. UPSCALE MODEL: 4xFaceUpDAT\n\
+#    DAT upscaler optimized for faces\n\
+UPSCALE_FILE="$MODELS_DIR/upscale_models/4xFaceUpDAT.safetensors"\n\
+if [ -n "$UPSCALE_MODEL_URL" ]; then\n\
+    download_model "$UPSCALE_MODEL_URL" "$UPSCALE_FILE" 50000000\n\
+else\n\
+    # Try common sources\n\
+    download_model \\\n\
+        "https://huggingface.co/Phips/4xFaceUpDAT/resolve/main/4xFaceUpDAT.safetensors" \\\n\
+        "$UPSCALE_FILE" 50000000 || \\\n\
+    echo "⚠️ 4xFaceUpDAT not found. Set UPSCALE_MODEL_URL or upload manually."\n\
+fi\n\
+\n\
+# 3. LORA: Skin Texture\n\
+#    LoRA for enhanced skin texture details\n\
+LORA_FILE="$MODELS_DIR/loras/skintexture.safetensors"\n\
+if [ -n "$LORA_SKINTEXTURE_URL" ]; then\n\
+    download_model "$LORA_SKINTEXTURE_URL" "$LORA_FILE" 1000000\n\
+elif [ -n "$HF_TOKEN" ]; then\n\
+    download_model \\\n\
+        "https://huggingface.co/g0tman1/skintexture.safetensors/resolve/main/skintexture.safetensors" \\\n\
+        "$LORA_FILE" 1000000 "Authorization: Bearer $HF_TOKEN"\n\
+else\n\
+    echo "⚠️ LoRA skintexture not configured."\n\
+    echo "   Set LORA_SKINTEXTURE_URL or HF_TOKEN environment variable"\n\
+fi\n\
+\n\
+# ============================================================================\n\
+# SUMMARY\n\
+# ============================================================================\n\
+echo ""\n\
+echo "📂 Models directory: $MODELS_DIR"\n\
+echo ""\n\
+echo "📦 Checkpoints:"\n\
+ls -lah "$MODELS_DIR/checkpoints/" 2>/dev/null || echo "   (empty)"\n\
+echo ""\n\
+echo "🔼 Upscale Models:"\n\
+ls -lah "$MODELS_DIR/upscale_models/" 2>/dev/null || echo "   (empty)"\n\
+echo ""\n\
+echo "🎨 LoRAs:"\n\
+ls -lah "$MODELS_DIR/loras/" 2>/dev/null || echo "   (empty)"\n\
+echo ""\n\
+echo "✅ Model setup complete"\n\
+' > /setup_models.sh && chmod +x /setup_models.sh
+
+# ============================================================================
+# STARTUP SCRIPT
+# ============================================================================
+RUN echo '#!/bin/bash\n\
+set -e\n\
+echo "🚀 Starting Vellum 2.0 ComfyUI Worker..."\n\
+\n\
+# Setup models from network volume\n\
+/setup_models.sh\n\
+\n\
+# Start ComfyUI (the base image handles this, but we can customize if needed)\n\
+echo "✅ Ready to process requests"\n\
+' > /custom_start.sh && chmod +x /custom_start.sh
+
+# The base image (runpod/worker-comfyui) handles the actual startup
+# Our setup script will be called during container initialization
