@@ -26,7 +26,9 @@ export default function LoginPage() {
     const result = await login(username, password);
 
     if (result.success) {
-      router.push("/");
+      // If on theclueless.es, redirect to /interdemo, otherwise to /
+      const isTheCluelessEs = window.location.hostname.endsWith('theclueless.es');
+      router.push(isTheCluelessEs ? "/interdemo" : "/");
       router.refresh();
     } else {
       setError(result.error || "Login failed");
