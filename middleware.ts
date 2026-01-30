@@ -17,11 +17,14 @@ export async function middleware(request: NextRequest) {
   const hostname = request.headers.get('host') || '';
 
   // Domain redirect: theclueless.es → theclueless.ai (except /interdemo)
-  if (hostname === 'theclueless.es' || hostname === 'www.theclueless.es') {
+  const isTheCluelessEs = hostname.endsWith('theclueless.es') || hostname.includes('theclueless.es:');
+
+  if (isTheCluelessEs) {
     if (!pathname.startsWith('/interdemo')) {
       const redirectUrl = new URL(pathname + request.nextUrl.search, 'https://theclueless.ai');
       return NextResponse.redirect(redirectUrl, 301);
     }
+    // /interdemo stays on this app - continue to auth check below
   }
 
   // Allow public routes
