@@ -14,6 +14,23 @@ const adminApiRoutes = ['/api/auth/users', '/api/auth/init-db'];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const hostname = request.headers.get('host') || '';
+
+  // Domain redirect logic: theclueless.es → theclueless.ai
+  // EXCEPT for /interdemo which should stay on this app
+  const isTheCluelessEs = hostname === 'theclueless.es' || hostname === 'www.theclueless.es';
+
+  if (isTheCluelessEs) {
+    // If path starts with /interdemo, don't redirect - serve the app
+    if (pathname.startsWith('/interdemo')) {
+      // Continue to authentication checks below
+    } else {
+      // Redirect all other paths to theclueless.ai
+      const redirectUrl = new URL(pathname, 'https://theclueless.ai');
+      redirectUrl.search = request.nextUrl.search; // Preserve query params
+      return NextResponse.redirect(redirectUrl, 301); // 301 = permanent redirect
+    }
+  }
 
   // Allow public routes
   if (publicRoutes.some(route => pathname.startsWith(route))) {
