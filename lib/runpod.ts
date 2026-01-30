@@ -75,8 +75,8 @@ export async function fileToBase64(file: File): Promise<string> {
 function buildWorkflowPayload(input: VellumWorkflowInput) {
   return {
     input: {
-      // These IDs must match the external node widget_values in the workflow
-      input_image: input.input_image,
+      // RunPod worker expects "image" field for the base64 image
+      image: input.input_image,
       strength_model: input.strength_model,
       scale_by: input.scale_by,
     },
