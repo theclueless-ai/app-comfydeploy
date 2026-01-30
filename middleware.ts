@@ -16,14 +16,19 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const hostname = request.headers.get('host') || '';
 
+  // DEBUG: Log hostname and pathname to Vercel logs
+  console.log('[Middleware Debug]', { hostname, pathname, url: request.url });
+
   // Domain redirect: theclueless.es → theclueless.ai (except /interdemo)
   const isTheCluelessEs = hostname.endsWith('theclueless.es') || hostname.includes('theclueless.es:');
 
   if (isTheCluelessEs) {
     if (!pathname.startsWith('/interdemo')) {
+      console.log('[Middleware] Redirecting to theclueless.ai', { hostname, pathname });
       const redirectUrl = new URL(pathname + request.nextUrl.search, 'https://theclueless.ai');
       return NextResponse.redirect(redirectUrl, 301);
     }
+    console.log('[Middleware] /interdemo detected, NOT redirecting', { hostname, pathname });
     // /interdemo stays on this app - continue to auth check below
   }
 
