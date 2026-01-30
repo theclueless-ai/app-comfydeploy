@@ -14,6 +14,15 @@ const adminApiRoutes = ['/api/auth/users', '/api/auth/init-db'];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const hostname = request.headers.get('host') || '';
+
+  // Domain redirect: theclueless.es → theclueless.ai (except /interdemo)
+  if (hostname === 'theclueless.es' || hostname === 'www.theclueless.es') {
+    if (!pathname.startsWith('/interdemo')) {
+      const redirectUrl = new URL(pathname + request.nextUrl.search, 'https://theclueless.ai');
+      return NextResponse.redirect(redirectUrl, 301);
+    }
+  }
 
   // Allow public routes
   if (publicRoutes.some(route => pathname.startsWith(route))) {
