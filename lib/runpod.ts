@@ -286,6 +286,27 @@ export function extractImagesFromOutput(
 
   const images: Array<{ url: string; filename: string }> = [];
 
+  // Format 0: RunPod wraps handler output in another "output" field
+  // Handler returns: { status: "COMPLETED", output: { images: [...] } }
+  // RunPod returns: { id, status, output: { status: "COMPLETED", output: { images: [...] } } }
+  // So we need to check output.output.images first
+  if (output.output?.images && Array.isArray(output.output.images)) {
+    console.log("extractImagesFromOutput: Found nested output.output.images with", output.output.images.length, "items");
+    for (const image of output.output.images) {
+      if (image.url) {
+        images.push({
+          url: image.url,
+          filename: image.filename || extractFilenameFromUrl(image.url),
+        });
+      }
+    }
+    // Return early since we found images in nested structure
+    if (images.length > 0) {
+      console.log("extractImagesFromOutput: Total images found:", images.length);
+      return images;
+    }
+  }
+
   // Format 1: output.images array (original expected format)
   if (output.images && Array.isArray(output.images)) {
     console.log("extractImagesFromOutput: Found images array with", output.images.length, "items");
