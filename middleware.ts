@@ -23,13 +23,17 @@ export async function middleware(request: NextRequest) {
   const isTheCluelessEs = hostname.endsWith('theclueless.es') || hostname.includes('theclueless.es:');
 
   if (isTheCluelessEs) {
-    if (!pathname.startsWith('/interdemo')) {
+    // Paths that should stay on theclueless.es (not redirect to .ai)
+    const stayOnEs = pathname.startsWith('/interdemo') ||
+                     pathname.startsWith('/login') ||
+                     pathname.startsWith('/api/auth');
+
+    if (!stayOnEs) {
       console.log('[Middleware] Redirecting to theclueless.ai', { hostname, pathname });
       const redirectUrl = new URL(pathname + request.nextUrl.search, 'https://theclueless.ai');
       return NextResponse.redirect(redirectUrl, 301);
     }
-    console.log('[Middleware] /interdemo detected, NOT redirecting', { hostname, pathname });
-    // /interdemo stays on this app - continue to auth check below
+    console.log('[Middleware] Staying on theclueless.es', { hostname, pathname });
   }
 
   // Allow public routes
