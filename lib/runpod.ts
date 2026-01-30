@@ -33,9 +33,16 @@ export interface RunPodStatusResponse {
   id: string;
   status: "IN_QUEUE" | "IN_PROGRESS" | "COMPLETED" | "FAILED" | "CANCELLED";
   output?: {
-    message?: string;
-    images?: string[];
     status?: string;
+    images?: Array<{
+      filename: string;
+      url: string;
+      dimensions: [number, number];
+      file_size_mb: number;
+    }>;
+    original_size?: [number, number];
+    scaleFactor?: number;
+    skin_texture_intensity?: number;
   };
   error?: string;
 }
@@ -70,15 +77,23 @@ export async function fileToBase64(file: File): Promise<string> {
 
 /**
  * Build the workflow payload for the Vellum 2.0 upscaling workflow
- * Input names must match the ComfyUI Deploy external node IDs exactly
+ * Maps app fields to RunPod handler expected fields:
+ * - image: base64 image (without data URI prefix)
+ * - scaleFactor: number (2, 4, or 8)
+ * - skin_texture_intensity: number (0 to 1)
  */
 function buildWorkflowPayload(input: VellumWorkflowInput) {
+  // Remove data URI prefix if present (handler expects raw base64)
+  let imageBase64 = input.input_image;
+  if (imageBase64.includes(',')) {
+    imageBase64 = imageBase64.split(',')[1];
+  }
+
   return {
     input: {
-      // RunPod worker expects "image" field for the base64 image
-      image: input.input_image,
-      strength_model: input.strength_model,
-      scale_by: input.scale_by,
+      image: imageBase64,
+      scaleFactor: parseInt(input.scale_by, 10),
+      skin_texture_intensity: input.strength_model,
     },
   };
 }
@@ -98,8 +113,8 @@ export async function runWorkflowAsync(
   console.log("=== RunPod API Call (async) ===");
   console.log("URL:", url);
   console.log("Endpoint ID:", endpointId);
-  console.log("Strength Model:", input.strength_model);
-  console.log("Scale By:", input.scale_by);
+  console.log("Skin Texture Intensity:", input.strength_model);
+  console.log("Scale Factor:", input.scale_by);
 
   const response = await fetch(url, {
     method: "POST",
@@ -140,8 +155,8 @@ export async function runWorkflowSync(
   console.log("=== RunPod API Call (sync) ===");
   console.log("URL:", url);
   console.log("Endpoint ID:", endpointId);
-  console.log("Strength Model:", input.strength_model);
-  console.log("Scale By:", input.scale_by);
+  console.log("Skin Texture Intensity:", input.strength_model);
+  console.log("Scale Factor:", input.scale_by);
   console.log("Timeout:", timeoutMs);
 
   const controller = new AbortController();
@@ -265,8 +280,8 @@ export function extractImagesFromOutput(
     return [];
   }
 
-  return output.images.map((imageUrl, index) => ({
-    url: imageUrl,
-    filename: `vellum_output_${index + 1}.png`,
+  return output.images.map((image) => ({
+    url: image.url,
+    filename: image.filename,
   }));
 }
