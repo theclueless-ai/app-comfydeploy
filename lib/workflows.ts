@@ -102,9 +102,9 @@ export const workflows: WorkflowConfig[] = [
         label: "Strength Model",
         description: "",
         required: true,
-        defaultValue: 1,
+        defaultValue: 0.5,
         min: 0,
-        max: 2,
+        max: 1,
         step: 0.05,
       },
       {
