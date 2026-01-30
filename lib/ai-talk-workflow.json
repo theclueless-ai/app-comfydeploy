@@ -1,0 +1,290 @@
+{
+  "214": {
+    "inputs": {
+      "normalize_loudness": true,
+      "num_frames": 1000,
+      "fps": 25,
+      "audio_scale": 1,
+      "audio_cfg_scale": 1,
+      "multi_audio_type": "para",
+      "add_noise_floor": false,
+      "smooth_transients": false,
+      "wav2vec_model": ["232", 0],
+      "audio_1": ["250", 0]
+    },
+    "class_type": "MultiTalkWav2VecEmbeds",
+    "_meta": {
+      "title": "Multi/InfiniteTalk Wav2vec2 Embeds"
+    }
+  },
+  "215": {
+    "inputs": {
+      "strength_1": 1.008,
+      "strength_2": 1,
+      "crop": "center",
+      "combine_embeds": "average",
+      "force_offload": true,
+      "tiles": 0,
+      "ratio": 0.5,
+      "clip_vision": ["231", 0],
+      "image_1": ["236", 0]
+    },
+    "class_type": "WanVideoClipVisionEncode",
+    "_meta": {
+      "title": "WanVideo ClipVision Encode"
+    }
+  },
+  "216": {
+    "inputs": {
+      "width": ["217", 0],
+      "height": ["217", 1],
+      "frame_window_size": 81,
+      "motion_frame": 25,
+      "force_offload": false,
+      "colormatch": "disabled",
+      "tiled_vae": false,
+      "mode": "infinitetalk",
+      "output_path": "",
+      "vae": ["228", 0],
+      "start_image": ["236", 0],
+      "clip_embeds": ["215", 0]
+    },
+    "class_type": "WanVideoImageToVideoMultiTalk",
+    "_meta": {
+      "title": "WanVideo Long I2V Multi/InfiniteTalk"
+    }
+  },
+  "217": {
+    "inputs": {
+      "image": ["236", 0]
+    },
+    "class_type": "GetImageSize",
+    "_meta": {
+      "title": "Obtener Tamaño de Imagen"
+    }
+  },
+  "218": {
+    "inputs": {
+      "model": "infinitetalk_single.safetensors"
+    },
+    "class_type": "MultiTalkModelLoader",
+    "_meta": {
+      "title": "Multi/InfiniteTalk Model Loader"
+    }
+  },
+  "220": {
+    "inputs": {
+      "steps": 6,
+      "cfg": 1.0000000000000002,
+      "shift": 11.000000000000002,
+      "seed": 78809525487790,
+      "force_offload": true,
+      "scheduler": "dpm++_sde",
+      "riflex_freq_index": 0,
+      "denoise_strength": 1,
+      "batched_cfg": false,
+      "rope_function": "comfy",
+      "start_step": 0,
+      "end_step": -1,
+      "add_noise_to_samples": true,
+      "model": ["234", 0],
+      "image_embeds": ["216", 0],
+      "text_embeds": ["225", 0],
+      "multitalk_embeds": ["214", 0]
+    },
+    "class_type": "WanVideoSampler",
+    "_meta": {
+      "title": "WanVideo Sampler"
+    }
+  },
+  "225": {
+    "inputs": {
+      "model_name": "umt5-xxl-enc-bf16.safetensors",
+      "precision": "bf16",
+      "positive_prompt": "The girl with pink hair smoothly turns her head from the side to face the camera directly, maintaining eye contact with the audience. She is speaking naturally with realistic lip synchronization. Simultaneously, she raises one hand to gracefully tuck a strand of her pink hair behind her ear and brushes it back. High-quality cinematic lighting, fluid motion, 4k, detailed facial expressions.",
+      "negative_prompt": "bright tones, overexposed, static, blurred details, subtitles, style, works, paintings, images, static, overall gray, worst quality, low quality, JPEG compression residue, ugly, incomplete, extra fingers, poorly drawn hands, poorly drawn faces, deformed, disfigured, misshapen limbs, fused fingers, still picture, messy background, three legs, many people in the background, walking backwards",
+      "quantization": "disabled",
+      "use_disk_cache": false,
+      "device": "gpu"
+    },
+    "class_type": "WanVideoTextEncodeCached",
+    "_meta": {
+      "title": "WanVideo TextEncode Cached"
+    }
+  },
+  "228": {
+    "inputs": {
+      "model_name": "Wan2_1_VAE_bf16.safetensors",
+      "precision": "bf16",
+      "use_cpu_cache": false,
+      "verbose": false
+    },
+    "class_type": "WanVideoVAELoader",
+    "_meta": {
+      "title": "WanVideo VAE Loader"
+    }
+  },
+  "231": {
+    "inputs": {
+      "clip_name": "clip_vision_h.safetensors"
+    },
+    "class_type": "CLIPVisionLoader",
+    "_meta": {
+      "title": "Cargar CLIP Vision"
+    }
+  },
+  "232": {
+    "inputs": {
+      "model": "wav2vec2-chinese-base_fp16.safetensors",
+      "base_precision": "bf16",
+      "load_device": "main_device"
+    },
+    "class_type": "Wav2VecModelLoader",
+    "_meta": {
+      "title": "Wav2vec2 Model Loader"
+    }
+  },
+  "233": {
+    "inputs": {
+      "lora": "wan2.2/lightx2v_I2V_14B_480p_cfg_step_distill_rank128_bf16.safetensors",
+      "strength": 1,
+      "low_mem_load": false,
+      "merge_loras": false
+    },
+    "class_type": "WanVideoLoraSelect",
+    "_meta": {
+      "title": "WanVideo Lora Select"
+    }
+  },
+  "234": {
+    "inputs": {
+      "model": "wan2.1-i2v-14b-720p-Q8_0.gguf",
+      "base_precision": "fp16_fast",
+      "quantization": "disabled",
+      "load_device": "main_device",
+      "attention_mode": "sdpa",
+      "rms_norm_function": "default",
+      "block_swap_args": ["235", 0],
+      "lora": ["233", 0],
+      "multitalk_model": ["218", 0]
+    },
+    "class_type": "WanVideoModelLoader",
+    "_meta": {
+      "title": "WanVideo Model Loader"
+    }
+  },
+  "235": {
+    "inputs": {
+      "blocks_to_swap": 11,
+      "offload_img_emb": false,
+      "offload_txt_emb": false,
+      "use_non_blocking": true,
+      "vace_blocks_to_swap": 0,
+      "prefetch_blocks": 1,
+      "block_swap_debug": false
+    },
+    "class_type": "WanVideoBlockSwap",
+    "_meta": {
+      "title": "WanVideo Block Swap"
+    }
+  },
+  "236": {
+    "inputs": {
+      "upscale_method": "lanczos",
+      "width": 720,
+      "height": 1280,
+      "crop": "disabled",
+      "image": ["737", 0]
+    },
+    "class_type": "ImageScale",
+    "_meta": {
+      "title": "Ampliar Imagen"
+    }
+  },
+  "237": {
+    "inputs": {
+      "enable_vae_tiling": false,
+      "tile_x": 272,
+      "tile_y": 272,
+      "tile_stride_x": 144,
+      "tile_stride_y": 128,
+      "normalization": "default",
+      "vae": ["228", 0],
+      "samples": ["220", 0]
+    },
+    "class_type": "WanVideoDecode",
+    "_meta": {
+      "title": "WanVideo Decode"
+    }
+  },
+  "238": {
+    "inputs": {
+      "frame_rate": 25,
+      "loop_count": 0,
+      "filename_prefix": "Video",
+      "format": "video/h264-mp4",
+      "pix_fmt": "yuv420p",
+      "crf": 19,
+      "save_metadata": true,
+      "trim_to_audio": true,
+      "pingpong": false,
+      "save_output": true,
+      "images": ["237", 0],
+      "audio": ["214", 1]
+    },
+    "class_type": "VHS_VideoCombine",
+    "_meta": {
+      "title": "Video Combine 🎥🅥🅗🅢"
+    }
+  },
+  "250": {
+    "inputs": {
+      "text": "",
+      "api_key": "sk_f80da7a6b227de5be6bfeb97541da13f4b41479d66ad74a6",
+      "voice_id": "gdMFOufuI36UmxNKJhtv",
+      "model_id": "eleven_multilingual_v2",
+      "seed": "",
+      "apply_text_normalization": "auto",
+      "voice_settings_stability": 0.3,
+      "voice_settings_use_speaker_boost": true,
+      "voice_settings_similarity_boost": 0.85,
+      "voice_settings_style": 0.3,
+      "voice_settings_speed": 1
+    },
+    "class_type": "ElevenlabsTextToSpeech",
+    "_meta": {
+      "title": "ElevenlabsTextToSpeech"
+    }
+  },
+  "260": {
+    "inputs": {
+      "num_frames": 1,
+      "input_video_frames": ["237", 0]
+    },
+    "class_type": "ExtractStartFramesForContinuations",
+    "_meta": {
+      "title": "Extract Start Frames For Continuations"
+    }
+  },
+  "261": {
+    "inputs": {
+      "filename_prefix": "ComfyUI",
+      "images": ["260", 0]
+    },
+    "class_type": "SaveImage",
+    "_meta": {
+      "title": "Guardar Imagen"
+    }
+  },
+  "737": {
+    "inputs": {
+      "base64_data": "",
+      "image_output": "Preview",
+      "save_prefix": "ComfyUI"
+    },
+    "class_type": "easy loadImageBase64",
+    "_meta": {
+      "title": "Load Image (Base64)"
+    }
+  }
+}

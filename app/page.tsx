@@ -6,7 +6,7 @@ import { WorkflowForm } from "@/components/workflow-form";
 import { ResultDisplay } from "@/components/result-display";
 import { Gallery } from "@/components/gallery";
 import { WorkflowTabs, WorkflowTab } from "@/components/workflow-tabs";
-import { getDefaultWorkflow, getVellumWorkflow } from "@/lib/workflows";
+import { getDefaultWorkflow, getVellumWorkflow, getAiTalkWorkflow } from "@/lib/workflows";
 import { cn } from "@/lib/utils";
 import { useHistory } from "@/hooks/use-history";
 import { History } from "lucide-react";
@@ -24,7 +24,12 @@ export default function Home() {
 
   const fashionWorkflow = getDefaultWorkflow();
   const vellumWorkflow = getVellumWorkflow();
-  const workflow = activeTab === "fashion" ? fashionWorkflow : vellumWorkflow;
+  const aiTalkWorkflow = getAiTalkWorkflow();
+  const workflow = activeTab === "fashion"
+    ? fashionWorkflow
+    : activeTab === "vellum"
+      ? vellumWorkflow
+      : aiTalkWorkflow;
 
   const { history, totalImages, addToHistory, clearHistory } = useHistory();
 
@@ -105,24 +110,30 @@ export default function Home() {
     return () => clearInterval(pollInterval);
   }, [runId, status, activeTab]);
 
-  // Poll for RunPod status (Vellum workflow)
+  // Poll for RunPod status (Vellum and AI Talk workflows)
   useEffect(() => {
-    if (!runId || status === "completed" || status === "failed" || activeTab !== "vellum") {
+    if (!runId || status === "completed" || status === "failed" || (activeTab !== "vellum" && activeTab !== "ai-talk")) {
       return;
     }
 
+    const statusEndpoint = activeTab === "vellum" ? "/api/vellum-status" : "/api/ai-talk-status";
+
     const pollInterval = setInterval(async () => {
       try {
-        const response = await fetch(`/api/vellum-status?jobId=${runId}`);
+        const response = await fetch(`${statusEndpoint}?jobId=${runId}`);
         const data = await response.json();
 
-        console.log("Vellum status data:", data);
+        console.log(`${activeTab} status data:`, data);
 
         if (data.status === "completed") {
           setStatus("completed");
           if (data.images && data.images.length > 0) {
             setResultImages(data.images);
             console.log(`Received ${data.images.length} images from RunPod`);
+          } else if (data.videos && data.videos.length > 0) {
+            // For AI Talk, videos are returned
+            setResultImages(data.videos);
+            console.log(`Received ${data.videos.length} videos from RunPod`);
           }
           clearInterval(pollInterval);
           setIsLoading(false);
@@ -135,7 +146,7 @@ export default function Home() {
           setStatus("running");
         }
       } catch (error) {
-        console.error("Vellum polling error:", error);
+        console.error(`${activeTab} polling error:`, error);
       }
     }, 3000);
 
@@ -171,7 +182,11 @@ export default function Home() {
       });
 
       // Use different API endpoints based on the active tab
-      const apiEndpoint = activeTab === "fashion" ? "/api/run-workflow" : "/api/run-vellum";
+      const apiEndpoint = activeTab === "fashion"
+        ? "/api/run-workflow"
+        : activeTab === "vellum"
+          ? "/api/run-vellum"
+          : "/api/run-ai-talk";
 
       const response = await fetch(apiEndpoint, {
         method: "POST",
@@ -228,7 +243,11 @@ export default function Home() {
               )}
             >
               <h3 className="text-sm font-semibold mb-3 text-gray-400">
-                {activeTab === "fashion" ? "Upload Images" : "Image Upscaling"}
+                {activeTab === "fashion"
+                  ? "Upload Images"
+                  : activeTab === "vellum"
+                    ? "Image Upscaling"
+                    : "Generate Talking Video"}
               </h3>
               <WorkflowForm
                 workflow={workflow}

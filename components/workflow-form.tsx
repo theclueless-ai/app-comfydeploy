@@ -153,6 +153,38 @@ export function WorkflowForm({
             );
           }
 
+          if (input.type === "text") {
+            return (
+              <div key={input.id} className="space-y-1.5">
+                <label className="block text-xs font-medium text-[rgb(var(--foreground))]">
+                  {input.label}
+                  {input.required && <span className="text-brand-pink ml-1">*</span>}
+                </label>
+                {input.description && (
+                  <p className="text-xs text-[rgb(var(--muted-foreground))]">
+                    {input.description}
+                  </p>
+                )}
+                <textarea
+                  value={(inputs[input.id] as string) || ""}
+                  onChange={(e) =>
+                    setInputs((prev) => ({ ...prev, [input.id]: e.target.value }))
+                  }
+                  placeholder={input.placeholder}
+                  required={input.required}
+                  rows={4}
+                  className={cn(
+                    "w-full px-3 py-2 rounded-md text-sm",
+                    "bg-[rgb(var(--background))] border border-[rgb(var(--border))]",
+                    "text-[rgb(var(--foreground))] placeholder:text-[rgb(var(--muted-foreground))]",
+                    "focus:outline-none focus:ring-2 focus:ring-brand-pink/50 focus:border-brand-pink",
+                    "resize-none"
+                  )}
+                />
+              </div>
+            );
+          }
+
           return null;
         })}
       </div>

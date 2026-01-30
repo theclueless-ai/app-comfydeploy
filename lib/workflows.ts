@@ -1,5 +1,6 @@
 import { WorkflowConfig } from "./types";
 import workflow_vellum from "./vellum-upscale.json";
+import workflow_ai_talk from "./ai-talk-workflow.json";
 
 /**
  * Workflow configurations
@@ -119,6 +120,33 @@ export const workflows: WorkflowConfig[] = [
       },
     ],
   },
+  {
+    id: "ai-talk",
+    name: "AI Talk",
+    description: "Generate talking head videos with AI-powered lip sync and voice synthesis.",
+    deploymentId: "", // Will use RUNPOD_AITALK_ENDPOINT_ID from env
+    backend: "runpod",
+    inputs: [
+      {
+        id: "input_image",
+        name: "input_image",
+        type: "image",
+        label: "Character Image",
+        description: "Upload an image of the character to animate",
+        required: true,
+        accept: "image/*",
+      },
+      {
+        id: "speech_text",
+        name: "speech_text",
+        type: "text",
+        label: "Speech Text",
+        description: "Enter the text you want the character to speak",
+        required: true,
+        placeholder: "Enter the text for the character to speak...",
+      },
+    ],
+  },
 ];
 
 export function getWorkflowById(id: string): WorkflowConfig | undefined {
@@ -131,4 +159,8 @@ export function getDefaultWorkflow(): WorkflowConfig {
 
 export function getVellumWorkflow(): WorkflowConfig {
   return workflows.find((w) => w.id === "vellum-upscale")!;
+}
+
+export function getAiTalkWorkflow(): WorkflowConfig {
+  return workflows.find((w) => w.id === "ai-talk")!;
 }
