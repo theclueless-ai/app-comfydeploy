@@ -26,7 +26,7 @@ export async function middleware(request: NextRequest) {
     // Paths that should stay on theclueless.es (not redirect to .ai)
     const stayOnEs = pathname.startsWith('/interdemo') ||
                      pathname.startsWith('/login') ||
-                     pathname.startsWith('/api/auth');
+                     pathname.startsWith('/api');
 
     if (!stayOnEs) {
       console.log('[Middleware] Redirecting to theclueless.ai', { hostname, pathname });
