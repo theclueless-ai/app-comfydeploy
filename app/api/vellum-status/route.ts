@@ -22,11 +22,16 @@ export async function GET(request: NextRequest) {
     // Get status from RunPod
     const runpodStatus = await getJobStatus(jobId);
 
+    // Log the full output for debugging
+    console.log("RunPod full response:", JSON.stringify(runpodStatus, null, 2));
+    console.log("RunPod output:", JSON.stringify(runpodStatus.output, null, 2));
+
     // Map status to our app format
     const status = mapRunPodStatus(runpodStatus.status);
 
     // Extract images if completed
     const images = extractImagesFromOutput(runpodStatus.output);
+    console.log("Extracted images:", images.length, images);
 
     const response: {
       jobId: string;
