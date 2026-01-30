@@ -1,4 +1,5 @@
 import { WorkflowConfig } from "./types";
+import workflow_vellum from "./vellum-upscale.json";
 
 /**
  * Workflow configurations
@@ -83,7 +84,7 @@ export const workflows: WorkflowConfig[] = [
     name: "Vellum 2.0",
     description: "AI-powered image upscaling with skin texture enhancement.",
     deploymentId: "", // Will use COMFYDEPLOY_VELLUM_DEPLOYMENT_ID from env
-    backend: "comfydeploy", // Changed from "runpod" to use ComfyDeploy temporarily
+    backend: "runpod", // Changed from "runpod" to use ComfyDeploy temporarily
     inputs: [
       {
         id: "input_image",
@@ -113,7 +114,7 @@ export const workflows: WorkflowConfig[] = [
         label: "Scale Factor",
         description: "",
         required: true,
-        defaultValue: "4",
+        defaultValue: "2",
         options: ["2", "4", "8"],
       },
     ],

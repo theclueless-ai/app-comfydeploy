@@ -42,7 +42,7 @@ export default function Home() {
 
   // Poll for webhook results (ComfyDeploy - both workflows now use ComfyDeploy)
   useEffect(() => {
-    if (!runId || status === "completed" || status === "failed") {
+    if (!runId || status === "completed" || status === "failed" || activeTab !== "fashion") {
       return;
     }
 
@@ -103,7 +103,44 @@ export default function Home() {
     }, 3000);
 
     return () => clearInterval(pollInterval);
-  }, [runId, status]);
+  }, [runId, status, activeTab]);
+
+  // Poll for RunPod status (Vellum workflow)
+  useEffect(() => {
+    if (!runId || status === "completed" || status === "failed" || activeTab !== "vellum") {
+      return;
+    }
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const response = await fetch(`/api/vellum-status?jobId=${runId}`);
+        const data = await response.json();
+
+        console.log("Vellum status data:", data);
+
+        if (data.status === "completed") {
+          setStatus("completed");
+          if (data.images && data.images.length > 0) {
+            setResultImages(data.images);
+            console.log(`Received ${data.images.length} images from RunPod`);
+          }
+          clearInterval(pollInterval);
+          setIsLoading(false);
+        } else if (data.status === "failed") {
+          setStatus("failed");
+          setError(data.error || "Workflow failed");
+          clearInterval(pollInterval);
+          setIsLoading(false);
+        } else if (data.status === "running") {
+          setStatus("running");
+        }
+      } catch (error) {
+        console.error("Vellum polling error:", error);
+      }
+    }, 3000);
+
+    return () => clearInterval(pollInterval);
+  }, [runId, status, activeTab]);
 
   // Save to history when run completes successfully
   useEffect(() => {

@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { fileToBase64 } from "@/lib/comfydeploy";
+// import { fileToBase64 } from "@/lib/comfydeploy";
+import { fileToBase64, runWorkflowAsync, VellumWorkflowInput } from "@/lib/runpod";
+import workflow from "@/lib/vellum-upscale.json";
 
 export async function POST(request: NextRequest) {
   try {
@@ -53,60 +55,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log("=== Vellum 2.0 Workflow Request (ComfyDeploy) ===");
+    console.log("=== Vellum 2.0 Workflow Request ===");
     console.log("Image:", imageFile.name, imageFile.type, imageFile.size);
     console.log("Strength Model:", strengthModel);
     console.log("Scale By:", scaleBy);
-    console.log("Deployment ID:", deploymentId);
 
     // Convert image to base64
     const imageBase64 = await fileToBase64(imageFile);
     console.log("Image converted to base64, length:", imageBase64.length);
 
-    // Construct webhook URL
-    const webhookUrl = `${process.env.WEBHOOK_BASE_URL || request.nextUrl.origin}/api/webhook`;
-
-    // Build the payload for ComfyDeploy
-    const payload = {
-      deployment_id: deploymentId,
-      inputs: {
-        input_image: imageBase64,
-        strength_model: strengthModel,
-        scale_by: scaleBy,
-      },
-      webhook: webhookUrl,
+    // Build workflow input
+    const workflowInput: VellumWorkflowInput = {
+      workflow: workflow,
+      input_image: imageBase64,
+      strength_model: strengthModel,
+      scale_by: scaleBy,
     };
 
-    console.log("Sending request to ComfyDeploy...");
-    console.log("Webhook URL:", webhookUrl);
-
-    // Call ComfyDeploy API
-    const response = await fetch("https://api.comfydeploy.com/api/run/deployment/queue", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify(payload),
-    });
-
-    console.log("Response status:", response.status);
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("ComfyDeploy API Error:", errorText);
-      return NextResponse.json(
-        { error: `ComfyDeploy API error: ${response.status} - ${errorText}` },
-        { status: response.status }
-      );
-    }
-
-    const data = await response.json();
-    console.log("ComfyDeploy response:", data);
+    // Run the workflow on RunPod
+    const result = await runWorkflowAsync(workflowInput);
 
     return NextResponse.json({
       success: true,
-      runId: data.run_id,
+      jobId: result.jobId,
     });
   } catch (error) {
     console.error("Vellum workflow execution error:", error);

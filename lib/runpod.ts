@@ -48,6 +48,7 @@ export interface RunPodStatusResponse {
  * - Node 689: ComfyUIDeployExternalTextAny (scale_by) - Scale factor "2", "4", "8"
  */
 export interface VellumWorkflowInput {
+  workflow : any;
   input_image: string;    // Base64 data URI
   strength_model: number; // 0 to 1 (LoRA strength)
   scale_by: string;       // "2", "4", or "8"
@@ -76,6 +77,7 @@ function buildWorkflowPayload(input: VellumWorkflowInput) {
   return {
     input: {
       // These IDs must match the external node widget_values in the workflow
+      workflow: input.workflow,
       input_image: input.input_image,
       strength_model: input.strength_model,
       scale_by: input.scale_by,
