@@ -141,7 +141,7 @@ export const workflows: WorkflowConfig[] = [
         name: "speech_text",
         type: "text",
         label: "Speech Text",
-        description: "Enter the text you want the character to speak",
+        description: "",
         required: true,
         placeholder: "Enter the text for the character to speak...",
       },
