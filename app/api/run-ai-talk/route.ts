@@ -49,9 +49,16 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Get the voice ID (optional, will use default if not provided)
+    const voiceId = formData.get("voice_id");
+    const selectedVoiceId = voiceId && typeof voiceId === "string" && voiceId.trim() !== ""
+      ? voiceId.trim()
+      : "gdMFOufuI36UmxNKJhtv"; // Default voice ID
+
     console.log("=== AI Talk Workflow Request ===");
     console.log("Image:", imageFile.name, imageFile.type, imageFile.size);
     console.log("Speech Text:", speechText.substring(0, 100) + "...");
+    console.log("Voice ID:", selectedVoiceId);
 
     // Convert image to base64
     const imageBase64 = await fileToBase64(imageFile);
@@ -71,9 +78,10 @@ export async function POST(request: NextRequest) {
       workflowWithInputs["737"].inputs.base64_data = rawBase64;
     }
 
-    // Set the speech text in node 250 (ElevenlabsTextToSpeech)
+    // Set the speech text and voice ID in node 250 (ElevenlabsTextToSpeech)
     if (workflowWithInputs["250"]) {
       workflowWithInputs["250"].inputs.text = speechText;
+      workflowWithInputs["250"].inputs.voice_id = selectedVoiceId;
     }
 
     // Build payload for RunPod

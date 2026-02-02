@@ -6,6 +6,7 @@ import { SelectInput } from "./select-input";
 import { BuilderInput } from "./builder-input";
 import { SliderInput } from "./slider-input";
 import { ButtonGroupInput } from "./button-group-input";
+import { VoiceSelectInput } from "./voice-select-input";
 import { WorkflowConfig } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Sparkles, Loader2 } from "lucide-react";
@@ -182,6 +183,21 @@ export function WorkflowForm({
                   )}
                 />
               </div>
+            );
+          }
+
+          if (input.type === "voice-select") {
+            return (
+              <VoiceSelectInput
+                key={input.id}
+                label={input.label}
+                description={input.description}
+                value={(inputs[input.id] as string) || ""}
+                onChange={(value) =>
+                  setInputs((prev) => ({ ...prev, [input.id]: value }))
+                }
+                required={input.required}
+              />
             );
           }
 
