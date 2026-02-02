@@ -141,7 +141,7 @@ export const workflows: WorkflowConfig[] = [
         name: "voice_id",
         type: "voice-select",
         label: "Select Voice",
-        description: "Choose a voice from your ElevenLabs library",
+        description: "",
         required: true,
       },
       {
