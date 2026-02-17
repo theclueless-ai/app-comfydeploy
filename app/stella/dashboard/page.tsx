@@ -405,17 +405,17 @@ export default function StellaDashboard() {
           </div>
         )
       ) : (
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-2 gap-2.5">
           {CATALOG_MODELS.map((model) => {
             const isSelected = selectedModelName === model.name && modelTab === "catalog";
             return (
               <button
                 key={model.name}
                 onClick={() => handleSelectCatalogModel(model)}
-                className={`relative rounded-xl overflow-hidden aspect-[3/4] group transition-all duration-200 ${
+                className={`relative rounded-lg overflow-hidden aspect-square group transition-all duration-200 ${
                   isSelected
-                    ? "ring-2 ring-gray-900 ring-offset-2"
-                    : "hover:ring-2 hover:ring-gray-300 hover:ring-offset-1"
+                    ? "ring-2 ring-gray-900 ring-offset-1"
+                    : "hover:ring-1 hover:ring-gray-300 hover:ring-offset-1"
                 }`}
               >
                 {/* Model photo as background */}
@@ -425,16 +425,16 @@ export default function StellaDashboard() {
                   className="absolute inset-0 w-full h-full object-cover"
                 />
                 {/* Gradient overlay at bottom */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                 {/* Name */}
-                <div className="absolute bottom-0 left-0 right-0 p-3">
-                  <p className="text-white text-sm font-medium">{model.name}</p>
+                <div className="absolute bottom-0 left-0 right-0 px-2.5 py-2">
+                  <p className="text-white text-xs font-medium">{model.name}</p>
                 </div>
                 {/* Selected check */}
                 {isSelected && (
-                  <div className="absolute top-2.5 right-2.5 w-6 h-6 rounded-full bg-gray-900 flex items-center justify-center">
+                  <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-gray-900 flex items-center justify-center">
                     <svg
-                      className="w-3.5 h-3.5 text-white"
+                      className="w-3 h-3 text-white"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
