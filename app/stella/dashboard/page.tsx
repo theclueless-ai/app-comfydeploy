@@ -904,8 +904,8 @@ export default function StellaDashboard() {
                 </h3>
               </div>
               {/* Card body */}
-              <div className="p-6 flex-1 flex flex-col">
-                <div className="flex-1 rounded-xl border-2 border-dashed border-gray-200 flex items-center justify-center overflow-hidden min-h-[300px] bg-gray-50/50">
+              <div className="p-6 flex-1 flex flex-col min-h-0">
+                <div className="flex-1 rounded-xl border-2 border-dashed border-gray-200 flex items-center justify-center min-h-0 bg-gray-50/50 relative">
                   {isGenerating && !resultImages.length ? (
                     <div className="flex flex-col items-center gap-3">
                       <Loader2 className="w-8 h-8 text-gray-300 animate-spin" />
@@ -919,7 +919,7 @@ export default function StellaDashboard() {
                     <img
                       src={previewSrc}
                       alt="Vista previa"
-                      className="w-full h-full object-contain"
+                      className="absolute inset-0 w-full h-full object-contain p-2"
                     />
                   ) : (
                     <div className="flex flex-col items-center gap-3">
