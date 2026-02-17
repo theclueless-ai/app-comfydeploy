@@ -573,62 +573,38 @@ export default function StellaDashboard() {
       {/* Pose */}
       <div className="space-y-2">
         <label className="text-xs font-medium text-gray-600">Pose</label>
-        <div className="grid grid-cols-1 gap-2">
-          {POSE_OPTIONS.map((opt) => (
-            <button
-              key={opt.label}
-              onClick={() => setPoseSelection(opt.value)}
-              className={`text-left px-4 py-3 rounded-xl border text-sm transition-all ${
-                poseSelection === opt.value
-                  ? "border-gray-900 bg-gray-50"
-                  : "border-gray-200 hover:border-gray-300"
-              }`}
-            >
-              <p
-                className={`font-medium text-xs ${
-                  poseSelection === opt.value
-                    ? "text-gray-900"
-                    : "text-gray-600"
-                }`}
-              >
+        <div className="relative">
+          <select
+            value={poseSelection}
+            onChange={(e) => setPoseSelection(e.target.value)}
+            className="w-full appearance-none bg-white border border-gray-200 rounded-xl px-4 py-3 pr-10 text-sm text-gray-700 focus:outline-none focus:border-gray-400 transition-colors"
+          >
+            {POSE_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
                 {opt.label}
-              </p>
-              <p className="text-[11px] text-gray-400 mt-0.5">
-                {opt.description}
-              </p>
-            </button>
-          ))}
+              </option>
+            ))}
+          </select>
+          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
         </div>
       </div>
 
       {/* Background */}
       <div className="space-y-2">
         <label className="text-xs font-medium text-gray-600">Fondo</label>
-        <div className="grid grid-cols-1 gap-2">
-          {BACKGROUND_OPTIONS.map((opt) => (
-            <button
-              key={opt.label}
-              onClick={() => setBackgroundSelection(opt.value)}
-              className={`text-left px-4 py-3 rounded-xl border text-sm transition-all ${
-                backgroundSelection === opt.value
-                  ? "border-gray-900 bg-gray-50"
-                  : "border-gray-200 hover:border-gray-300"
-              }`}
-            >
-              <p
-                className={`font-medium text-xs ${
-                  backgroundSelection === opt.value
-                    ? "text-gray-900"
-                    : "text-gray-600"
-                }`}
-              >
+        <div className="relative">
+          <select
+            value={backgroundSelection}
+            onChange={(e) => setBackgroundSelection(e.target.value)}
+            className="w-full appearance-none bg-white border border-gray-200 rounded-xl px-4 py-3 pr-10 text-sm text-gray-700 focus:outline-none focus:border-gray-400 transition-colors"
+          >
+            {BACKGROUND_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
                 {opt.label}
-              </p>
-              <p className="text-[11px] text-gray-400 mt-0.5">
-                {opt.description}
-              </p>
-            </button>
-          ))}
+              </option>
+            ))}
+          </select>
+          <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
         </div>
       </div>
 
