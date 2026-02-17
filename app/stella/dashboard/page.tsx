@@ -13,8 +13,9 @@ import {
   ChevronDown,
   Loader2,
   Download,
-  CheckCircle2,
   AlertCircle,
+  Sparkles,
+  ArrowLeft,
 } from "lucide-react";
 
 /* ------------------------------------------------------------------ */
@@ -36,25 +37,27 @@ interface ResultImage {
 /* ------------------------------------------------------------------ */
 
 const SIZE_OPTIONS = [
-  "2048x2048 (1:1)",
-  "2304x1728 (4:3)",
-  "1728x2304 (3:4)",
-  "2560x1440 (16:9)",
-  "1440x2560 (9:16)",
-  "2496x1664 (3:2)",
-  "1664x2496 (2:3)",
-  "3024x1296 (21:9)",
-  "4096x4096 (1:1)",
+  { label: "2048×2048 — Cuadrado", value: "2048x2048 (1:1)" },
+  { label: "2304×1728 — Horizontal 4:3", value: "2304x1728 (4:3)" },
+  { label: "1728×2304 — Vertical 3:4", value: "1728x2304 (3:4)" },
+  { label: "2560×1440 — Panorámico 16:9", value: "2560x1440 (16:9)" },
+  { label: "1440×2560 — Vertical 9:16", value: "1440x2560 (9:16)" },
+  { label: "2496×1664 — Horizontal 3:2", value: "2496x1664 (3:2)" },
+  { label: "1664×2496 — Vertical 2:3", value: "1664x2496 (2:3)" },
+  { label: "3024×1296 — Ultra panorámico", value: "3024x1296 (21:9)" },
+  { label: "4096×4096 — Cuadrado grande", value: "4096x4096 (1:1)" },
 ];
 
 const POSE_OPTIONS = [
   {
     label: "Plano medio frontal",
+    description: "Torso de frente, brazos cruzados, mirando a cámara",
     value:
       "Plano medio, torso de frente, brazos cruzados, cuerpo ligeramente girado hacia la derecha, mirando a la cámara con expresión segura",
   },
   {
     label: "Plano entero de pie",
+    description: "Postura recta, mano en la cadera, expresión relajada",
     value:
       "Plano entero, de pie, postura recta con una mano en la cadera, cabeza ligeramente inclinada, expresión relajada y confiada",
   },
@@ -63,11 +66,13 @@ const POSE_OPTIONS = [
 const BACKGROUND_OPTIONS = [
   {
     label: "Estudio blanco",
+    description: "Fondo blanco liso, iluminación profesional de moda",
     value:
       "Fondo blanco liso de estudio, suave sombra bajo la modelo, iluminación profesional de moda",
   },
   {
     label: "Estudio cálido",
+    description: "Tonos marrones suaves, muebles vintage desenfocados",
     value:
       "Estudio interior cálido con tonos marrones suaves, muebles de estilo vintage ligeramente desenfocados en el fondo",
   },
@@ -95,7 +100,7 @@ export default function StellaDashboard() {
   const productInputRef = useRef<HTMLInputElement>(null);
 
   /* ---- Step 3: Configuración ---- */
-  const [sizePreset, setSizePreset] = useState(SIZE_OPTIONS[0]);
+  const [sizePreset, setSizePreset] = useState(SIZE_OPTIONS[0].value);
   const [poseSelection, setPoseSelection] = useState(POSE_OPTIONS[0].value);
   const [backgroundSelection, setBackgroundSelection] = useState(
     BACKGROUND_OPTIONS[0].value
@@ -114,6 +119,15 @@ export default function StellaDashboard() {
     resultImages.length > 0
       ? resultImages[0].url
       : productImage?.preview ?? modelImage?.preview ?? null;
+
+  /* ---- Summary helpers ---- */
+  const selectedSize =
+    SIZE_OPTIONS.find((s) => s.value === sizePreset)?.label ?? sizePreset;
+  const selectedPose =
+    POSE_OPTIONS.find((p) => p.value === poseSelection)?.label ?? "—";
+  const selectedBackground =
+    BACKGROUND_OPTIONS.find((b) => b.value === backgroundSelection)?.label ??
+    "—";
 
   /* ---------------------------------------------------------------- */
   /*  Handlers                                                        */
@@ -157,10 +171,14 @@ export default function StellaDashboard() {
   );
 
   /* Navigate steps */
-  const goNext = () => {
+  const markCompleted = (step: number) => {
     setCompletedSteps((prev) =>
-      prev.includes(currentStep) ? prev : [...prev, currentStep]
+      prev.includes(step) ? prev : [...prev, step]
     );
+  };
+
+  const goNext = () => {
+    markCompleted(currentStep);
     setCurrentStep((s) => Math.min(s + 1, 4));
   };
 
@@ -169,6 +187,10 @@ export default function StellaDashboard() {
   /* ---- Submit workflow ---- */
   const handleGenerate = async () => {
     if (!modelImage || !productImage) return;
+
+    // Mark step 3 as completed and move to step 4 immediately
+    markCompleted(3);
+    setCurrentStep(4);
 
     setIsGenerating(true);
     setStatus("queued");
@@ -208,7 +230,6 @@ export default function StellaDashboard() {
 
     pollRef.current = setInterval(async () => {
       try {
-        // Check webhook first
         const webhookRes = await fetch(`/api/webhook?runId=${runId}`);
         const webhookData = await webhookRes.json();
 
@@ -228,7 +249,6 @@ export default function StellaDashboard() {
           return;
         }
 
-        // Fallback to status API
         const statusRes = await fetch(`/api/status/${runId}`);
         const statusData = await statusRes.json();
 
@@ -280,14 +300,19 @@ export default function StellaDashboard() {
   const renderStep1 = () => (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-gray-900">
-          Seleccionar Modelo
-        </h2>
+        <div>
+          <h2 className="text-sm font-semibold text-gray-900">
+            Seleccionar Modelo
+          </h2>
+          <p className="text-xs text-gray-400 mt-0.5">
+            Sube una imagen del modelo o selecciona del catálogo
+          </p>
+        </div>
         {/* Tabs: Subir / Catálogo */}
         <div className="flex bg-gray-100 rounded-lg p-0.5">
           <button
             onClick={() => setModelTab("upload")}
-            className={`px-3 py-1 text-xs rounded-md transition-all ${
+            className={`px-3 py-1.5 text-xs rounded-md transition-all ${
               modelTab === "upload"
                 ? "bg-white text-gray-900 shadow-sm"
                 : "text-gray-500 hover:text-gray-700"
@@ -297,7 +322,7 @@ export default function StellaDashboard() {
           </button>
           <button
             onClick={() => setModelTab("catalog")}
-            className={`px-3 py-1 text-xs rounded-md transition-all ${
+            className={`px-3 py-1.5 text-xs rounded-md transition-all ${
               modelTab === "catalog"
                 ? "bg-white text-gray-900 shadow-sm"
                 : "text-gray-500 hover:text-gray-700"
@@ -309,7 +334,6 @@ export default function StellaDashboard() {
       </div>
 
       {modelTab === "upload" ? (
-        /* Upload area */
         modelImage ? (
           <div className="relative rounded-xl overflow-hidden border border-gray-200 bg-gray-50">
             <img
@@ -323,7 +347,7 @@ export default function StellaDashboard() {
             >
               <X className="w-3.5 h-3.5" />
             </button>
-            <div className="px-4 py-2 bg-white border-t border-gray-100 flex items-center justify-between">
+            <div className="px-4 py-2.5 bg-white border-t border-gray-100 flex items-center justify-between">
               <span className="text-xs text-gray-500 truncate">
                 {modelImage.file.name}
               </span>
@@ -356,7 +380,6 @@ export default function StellaDashboard() {
           </div>
         )
       ) : (
-        /* Catalog placeholder */
         <div className="border border-gray-200 rounded-xl p-12 flex flex-col items-center justify-center text-center">
           <ImageIcon className="w-10 h-10 text-gray-300 mb-3" />
           <p className="text-sm text-gray-500">Catálogo de modelos</p>
@@ -364,7 +387,6 @@ export default function StellaDashboard() {
         </div>
       )}
 
-      {/* Next button */}
       <div className="flex justify-end pt-2">
         <button
           onClick={goNext}
@@ -379,7 +401,12 @@ export default function StellaDashboard() {
 
   const renderStep2 = () => (
     <div className="space-y-5">
-      <h2 className="text-sm font-semibold text-gray-900">Subir Producto</h2>
+      <div>
+        <h2 className="text-sm font-semibold text-gray-900">Subir Producto</h2>
+        <p className="text-xs text-gray-400 mt-0.5">
+          Sube la imagen de la prenda o producto
+        </p>
+      </div>
 
       {productImage ? (
         <div className="relative rounded-xl overflow-hidden border border-gray-200 bg-gray-50">
@@ -394,7 +421,7 @@ export default function StellaDashboard() {
           >
             <X className="w-3.5 h-3.5" />
           </button>
-          <div className="px-4 py-2 bg-white border-t border-gray-100 flex items-center justify-between">
+          <div className="px-4 py-2.5 bg-white border-t border-gray-100 flex items-center justify-between">
             <span className="text-xs text-gray-500 truncate">
               {productImage.file.name}
             </span>
@@ -430,8 +457,9 @@ export default function StellaDashboard() {
       <div className="flex justify-between pt-2">
         <button
           onClick={goPrev}
-          className="px-6 py-2.5 text-gray-500 text-xs uppercase tracking-widest rounded-full hover:bg-gray-100 transition-all"
+          className="flex items-center gap-1.5 px-5 py-2.5 text-gray-500 text-xs tracking-wide rounded-full hover:bg-gray-100 transition-all"
         >
+          <ArrowLeft className="w-3 h-3" />
           Atrás
         </button>
         <button
@@ -447,22 +475,27 @@ export default function StellaDashboard() {
 
   const renderStep3 = () => (
     <div className="space-y-6">
-      <h2 className="text-sm font-semibold text-gray-900">Configuración</h2>
+      <div>
+        <h2 className="text-sm font-semibold text-gray-900">
+          Configurar Ajustes
+        </h2>
+        <p className="text-xs text-gray-400 mt-0.5">
+          Personaliza la configuración de la imagen de salida
+        </p>
+      </div>
 
       {/* Size */}
       <div className="space-y-2">
-        <label className="text-xs text-gray-500 uppercase tracking-widest">
-          Tamaño
-        </label>
+        <label className="text-xs font-medium text-gray-600">Tamaño</label>
         <div className="relative">
           <select
             value={sizePreset}
             onChange={(e) => setSizePreset(e.target.value)}
-            className="w-full appearance-none bg-white border border-gray-200 rounded-lg px-4 py-2.5 pr-10 text-sm text-gray-700 focus:outline-none focus:border-gray-400 transition-colors"
+            className="w-full appearance-none bg-white border border-gray-200 rounded-xl px-4 py-3 pr-10 text-sm text-gray-700 focus:outline-none focus:border-gray-400 transition-colors"
           >
             {SIZE_OPTIONS.map((opt) => (
-              <option key={opt} value={opt}>
-                {opt}
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
               </option>
             ))}
           </select>
@@ -472,21 +505,30 @@ export default function StellaDashboard() {
 
       {/* Pose */}
       <div className="space-y-2">
-        <label className="text-xs text-gray-500 uppercase tracking-widest">
-          Pose
-        </label>
+        <label className="text-xs font-medium text-gray-600">Pose</label>
         <div className="grid grid-cols-1 gap-2">
           {POSE_OPTIONS.map((opt) => (
             <button
               key={opt.label}
               onClick={() => setPoseSelection(opt.value)}
-              className={`text-left px-4 py-3 rounded-lg border text-sm transition-all ${
+              className={`text-left px-4 py-3 rounded-xl border text-sm transition-all ${
                 poseSelection === opt.value
-                  ? "border-gray-900 bg-gray-50 text-gray-900"
-                  : "border-gray-200 text-gray-500 hover:border-gray-300"
+                  ? "border-gray-900 bg-gray-50"
+                  : "border-gray-200 hover:border-gray-300"
               }`}
             >
-              {opt.label}
+              <p
+                className={`font-medium text-xs ${
+                  poseSelection === opt.value
+                    ? "text-gray-900"
+                    : "text-gray-600"
+                }`}
+              >
+                {opt.label}
+              </p>
+              <p className="text-[11px] text-gray-400 mt-0.5">
+                {opt.description}
+              </p>
             </button>
           ))}
         </div>
@@ -494,38 +536,94 @@ export default function StellaDashboard() {
 
       {/* Background */}
       <div className="space-y-2">
-        <label className="text-xs text-gray-500 uppercase tracking-widest">
-          Fondo
-        </label>
+        <label className="text-xs font-medium text-gray-600">Fondo</label>
         <div className="grid grid-cols-1 gap-2">
           {BACKGROUND_OPTIONS.map((opt) => (
             <button
               key={opt.label}
               onClick={() => setBackgroundSelection(opt.value)}
-              className={`text-left px-4 py-3 rounded-lg border text-sm transition-all ${
+              className={`text-left px-4 py-3 rounded-xl border text-sm transition-all ${
                 backgroundSelection === opt.value
-                  ? "border-gray-900 bg-gray-50 text-gray-900"
-                  : "border-gray-200 text-gray-500 hover:border-gray-300"
+                  ? "border-gray-900 bg-gray-50"
+                  : "border-gray-200 hover:border-gray-300"
               }`}
             >
-              {opt.label}
+              <p
+                className={`font-medium text-xs ${
+                  backgroundSelection === opt.value
+                    ? "text-gray-900"
+                    : "text-gray-600"
+                }`}
+              >
+                {opt.label}
+              </p>
+              <p className="text-[11px] text-gray-400 mt-0.5">
+                {opt.description}
+              </p>
             </button>
           ))}
         </div>
       </div>
 
+      {/* Divider */}
+      <div className="border-t border-gray-100" />
+
+      {/* Summary */}
+      <div className="space-y-3">
+        <h3 className="text-[10px] font-semibold text-gray-400 uppercase tracking-[0.15em]">
+          Resumen
+        </h3>
+        <div className="bg-gray-50 rounded-xl p-4 space-y-2.5">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-gray-400">Modelo</span>
+            <span className="text-xs text-gray-700 font-medium truncate ml-4 max-w-[180px]">
+              {modelImage?.file.name ?? "—"}
+            </span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-gray-400">Producto</span>
+            <span className="text-xs text-gray-700 font-medium truncate ml-4 max-w-[180px]">
+              {productImage?.file.name ?? "—"}
+            </span>
+          </div>
+          <div className="border-t border-gray-200/60" />
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-gray-400">Tamaño</span>
+            <span className="text-xs text-gray-700 font-medium">
+              {selectedSize}
+            </span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-gray-400">Pose</span>
+            <span className="text-xs text-gray-700 font-medium">
+              {selectedPose}
+            </span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-gray-400">Fondo</span>
+            <span className="text-xs text-gray-700 font-medium">
+              {selectedBackground}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Action buttons */}
       <div className="flex justify-between pt-2">
         <button
           onClick={goPrev}
-          className="px-6 py-2.5 text-gray-500 text-xs uppercase tracking-widest rounded-full hover:bg-gray-100 transition-all"
+          className="flex items-center gap-1.5 px-5 py-2.5 text-gray-500 text-xs tracking-wide rounded-full hover:bg-gray-100 transition-all"
         >
+          <ArrowLeft className="w-3 h-3" />
           Atrás
         </button>
         <button
-          onClick={goNext}
-          className="px-6 py-2.5 bg-gray-900 text-white text-xs uppercase tracking-widest rounded-full hover:bg-gray-800 transition-all"
+          onClick={handleGenerate}
+          disabled={!modelImage || !productImage}
+          className="flex items-center gap-2 px-6 py-2.5 bg-gray-900 text-white text-xs uppercase tracking-widest rounded-full hover:bg-gray-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
         >
-          Siguiente
+          <Sparkles className="w-3.5 h-3.5" />
+          Generar Imagen
         </button>
       </div>
     </div>
@@ -533,64 +631,66 @@ export default function StellaDashboard() {
 
   const renderStep4 = () => (
     <div className="space-y-6">
-      <h2 className="text-sm font-semibold text-gray-900">Generar Imagen</h2>
-
-      {/* Summary */}
-      <div className="space-y-3">
-        <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-          {modelImage && (
-            <img
-              src={modelImage.preview}
-              alt="Modelo"
-              className="w-10 h-10 rounded object-cover"
-            />
-          )}
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-medium text-gray-700">Modelo</p>
-            <p className="text-xs text-gray-400 truncate">
-              {modelImage?.file.name}
-            </p>
-          </div>
-          <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
-        </div>
-
-        <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-          {productImage && (
-            <img
-              src={productImage.preview}
-              alt="Producto"
-              className="w-10 h-10 rounded object-cover"
-            />
-          )}
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-medium text-gray-700">Producto</p>
-            <p className="text-xs text-gray-400 truncate">
-              {productImage?.file.name}
-            </p>
-          </div>
-          <CheckCircle2 className="w-4 h-4 text-green-500 shrink-0" />
-        </div>
-
-        <div className="p-3 bg-gray-50 rounded-lg space-y-1">
-          <p className="text-xs text-gray-400">Tamaño: {sizePreset}</p>
-          <p className="text-xs text-gray-400 truncate">
-            Pose:{" "}
-            {POSE_OPTIONS.find((p) => p.value === poseSelection)?.label}
-          </p>
-          <p className="text-xs text-gray-400 truncate">
-            Fondo:{" "}
-            {
-              BACKGROUND_OPTIONS.find(
-                (b) => b.value === backgroundSelection
-              )?.label
-            }
+      {/* Header changes based on state */}
+      {isGenerating ? (
+        <div>
+          <h2 className="text-sm font-semibold text-gray-900">
+            Generando...
+          </h2>
+          <p className="text-xs text-gray-400 mt-0.5">
+            Tu imagen generada con IA se está creando. Esto puede tomar unos
+            momentos.
           </p>
         </div>
-      </div>
+      ) : status === "completed" ? (
+        <div>
+          <h2 className="text-sm font-semibold text-gray-900">
+            Imagen Generada
+          </h2>
+          <p className="text-xs text-gray-400 mt-0.5">
+            Tu imagen está lista. Puedes descargarla o generar una nueva.
+          </p>
+        </div>
+      ) : status === "failed" ? (
+        <div>
+          <h2 className="text-sm font-semibold text-gray-900">
+            Error al Generar
+          </h2>
+          <p className="text-xs text-gray-400 mt-0.5">
+            Hubo un problema al generar tu imagen. Intenta de nuevo.
+          </p>
+        </div>
+      ) : (
+        <div>
+          <h2 className="text-sm font-semibold text-gray-900">
+            Generar Imagen
+          </h2>
+          <p className="text-xs text-gray-400 mt-0.5">
+            Revisa el resumen y genera tu imagen
+          </p>
+        </div>
+      )}
+
+      {/* Generating state */}
+      {isGenerating && (
+        <div className="flex flex-col items-center py-10">
+          <div className="relative">
+            <div className="w-16 h-16 rounded-full border-2 border-gray-100 flex items-center justify-center">
+              <Loader2 className="w-7 h-7 text-gray-900 animate-spin" />
+            </div>
+          </div>
+          <p className="text-sm text-gray-700 font-medium mt-5">
+            Procesando tu solicitud...
+          </p>
+          <p className="text-xs text-gray-400 mt-1">
+            Esto usualmente toma 10-15 segundos
+          </p>
+        </div>
+      )}
 
       {/* Error */}
       {error && (
-        <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-100 rounded-lg">
+        <div className="flex items-center gap-2.5 p-4 bg-red-50 border border-red-100 rounded-xl">
           <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
           <p className="text-xs text-red-600">{error}</p>
         </div>
@@ -599,9 +699,6 @@ export default function StellaDashboard() {
       {/* Result images */}
       {resultImages.length > 0 && (
         <div className="space-y-3">
-          <p className="text-xs text-gray-500 uppercase tracking-widest">
-            Resultados
-          </p>
           <div className="grid grid-cols-1 gap-3">
             {resultImages.map((img, i) => (
               <div
@@ -615,7 +712,7 @@ export default function StellaDashboard() {
                 />
                 <button
                   onClick={() => handleDownload(img.url, img.filename)}
-                  className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80 transition-colors"
+                  className="absolute top-3 right-3 w-9 h-9 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80 transition-colors"
                 >
                   <Download className="w-4 h-4" />
                 </button>
@@ -625,31 +722,44 @@ export default function StellaDashboard() {
         </div>
       )}
 
+      {/* Summary (shown when not generating) */}
+      {!isGenerating && (
+        <div className="bg-gray-50 rounded-xl p-4 space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-gray-400">Tamaño</span>
+            <span className="text-xs text-gray-600">{selectedSize}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-gray-400">Pose</span>
+            <span className="text-xs text-gray-600">{selectedPose}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-xs text-gray-400">Fondo</span>
+            <span className="text-xs text-gray-600">{selectedBackground}</span>
+          </div>
+        </div>
+      )}
+
       {/* Action buttons */}
       <div className="flex justify-between pt-2">
         <button
           onClick={goPrev}
           disabled={isGenerating}
-          className="px-6 py-2.5 text-gray-500 text-xs uppercase tracking-widest rounded-full hover:bg-gray-100 disabled:opacity-30 transition-all"
+          className="flex items-center gap-1.5 px-5 py-2.5 text-gray-500 text-xs tracking-wide rounded-full hover:bg-gray-100 disabled:opacity-30 transition-all"
         >
+          <ArrowLeft className="w-3 h-3" />
           Atrás
         </button>
-        <button
-          onClick={handleGenerate}
-          disabled={isGenerating || !modelImage || !productImage}
-          className="px-8 py-2.5 bg-gray-900 text-white text-xs uppercase tracking-widest rounded-full hover:bg-gray-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all flex items-center gap-2"
-        >
-          {isGenerating ? (
-            <>
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              {status === "queued" ? "En cola..." : "Procesando..."}
-            </>
-          ) : resultImages.length > 0 ? (
-            "Generar de nuevo"
-          ) : (
-            "Generar"
-          )}
-        </button>
+        {!isGenerating && (
+          <button
+            onClick={handleGenerate}
+            disabled={!modelImage || !productImage}
+            className="flex items-center gap-2 px-6 py-2.5 bg-gray-900 text-white text-xs uppercase tracking-widest rounded-full hover:bg-gray-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            {resultImages.length > 0 ? "Generar de nuevo" : "Generar Imagen"}
+          </button>
+        )}
       </div>
     </div>
   );
@@ -665,16 +775,24 @@ export default function StellaDashboard() {
     4: renderStep4,
   };
 
+  /* Step card titles */
+  const stepTitles: Record<number, string> = {
+    1: "Paso 1 — Modelo",
+    2: "Paso 2 — Producto",
+    3: "Paso 3 — Configuración",
+    4: "Paso 4 — Generar",
+  };
+
   return (
-    <div className="h-screen flex bg-[#fafafa] overflow-hidden">
+    <div className="h-screen flex bg-[#f7f7f8] overflow-hidden">
       {/* Sidebar */}
       <StellaSidebar activeItem="generate" onLogout={handleLogout} />
 
       {/* Main area */}
       <main className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
-        <header className="px-8 pt-8 pb-6 shrink-0">
-          <div className="flex items-center justify-between mb-6">
+        <header className="px-8 pt-8 pb-4 shrink-0">
+          <div className="flex items-center justify-between mb-5">
             <div>
               <h1 className="text-lg font-light tracking-widest text-gray-900">
                 stella<sup className="text-[8px] align-super">®</sup>
@@ -694,42 +812,57 @@ export default function StellaDashboard() {
         </header>
 
         {/* Content */}
-        <div className="flex-1 px-8 pb-8 overflow-y-auto">
+        <div className="flex-1 px-8 pb-8 pt-4 overflow-y-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
             {/* Left panel – step form */}
-            <div className="bg-white rounded-2xl border border-gray-100 p-6 overflow-y-auto">
-              {stepContent[currentStep]()}
+            <div className="bg-white rounded-2xl border border-gray-200/80 flex flex-col overflow-hidden">
+              {/* Card header */}
+              <div className="px-6 py-4 border-b border-gray-100">
+                <h3 className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.12em]">
+                  {stepTitles[currentStep]}
+                </h3>
+              </div>
+              {/* Card body */}
+              <div className="p-6 overflow-y-auto flex-1">
+                {stepContent[currentStep]()}
+              </div>
             </div>
 
             {/* Right panel – preview */}
-            <div className="bg-white rounded-2xl border border-gray-100 p-6 flex flex-col">
-              <h2 className="text-[10px] font-medium text-gray-400 uppercase tracking-[0.2em] mb-4">
-                Vista previa
-              </h2>
-              <div className="flex-1 rounded-xl bg-gray-50 border border-gray-100 flex items-center justify-center overflow-hidden min-h-[300px]">
-                {isGenerating && !resultImages.length ? (
-                  <div className="flex flex-col items-center gap-3">
-                    <Loader2 className="w-8 h-8 text-gray-300 animate-spin" />
-                    <p className="text-xs text-gray-400">
-                      {status === "queued"
-                        ? "En cola..."
-                        : "Generando imagen..."}
-                    </p>
-                  </div>
-                ) : previewSrc ? (
-                  <img
-                    src={previewSrc}
-                    alt="Vista previa"
-                    className="w-full h-full object-contain"
-                  />
-                ) : (
-                  <div className="flex flex-col items-center gap-3">
-                    <ImageIcon className="w-10 h-10 text-gray-200" />
-                    <p className="text-xs text-gray-300">
-                      La vista previa aparecerá aquí
-                    </p>
-                  </div>
-                )}
+            <div className="bg-white rounded-2xl border border-gray-200/80 flex flex-col overflow-hidden">
+              {/* Card header */}
+              <div className="px-6 py-4 border-b border-gray-100">
+                <h3 className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.12em]">
+                  Vista previa
+                </h3>
+              </div>
+              {/* Card body */}
+              <div className="p-6 flex-1 flex flex-col">
+                <div className="flex-1 rounded-xl border-2 border-dashed border-gray-200 flex items-center justify-center overflow-hidden min-h-[300px] bg-gray-50/50">
+                  {isGenerating && !resultImages.length ? (
+                    <div className="flex flex-col items-center gap-3">
+                      <Loader2 className="w-8 h-8 text-gray-300 animate-spin" />
+                      <p className="text-xs text-gray-400">
+                        {status === "queued"
+                          ? "En cola..."
+                          : "Generando imagen..."}
+                      </p>
+                    </div>
+                  ) : previewSrc ? (
+                    <img
+                      src={previewSrc}
+                      alt="Vista previa"
+                      className="w-full h-full object-contain"
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center gap-3">
+                      <ImageIcon className="w-10 h-10 text-gray-200" />
+                      <p className="text-xs text-gray-300">
+                        Configura los ajustes y genera
+                      </p>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
