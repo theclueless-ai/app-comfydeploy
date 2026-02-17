@@ -7,7 +7,7 @@ const JWT_SECRET = new TextEncoder().encode(
 );
 
 // Routes that don't require authentication
-const publicRoutes = ['/login', '/api/auth/login', '/api/auth/logout'];
+const publicRoutes = ['/login', '/stella', '/api/auth/login', '/api/auth/logout'];
 
 // Routes that require admin API key (not user authentication)
 const adminApiRoutes = ['/api/auth/users', '/api/auth/init-db'];
