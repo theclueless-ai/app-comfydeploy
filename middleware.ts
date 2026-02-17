@@ -26,6 +26,7 @@ export async function middleware(request: NextRequest) {
     // Paths that should stay on theclueless.es (not redirect to .ai)
     const stayOnEs = pathname.startsWith('/interdemo') ||
                      pathname.startsWith('/login') ||
+                     pathname.startsWith('/stella') ||
                      pathname.startsWith('/api');
 
     if (!stayOnEs) {
