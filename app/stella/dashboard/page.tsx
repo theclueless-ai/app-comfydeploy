@@ -63,6 +63,13 @@ const POSE_OPTIONS = [
   },
 ];
 
+const CATALOG_MODELS = [
+  { name: "Lia", image: "/models/lia.jpg" },
+  { name: "Kay", image: "/models/kay.jpg" },
+  { name: "Aitana", image: "/models/aitana.jpg" },
+  { name: "Olivia", image: "/models/olivia.jpg" },
+];
+
 const BACKGROUND_OPTIONS = [
   {
     label: "Estudio blanco",
@@ -93,6 +100,7 @@ export default function StellaDashboard() {
   /* ---- Step 1: Modelo ---- */
   const [modelImage, setModelImage] = useState<UploadedImage | null>(null);
   const [modelTab, setModelTab] = useState<"upload" | "catalog">("upload");
+  const [selectedModelName, setSelectedModelName] = useState<string | null>(null);
   const modelInputRef = useRef<HTMLInputElement>(null);
 
   /* ---- Step 2: Producto ---- */
@@ -169,6 +177,23 @@ export default function StellaDashboard() {
     },
     []
   );
+
+  /* Select a catalog model */
+  const handleSelectCatalogModel = async (model: { name: string; image: string }) => {
+    setSelectedModelName(model.name);
+    try {
+      const res = await fetch(model.image);
+      const blob = await res.blob();
+      const file = new File([blob], `${model.name.toLowerCase()}.jpg`, {
+        type: blob.type || "image/jpeg",
+      });
+      const preview = model.image;
+      setModelImage({ file, preview });
+    } catch {
+      // If fetch fails, just set the preview path
+      setSelectedModelName(null);
+    }
+  };
 
   /* Navigate steps */
   const markCompleted = (step: number) => {
@@ -311,7 +336,7 @@ export default function StellaDashboard() {
         {/* Tabs: Subir / Catálogo */}
         <div className="flex bg-gray-100 rounded-lg p-0.5">
           <button
-            onClick={() => setModelTab("upload")}
+            onClick={() => { setModelTab("upload"); setSelectedModelName(null); }}
             className={`px-3 py-1.5 text-xs rounded-md transition-all ${
               modelTab === "upload"
                 ? "bg-white text-gray-900 shadow-sm"
@@ -342,7 +367,7 @@ export default function StellaDashboard() {
               className="w-full h-64 object-contain"
             />
             <button
-              onClick={() => setModelImage(null)}
+              onClick={() => { setModelImage(null); setSelectedModelName(null); }}
               className="absolute top-3 right-3 w-7 h-7 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/80"
             >
               <X className="w-3.5 h-3.5" />
@@ -375,15 +400,57 @@ export default function StellaDashboard() {
               type="file"
               accept="image/*"
               className="hidden"
-              onChange={(e) => handleImageUpload(e, setModelImage)}
+              onChange={(e) => { handleImageUpload(e, setModelImage); setSelectedModelName(null); }}
             />
           </div>
         )
       ) : (
-        <div className="border border-gray-200 rounded-xl p-12 flex flex-col items-center justify-center text-center">
-          <ImageIcon className="w-10 h-10 text-gray-300 mb-3" />
-          <p className="text-sm text-gray-500">Catálogo de modelos</p>
-          <p className="text-xs text-gray-400 mt-1">Próximamente</p>
+        <div className="grid grid-cols-2 gap-3">
+          {CATALOG_MODELS.map((model) => {
+            const isSelected = selectedModelName === model.name && modelTab === "catalog";
+            return (
+              <button
+                key={model.name}
+                onClick={() => handleSelectCatalogModel(model)}
+                className={`relative rounded-xl overflow-hidden aspect-[3/4] group transition-all duration-200 ${
+                  isSelected
+                    ? "ring-2 ring-gray-900 ring-offset-2"
+                    : "hover:ring-2 hover:ring-gray-300 hover:ring-offset-1"
+                }`}
+              >
+                {/* Model photo as background */}
+                <img
+                  src={model.image}
+                  alt={model.name}
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+                {/* Gradient overlay at bottom */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
+                {/* Name */}
+                <div className="absolute bottom-0 left-0 right-0 p-3">
+                  <p className="text-white text-sm font-medium">{model.name}</p>
+                </div>
+                {/* Selected check */}
+                {isSelected && (
+                  <div className="absolute top-2.5 right-2.5 w-6 h-6 rounded-full bg-gray-900 flex items-center justify-center">
+                    <svg
+                      className="w-3.5 h-3.5 text-white"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2.5}
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                  </div>
+                )}
+              </button>
+            );
+          })}
         </div>
       )}
 
@@ -577,7 +644,7 @@ export default function StellaDashboard() {
           <div className="flex items-center justify-between">
             <span className="text-xs text-gray-400">Modelo</span>
             <span className="text-xs text-gray-700 font-medium truncate ml-4 max-w-[180px]">
-              {modelImage?.file.name ?? "—"}
+              {selectedModelName ?? modelImage?.file.name ?? "—"}
             </span>
           </div>
           <div className="flex items-center justify-between">
