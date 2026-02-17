@@ -6,8 +6,10 @@ const JWT_SECRET = new TextEncoder().encode(
   process.env.JWT_SECRET || 'your-secret-key-change-in-production'
 );
 
-// Routes that don't require authentication
-const publicRoutes = ['/login', '/stella', '/api/auth/login', '/api/auth/logout'];
+// Routes that don't require authentication (startsWith match)
+const publicPrefixRoutes = ['/login', '/api/auth/login', '/api/auth/logout'];
+// Routes that don't require authentication (exact match only)
+const publicExactRoutes = ['/stella'];
 
 // Routes that require admin API key (not user authentication)
 const adminApiRoutes = ['/api/auth/users', '/api/auth/init-db'];
@@ -38,7 +40,10 @@ export async function middleware(request: NextRequest) {
   }
 
   // Allow public routes
-  if (publicRoutes.some(route => pathname.startsWith(route))) {
+  if (publicPrefixRoutes.some(route => pathname.startsWith(route))) {
+    return NextResponse.next();
+  }
+  if (publicExactRoutes.includes(pathname)) {
     return NextResponse.next();
   }
 
@@ -59,9 +64,12 @@ export async function middleware(request: NextRequest) {
   // Check for auth token
   const token = request.cookies.get('auth-token')?.value;
 
+  // Determine correct login page based on path
+  const loginPath = pathname.startsWith('/stella') ? '/stella' : '/login';
+
   if (!token) {
     // Redirect to login if no token
-    const loginUrl = new URL('/login', request.url);
+    const loginUrl = new URL(loginPath, request.url);
     return NextResponse.redirect(loginUrl);
   }
 
@@ -71,7 +79,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   } catch {
     // Token is invalid, redirect to login
-    const loginUrl = new URL('/login', request.url);
+    const loginUrl = new URL(loginPath, request.url);
     const response = NextResponse.redirect(loginUrl);
     // Clear the invalid cookie
     response.cookies.set('auth-token', '', { maxAge: 0 });

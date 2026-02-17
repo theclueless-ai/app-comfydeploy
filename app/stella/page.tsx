@@ -24,7 +24,7 @@ export default function StellaLoginPage() {
     const result = await login(email, password);
 
     if (result.success) {
-      router.push("/");
+      router.push("/stella/dashboard");
       router.refresh();
     } else {
       setError(result.error || "Login failed");
