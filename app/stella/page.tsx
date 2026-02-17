@@ -49,8 +49,8 @@ export default function StellaLoginPage() {
 
         {/* Stella logo overlay - top left */}
         <div className="absolute top-8 left-8 z-10">
-          <span className="text-white text-2xl font-light tracking-widest">
-            stella<sup className="text-xs align-super">®</sup>
+          <span className="text-white text-8xl font-light tracking-widest">
+            stella<sup className="text-lg align-end">®</sup>
           </span>
         </div>
 
