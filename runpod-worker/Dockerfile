@@ -48,13 +48,15 @@ RUN cd ${COMFYUI_DIR}/custom_nodes \
     && git clone --depth 1 https://github.com/kijai/ComfyUI-WanVideoWrapper.git \
     && git clone --depth 1 https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite.git \
     && git clone --depth 1 https://github.com/sysL-padawan/comfyui-elevenlabs-integration.git \
+    && git clone --depth 1 https://github.com/karthikg-09/Elevenlabs-ComfyUI.git \
     && git clone --depth 1 https://github.com/yolain/ComfyUI-Easy-Use.git \
     && git clone --depth 1 https://github.com/chflame163/ComfyUI_LayerStyle.git \
-    && git clone --depth 1 https://github.com/pythongosssss/ComfyUI-Custom-Scripts.git
+    && git clone --depth 1 https://github.com/pythongosssss/ComfyUI-Custom-Scripts.git \
+    && git clone --depth 1 https://github.com/rgthree/rgthree-comfy.git
 
 # Install requirements for each custom node
 RUN for dir in ComfyUI-WanVideoWrapper ComfyUI-VideoHelperSuite comfyui-elevenlabs-integration \
-    ComfyUI-Easy-Use ComfyUI_LayerStyle; do \
+    Elevenlabs-ComfyUI ComfyUI-Easy-Use ComfyUI_LayerStyle rgthree-comfy; do \
     if [ -f "${COMFYUI_DIR}/custom_nodes/$dir/requirements.txt" ]; then \
         pip install --no-cache-dir -r "${COMFYUI_DIR}/custom_nodes/$dir/requirements.txt" 2>/dev/null || true; \
     fi; \

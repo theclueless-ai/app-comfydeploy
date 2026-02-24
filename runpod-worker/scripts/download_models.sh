@@ -42,7 +42,7 @@ mkdir -p "${MODELS_DIR}/loras/wan2.2"
 # =============================================================================
 echo ""
 echo "[1/7] Downloading InfiniteTalk model..."
-if [ ! -f "${MODELS_DIR}/infinitetalk/infinitetalk_single.safetensors" ]; then
+if [ ! -f "${MODELS_DIR}/infinitetalk/Wan2_1-InfiniTetalk-Single_fp16.safetensors" ]; then
     huggingface-cli download \
         Kijai/WanVideo_comfy \
         InfiniteTalk/Wan2_1-InfiniTetalk-Single_fp16.safetensors \
@@ -50,10 +50,10 @@ if [ ! -f "${MODELS_DIR}/infinitetalk/infinitetalk_single.safetensors" ]; then
         --local-dir "${MODELS_DIR}/infinitetalk" \
         --local-dir-use-symlinks False
 
-    # Rename to match workflow expectation
+    # Move from subfolder if needed
     if [ -f "${MODELS_DIR}/infinitetalk/InfiniteTalk/Wan2_1-InfiniTetalk-Single_fp16.safetensors" ]; then
         mv "${MODELS_DIR}/infinitetalk/InfiniteTalk/Wan2_1-InfiniTetalk-Single_fp16.safetensors" \
-            "${MODELS_DIR}/infinitetalk/infinitetalk_single.safetensors"
+            "${MODELS_DIR}/infinitetalk/Wan2_1-InfiniTetalk-Single_fp16.safetensors"
         rm -rf "${MODELS_DIR}/infinitetalk/InfiniteTalk"
     fi
     echo "  Done!"
