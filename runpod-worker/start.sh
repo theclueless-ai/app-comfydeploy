@@ -33,12 +33,12 @@ if [ -d "${VOLUME_DIR}" ]; then
     fi
 
     # --- InfiniteTalk model ---
-    # WanVideoWrapper looks for this in custom_nodes/ComfyUI-WanVideoWrapper/models/ or models/diffusion_models/
-    if [ -f "${MODELS_DIR}/infinitetalk/infinitetalk_single.safetensors" ]; then
+    # WanVideoWrapper looks in custom_nodes/ComfyUI-WanVideoWrapper/models/ or models/diffusion_models/
+    if [ -f "${MODELS_DIR}/infinitetalk/Wan2_1-InfiniTetalk-Single_fp16.safetensors" ]; then
         mkdir -p "${COMFYUI_DIR}/custom_nodes/ComfyUI-WanVideoWrapper/models"
-        ln -sf "${MODELS_DIR}/infinitetalk/infinitetalk_single.safetensors" \
-            "${COMFYUI_DIR}/custom_nodes/ComfyUI-WanVideoWrapper/models/infinitetalk_single.safetensors"
-        echo "  -> Linked: infinitetalk_single.safetensors"
+        ln -sf "${MODELS_DIR}/infinitetalk/Wan2_1-InfiniTetalk-Single_fp16.safetensors" \
+            "${COMFYUI_DIR}/custom_nodes/ComfyUI-WanVideoWrapper/models/Wan2_1-InfiniTetalk-Single_fp16.safetensors"
+        echo "  -> Linked: Wan2_1-InfiniTetalk-Single_fp16.safetensors"
     fi
 
     # --- Text encoder ---

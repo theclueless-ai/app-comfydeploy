@@ -32,22 +32,18 @@ export HF_HUB_ENABLE_HF_TRANSFER=1
 # =============================================================================
 echo ""
 echo "[1/7] Downloading InfiniteTalk model..."
-if [ ! -f "${MODELS_DIR}/infinitetalk/infinitetalk_single.safetensors" ]; then
-    python3 -c "
-from huggingface_hub import hf_hub_download
-path = hf_hub_download(
-    'Kijai/WanVideo_comfy',
-    'InfiniteTalk/Wan2_1-InfiniTetalk-Single_fp16.safetensors',
-    revision='refs/pr/76',
-    local_dir='${MODELS_DIR}/infinitetalk',
-    local_dir_use_symlinks=False
-)
-print(f'Downloaded to: {path}')
-"
-    # Rename to match workflow expectation
+if [ ! -f "${MODELS_DIR}/infinitetalk/Wan2_1-InfiniTetalk-Single_fp16.safetensors" ]; then
+    huggingface-cli download \
+        Kijai/WanVideo_comfy \
+        InfiniteTalk/Wan2_1-InfiniTetalk-Single_fp16.safetensors \
+        --revision refs/pr/76 \
+        --local-dir "${MODELS_DIR}/infinitetalk" \
+        --local-dir-use-symlinks False
+
+    # Move from subfolder if needed
     if [ -f "${MODELS_DIR}/infinitetalk/InfiniteTalk/Wan2_1-InfiniTetalk-Single_fp16.safetensors" ]; then
         mv "${MODELS_DIR}/infinitetalk/InfiniteTalk/Wan2_1-InfiniTetalk-Single_fp16.safetensors" \
-            "${MODELS_DIR}/infinitetalk/infinitetalk_single.safetensors"
+            "${MODELS_DIR}/infinitetalk/Wan2_1-InfiniTetalk-Single_fp16.safetensors"
         rm -rf "${MODELS_DIR}/infinitetalk/InfiniteTalk"
     fi
     echo "  Done!"

@@ -10,12 +10,10 @@
       "add_noise_floor": false,
       "smooth_transients": false,
       "wav2vec_model": ["232", 0],
-      "audio_1": ["250", 0]
+      "audio_1": ["295", 0]
     },
     "class_type": "MultiTalkWav2VecEmbeds",
-    "_meta": {
-      "title": "Multi/InfiniteTalk Wav2vec2 Embeds"
-    }
+    "_meta": { "title": "Multi/InfiniteTalk Wav2vec2 Embeds" }
   },
   "215": {
     "inputs": {
@@ -27,12 +25,10 @@
       "tiles": 0,
       "ratio": 0.5,
       "clip_vision": ["231", 0],
-      "image_1": ["236", 0]
+      "image_1": ["324", 0]
     },
     "class_type": "WanVideoClipVisionEncode",
-    "_meta": {
-      "title": "WanVideo ClipVision Encode"
-    }
+    "_meta": { "title": "WanVideo ClipVision Encode" }
   },
   "216": {
     "inputs": {
@@ -46,38 +42,32 @@
       "mode": "infinitetalk",
       "output_path": "",
       "vae": ["228", 0],
-      "start_image": ["236", 0],
+      "start_image": ["324", 0],
       "clip_embeds": ["215", 0]
     },
     "class_type": "WanVideoImageToVideoMultiTalk",
-    "_meta": {
-      "title": "WanVideo Long I2V Multi/InfiniteTalk"
-    }
+    "_meta": { "title": "WanVideo Long I2V Multi/InfiniteTalk" }
   },
   "217": {
     "inputs": {
-      "image": ["236", 0]
+      "image": ["324", 0]
     },
     "class_type": "GetImageSize",
-    "_meta": {
-      "title": "Obtener Tamaño de Imagen"
-    }
+    "_meta": { "title": "Get Image Size (final)" }
   },
   "218": {
     "inputs": {
-      "model": "infinitetalk_single.safetensors"
+      "model": "Wan2_1-InfiniTetalk-Single_fp16.safetensors"
     },
     "class_type": "MultiTalkModelLoader",
-    "_meta": {
-      "title": "Multi/InfiniteTalk Model Loader"
-    }
+    "_meta": { "title": "Multi/InfiniteTalk Model Loader" }
   },
   "220": {
     "inputs": {
       "steps": 6,
       "cfg": 1.0000000000000002,
       "shift": 11.000000000000002,
-      "seed": 78809525487790,
+      "seed": 71584370512286,
       "force_offload": true,
       "scheduler": "dpm++_sde",
       "riflex_freq_index": 0,
@@ -93,24 +83,20 @@
       "multitalk_embeds": ["214", 0]
     },
     "class_type": "WanVideoSampler",
-    "_meta": {
-      "title": "WanVideo Sampler"
-    }
+    "_meta": { "title": "WanVideo Sampler" }
   },
   "225": {
     "inputs": {
       "model_name": "umt5-xxl-enc-bf16.safetensors",
       "precision": "bf16",
       "positive_prompt": "",
-      "negative_prompt": "bright tones, overexposed, static, blurred details, subtitles, style, works, paintings, images, static, overall gray, worst quality, low quality, JPEG compression residue, ugly, incomplete, extra fingers, poorly drawn hands, poorly drawn faces, deformed, disfigured, misshapen limbs, fused fingers, still picture, messy background, three legs, many people in the background, walking backwards",
+      "negative_prompt": "low quality, blurry, artifacts, bad anatomy, deformed hands, extra fingers, watermark, text, logo",
       "quantization": "disabled",
       "use_disk_cache": false,
       "device": "gpu"
     },
     "class_type": "WanVideoTextEncodeCached",
-    "_meta": {
-      "title": "WanVideo TextEncode Cached"
-    }
+    "_meta": { "title": "WanVideo TextEncode Cached" }
   },
   "228": {
     "inputs": {
@@ -120,18 +106,14 @@
       "verbose": false
     },
     "class_type": "WanVideoVAELoader",
-    "_meta": {
-      "title": "WanVideo VAE Loader"
-    }
+    "_meta": { "title": "WanVideo VAE Loader" }
   },
   "231": {
     "inputs": {
       "clip_name": "clip_vision_h.safetensors"
     },
     "class_type": "CLIPVisionLoader",
-    "_meta": {
-      "title": "Cargar CLIP Vision"
-    }
+    "_meta": { "title": "Cargar CLIP Vision" }
   },
   "232": {
     "inputs": {
@@ -140,9 +122,7 @@
       "load_device": "main_device"
     },
     "class_type": "Wav2VecModelLoader",
-    "_meta": {
-      "title": "Wav2vec2 Model Loader"
-    }
+    "_meta": { "title": "Wav2vec2 Model Loader" }
   },
   "233": {
     "inputs": {
@@ -152,9 +132,7 @@
       "merge_loras": false
     },
     "class_type": "WanVideoLoraSelect",
-    "_meta": {
-      "title": "WanVideo Lora Select"
-    }
+    "_meta": { "title": "WanVideo Lora Select" }
   },
   "234": {
     "inputs": {
@@ -169,9 +147,7 @@
       "multitalk_model": ["218", 0]
     },
     "class_type": "WanVideoModelLoader",
-    "_meta": {
-      "title": "WanVideo Model Loader"
-    }
+    "_meta": { "title": "WanVideo Model Loader" }
   },
   "235": {
     "inputs": {
@@ -184,22 +160,7 @@
       "block_swap_debug": false
     },
     "class_type": "WanVideoBlockSwap",
-    "_meta": {
-      "title": "WanVideo Block Swap"
-    }
-  },
-  "236": {
-    "inputs": {
-      "upscale_method": "lanczos",
-      "width": 720,
-      "height": 1280,
-      "crop": "disabled",
-      "image": ["737", 0]
-    },
-    "class_type": "ImageScale",
-    "_meta": {
-      "title": "Ampliar Imagen"
-    }
+    "_meta": { "title": "WanVideo Block Swap" }
   },
   "237": {
     "inputs": {
@@ -213,9 +174,7 @@
       "samples": ["220", 0]
     },
     "class_type": "WanVideoDecode",
-    "_meta": {
-      "title": "WanVideo Decode"
-    }
+    "_meta": { "title": "WanVideo Decode" }
   },
   "238": {
     "inputs": {
@@ -233,11 +192,84 @@
       "audio": ["214", 1]
     },
     "class_type": "VHS_VideoCombine",
-    "_meta": {
-      "title": "Video Combine"
-    }
+    "_meta": { "title": "Video Combine" }
   },
-  "250": {
+  "260": {
+    "inputs": {
+      "num_frames": 1,
+      "input_video_frames": ["237", 0]
+    },
+    "class_type": "ExtractStartFramesForContinuations",
+    "_meta": { "title": "Extract Start Frames" }
+  },
+  "261": {
+    "inputs": {
+      "filename_prefix": "Talk_V1",
+      "images": ["260", 0]
+    },
+    "class_type": "SaveImage",
+    "_meta": { "title": "Save Image" }
+  },
+
+  "_comment_image_processing": "Image chain: 737 -> 319 (aspect ratio) -> 323 (get size) -> 318/320 (64-align) -> 324 (resize)",
+
+  "319": {
+    "inputs": {
+      "aspect_ratio": "original",
+      "proportional_width": 1,
+      "proportional_height": 1,
+      "fit": "crop",
+      "method": "lanczos",
+      "round_to_multiple": "None",
+      "scale_to_side": "longest",
+      "scale_to_length": 1280,
+      "background_color": "#000000",
+      "image": ["737", 0]
+    },
+    "class_type": "LayerUtility: ImageScaleByAspectRatio V2",
+    "_meta": { "title": "Scale By Aspect Ratio" }
+  },
+  "323": {
+    "inputs": {
+      "image": ["319", 0]
+    },
+    "class_type": "GetImageSize",
+    "_meta": { "title": "Get Image Size (scaled)" }
+  },
+  "318": {
+    "inputs": {
+      "expression": "(a // 64) * 64\n",
+      "a": ["323", 0]
+    },
+    "class_type": "MathExpression|pysssss",
+    "_meta": { "title": "Align Width to 64px" }
+  },
+  "320": {
+    "inputs": {
+      "expression": "(a // 64) * 64\n",
+      "a": ["323", 1]
+    },
+    "class_type": "MathExpression|pysssss",
+    "_meta": { "title": "Align Height to 64px" }
+  },
+  "324": {
+    "inputs": {
+      "mode": "pixels",
+      "width": 0,
+      "height": 0,
+      "interpolation_mode": "crop",
+      "resize_mode": "area",
+      "image": ["737", 0],
+      "width_connection": ["318", 0],
+      "height_connection": ["320", 0]
+    },
+    "class_type": "Image Resize (rgthree)",
+    "_meta": { "title": "Image Resize (64-aligned)" }
+  },
+
+  "_comment_audio_tts": "TTS node: text -> ElevenlabsTextToSpeech -> audio (used in TTS mode)",
+
+  "333": {
     "inputs": {
       "text": "",
       "api_key": "",
@@ -252,30 +284,33 @@
       "voice_settings_speed": 1
     },
     "class_type": "ElevenlabsTextToSpeech",
-    "_meta": {
-      "title": "ElevenlabsTextToSpeech"
-    }
+    "_meta": { "title": "ElevenLabs TTS" }
   },
-  "260": {
+
+  "_comment_audio_sts": "STS nodes: LoadAudio -> ElevenLabsVoiceChanger -> audio (used in STS mode)",
+
+  "900": {
     "inputs": {
-      "num_frames": 1,
-      "input_video_frames": ["237", 0]
+      "audio": ""
     },
-    "class_type": "ExtractStartFramesForContinuations",
-    "_meta": {
-      "title": "Extract Start Frames For Continuations"
-    }
+    "class_type": "LoadAudio",
+    "_meta": { "title": "Load Audio (STS input)" }
   },
-  "261": {
+  "295": {
     "inputs": {
-      "filename_prefix": "ComfyUI",
-      "images": ["260", 0]
+      "api_key": "",
+      "voice_id": "gdMFOufuI36UmxNKJhtv",
+      "model_id": "eleven_multilingual_sts_v2",
+      "output_format": "mp3_44100_128",
+      "remove_background_noise": false,
+      "audio": ["900", 0]
     },
-    "class_type": "SaveImage",
-    "_meta": {
-      "title": "Guardar Imagen"
-    }
+    "class_type": "ElevenLabsVoiceChanger",
+    "_meta": { "title": "ElevenLabs Voice Changer" }
   },
+
+  "_comment_input": "Base64 image input (replaces ComfyDeploy ExternalImage)",
+
   "737": {
     "inputs": {
       "base64_data": "",
@@ -283,8 +318,6 @@
       "save_prefix": "ComfyUI"
     },
     "class_type": "easy loadImageBase64",
-    "_meta": {
-      "title": "Load Image (Base64)"
-    }
+    "_meta": { "title": "Load Image (Base64)" }
   }
 }

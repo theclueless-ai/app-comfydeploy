@@ -1,12 +1,12 @@
 """
 RunPod Serverless Handler - AI Talk (ComfyUI InfiniteTalk/WanVideo)
 
-Receives inputs from the Next.js app, injects them into the ComfyUI workflow,
-executes it, and uploads the resulting video to S3.
-
 Supports two modes:
-  - TTS mode: text + voice_id → ElevenLabs TTS → InfiniteTalk video
-  - STS mode: audio + voice_id → ElevenLabs Voice Changer → InfiniteTalk video
+  - TTS mode: text + voice_id -> ElevenlabsTextToSpeech (node 333) -> video
+  - STS mode: audio + voice_id -> LoadAudio (900) -> ElevenLabsVoiceChanger (295) -> video
+
+The handler loads a base workflow with BOTH nodes, then removes the
+unused path before submitting to ComfyUI.
 """
 
 import runpod
@@ -18,7 +18,6 @@ import base64
 import glob
 import requests
 import boto3
-from urllib.parse import urlparse
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -27,22 +26,21 @@ COMFYUI_URL = "http://127.0.0.1:8188"
 COMFYUI_DIR = "/comfyui"
 WORKFLOW_PATH = os.path.join(COMFYUI_DIR, "workflow_api.json")
 
-# S3 config (set via RunPod endpoint environment variables)
 S3_BUCKET = os.environ.get("AWS_S3_BUCKET", "")
 S3_REGION = os.environ.get("AWS_S3_REGION", "us-east-1")
-S3_ENDPOINT_URL = os.environ.get("AWS_S3_ENDPOINT_URL", None)  # For R2/MinIO
+S3_ENDPOINT_URL = os.environ.get("AWS_S3_ENDPOINT_URL", None)
 S3_ACCESS_KEY = os.environ.get("AWS_ACCESS_KEY_ID", "")
 S3_SECRET_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY", "")
 
-# ElevenLabs API key (injected into workflow nodes)
 ELEVENLABS_API_KEY = os.environ.get("ELEVENLABS_API_KEY", "")
 
-# Max wait time for a single workflow execution (30 minutes)
-MAX_EXECUTION_TIME = 1800
+MAX_EXECUTION_TIME = 1800  # 30 minutes
 
 
+# ---------------------------------------------------------------------------
+# S3
+# ---------------------------------------------------------------------------
 def get_s3_client():
-    """Create boto3 S3 client."""
     kwargs = {
         "service_name": "s3",
         "region_name": S3_REGION,
@@ -55,89 +53,131 @@ def get_s3_client():
 
 
 def upload_to_s3(file_path: str, content_type: str = "video/mp4") -> str:
-    """Upload a file to S3 and return a presigned URL (valid 7 days)."""
     s3 = get_s3_client()
     filename = os.path.basename(file_path)
     s3_key = f"ai-talk/{uuid.uuid4().hex[:8]}_{filename}"
 
     print(f"[S3] Uploading {file_path} -> s3://{S3_BUCKET}/{s3_key}")
+    s3.upload_file(file_path, S3_BUCKET, s3_key, ExtraArgs={"ContentType": content_type})
 
-    s3.upload_file(
-        file_path,
-        S3_BUCKET,
-        s3_key,
-        ExtraArgs={"ContentType": content_type},
-    )
-
-    # Generate presigned URL (7 days)
     presigned_url = s3.generate_presigned_url(
         "get_object",
         Params={"Bucket": S3_BUCKET, "Key": s3_key},
         ExpiresIn=7 * 24 * 3600,
     )
-
     print(f"[S3] Upload complete: {presigned_url[:80]}...")
     return presigned_url
 
 
+# ---------------------------------------------------------------------------
+# Audio helpers
+# ---------------------------------------------------------------------------
+def save_audio_to_comfyui_input(audio_b64: str, filename: str) -> str:
+    """Decode base64 audio and save to ComfyUI input directory."""
+    audio_data = audio_b64
+    if "," in audio_data:
+        audio_data = audio_data.split(",", 1)[1]
+    audio_bytes = base64.b64decode(audio_data)
+
+    input_dir = os.path.join(COMFYUI_DIR, "input")
+    os.makedirs(input_dir, exist_ok=True)
+    filepath = os.path.join(input_dir, filename)
+    with open(filepath, "wb") as f:
+        f.write(audio_bytes)
+    print(f"[Audio] Saved {len(audio_bytes)} bytes to {filepath}")
+    return filename
+
+
+# ---------------------------------------------------------------------------
+# Workflow loading + conditional routing
+# ---------------------------------------------------------------------------
 def load_workflow() -> dict:
-    """Load the base workflow JSON."""
     with open(WORKFLOW_PATH, "r") as f:
         return json.load(f)
 
 
-def inject_inputs(workflow: dict, inputs: dict) -> dict:
+def prepare_workflow(workflow: dict, inputs: dict) -> dict:
     """
-    Inject user inputs into the workflow nodes.
+    Inject user inputs and configure the workflow for TTS or STS mode.
 
-    Node mapping (from ai-talk-workflow.json):
-      - 737: easy loadImageBase64 → base64_data (input image)
-      - 250: ElevenlabsTextToSpeech → text, voice_id, api_key
-      - 225: WanVideoTextEncodeCached → positive_prompt
-      - 214: MultiTalkWav2VecEmbeds → audio comes from node 250 output
+    TTS mode (text selected):
+      - Node 333 (ElevenlabsTextToSpeech) generates audio
+      - Node 214 audio_1 = ["333", 0]
+      - Remove STS nodes: 295, 900
+
+    STS mode (audio selected):
+      - Node 900 (LoadAudio) loads user audio
+      - Node 295 (ElevenLabsVoiceChanger) transforms voice
+      - Node 214 audio_1 = ["295", 0]
+      - Remove TTS node: 333
     """
+    mode = inputs.get("mode", "tts")
+
+    # Remove _comment keys (not valid ComfyUI nodes)
+    comment_keys = [k for k in workflow if k.startswith("_comment")]
+    for k in comment_keys:
+        del workflow[k]
+
     # --- Input image (Node 737) ---
-    if "input_image" in inputs:
+    if inputs.get("input_image"):
         image_data = inputs["input_image"]
-        # Remove data URI prefix if present - node expects raw base64
         if "," in image_data:
             image_data = image_data.split(",", 1)[1]
         workflow["737"]["inputs"]["base64_data"] = image_data
 
-    # --- ElevenLabs TTS node (Node 250) ---
-    # Always inject API key
-    if ELEVENLABS_API_KEY:
-        workflow["250"]["inputs"]["api_key"] = ELEVENLABS_API_KEY
-
-    # Voice ID
-    if "voice_id" in inputs and inputs["voice_id"]:
-        workflow["250"]["inputs"]["voice_id"] = inputs["voice_id"]
-
-    # Text for TTS (positive_prompt doubles as speech text)
-    if "input_text" in inputs and inputs["input_text"]:
-        workflow["250"]["inputs"]["text"] = inputs["input_text"]
-
-    # --- Positive prompt for video generation (Node 225) ---
-    if "positive_prompt" in inputs and inputs["positive_prompt"]:
+    # --- Positive prompt (Node 225) ---
+    if inputs.get("positive_prompt"):
         workflow["225"]["inputs"]["positive_prompt"] = inputs["positive_prompt"]
 
-    # --- Mode: If user sent audio directly, swap ElevenLabs node for direct audio ---
-    # In STS mode, the audio is sent as input_audio and we need to handle it differently
-    if "input_audio" in inputs and inputs["input_audio"]:
-        audio_data = inputs["input_audio"]
-        # If audio is provided, save it to disk and point wav2vec node to it
-        # This bypasses the ElevenLabs TTS node
-        if "mode" in inputs and inputs["mode"] == "sts":
-            # STS mode: audio goes through ElevenLabs Voice Changer first
-            # The STS workflow variation would be handled here
-            # For now, we keep TTS mode as default
-            pass
+    # --- Audio routing based on mode ---
+    if mode == "sts":
+        print("[Workflow] STS mode: audio -> VoiceChanger (295) -> wav2vec (214)")
+
+        # Save input audio to file
+        audio_b64 = inputs.get("input_audio", "")
+        if not audio_b64:
+            raise ValueError("STS mode requires input_audio")
+
+        audio_filename = f"sts_input_{uuid.uuid4().hex[:8]}.mp3"
+        save_audio_to_comfyui_input(audio_b64, audio_filename)
+
+        # Configure LoadAudio (900) -> VoiceChanger (295) -> wav2vec (214)
+        workflow["900"]["inputs"]["audio"] = audio_filename
+
+        if ELEVENLABS_API_KEY:
+            workflow["295"]["inputs"]["api_key"] = ELEVENLABS_API_KEY
+        if inputs.get("voice_id"):
+            workflow["295"]["inputs"]["voice_id"] = inputs["voice_id"]
+
+        workflow["214"]["inputs"]["audio_1"] = ["295", 0]
+
+        # Remove TTS node (not needed, avoid execution)
+        workflow.pop("333", None)
+
+    else:
+        print("[Workflow] TTS mode: text -> TTS (333) -> wav2vec (214)")
+
+        # Configure TTS node (333)
+        if ELEVENLABS_API_KEY:
+            workflow["333"]["inputs"]["api_key"] = ELEVENLABS_API_KEY
+        if inputs.get("voice_id"):
+            workflow["333"]["inputs"]["voice_id"] = inputs["voice_id"]
+        if inputs.get("input_text"):
+            workflow["333"]["inputs"]["text"] = inputs["input_text"]
+
+        workflow["214"]["inputs"]["audio_1"] = ["333", 0]
+
+        # Remove STS nodes (not needed, avoid execution)
+        workflow.pop("295", None)
+        workflow.pop("900", None)
 
     return workflow
 
 
+# ---------------------------------------------------------------------------
+# ComfyUI interaction
+# ---------------------------------------------------------------------------
 def queue_prompt(workflow: dict) -> str:
-    """Send workflow to ComfyUI and return the prompt_id."""
     payload = {"prompt": workflow}
     resp = requests.post(f"{COMFYUI_URL}/prompt", json=payload)
     resp.raise_for_status()
@@ -148,18 +188,12 @@ def queue_prompt(workflow: dict) -> str:
 
 
 def poll_until_complete(prompt_id: str) -> dict:
-    """
-    Poll ComfyUI /history endpoint until the prompt completes.
-    Returns the history entry for the prompt.
-    """
     start_time = time.time()
 
     while True:
         elapsed = time.time() - start_time
         if elapsed > MAX_EXECUTION_TIME:
-            raise TimeoutError(
-                f"Workflow execution exceeded {MAX_EXECUTION_TIME}s timeout"
-            )
+            raise TimeoutError(f"Workflow exceeded {MAX_EXECUTION_TIME}s timeout")
 
         try:
             resp = requests.get(f"{COMFYUI_URL}/history/{prompt_id}")
@@ -178,9 +212,7 @@ def poll_until_complete(prompt_id: str) -> dict:
                     error_msgs = []
                     for node_id, node_info in entry.get("outputs", {}).items():
                         if "errors" in node_info:
-                            error_msgs.append(
-                                f"Node {node_id}: {node_info['errors']}"
-                            )
+                            error_msgs.append(f"Node {node_id}: {node_info['errors']}")
                     raise RuntimeError(
                         f"Workflow failed: {'; '.join(error_msgs) or 'Unknown error'}"
                     )
@@ -188,7 +220,6 @@ def poll_until_complete(prompt_id: str) -> dict:
         except requests.exceptions.ConnectionError:
             print(f"[ComfyUI] Connection error, retrying... ({elapsed:.0f}s)")
 
-        # Poll every 2 seconds
         time.sleep(2)
 
         if int(elapsed) % 30 == 0 and elapsed > 0:
@@ -196,130 +227,95 @@ def poll_until_complete(prompt_id: str) -> dict:
 
 
 def find_output_video(history_entry: dict) -> str | None:
-    """
-    Find the output video file from the ComfyUI history entry.
-    Looks for VHS_VideoCombine output (Node 238).
-    """
     outputs = history_entry.get("outputs", {})
 
     # Check node 238 first (VHS_VideoCombine)
-    for node_id in ["238"]:
-        if node_id in outputs:
-            node_output = outputs[node_id]
-
-            # VHS_VideoCombine outputs gifs array (which are actually videos)
-            if "gifs" in node_output:
-                for item in node_output["gifs"]:
+    if "238" in outputs:
+        node_output = outputs["238"]
+        for key in ["gifs", "videos"]:
+            if key in node_output:
+                for item in node_output[key]:
                     filename = item.get("filename", "")
                     subfolder = item.get("subfolder", "")
                     file_type = item.get("type", "output")
 
-                    if file_type == "output":
-                        video_path = os.path.join(
-                            COMFYUI_DIR, "output", subfolder, filename
-                        )
-                    elif file_type == "temp":
-                        video_path = os.path.join(
-                            COMFYUI_DIR, "temp", subfolder, filename
-                        )
-                    else:
-                        video_path = os.path.join(
-                            COMFYUI_DIR, "output", subfolder, filename
-                        )
+                    base = "temp" if file_type == "temp" else "output"
+                    video_path = os.path.join(COMFYUI_DIR, base, subfolder, filename)
 
                     if os.path.exists(video_path):
                         print(f"[Output] Found video: {video_path}")
                         return video_path
 
-            # Also check videos array
-            if "videos" in node_output:
-                for item in node_output["videos"]:
-                    filename = item.get("filename", "")
-                    subfolder = item.get("subfolder", "")
-                    video_path = os.path.join(
-                        COMFYUI_DIR, "output", subfolder, filename
-                    )
-                    if os.path.exists(video_path):
-                        print(f"[Output] Found video: {video_path}")
-                        return video_path
-
-    # Fallback: search all outputs for any video files
+    # Fallback: search all outputs
     for node_id, node_output in outputs.items():
         for key in ["gifs", "videos"]:
             if key in node_output:
                 for item in node_output[key]:
                     filename = item.get("filename", "")
                     subfolder = item.get("subfolder", "")
-                    video_path = os.path.join(
-                        COMFYUI_DIR, "output", subfolder, filename
-                    )
+                    video_path = os.path.join(COMFYUI_DIR, "output", subfolder, filename)
                     if os.path.exists(video_path):
                         print(f"[Output] Found video (fallback): {video_path}")
                         return video_path
 
-    # Last resort: find most recent mp4 in output directory
-    output_dir = os.path.join(COMFYUI_DIR, "output")
-    mp4_files = glob.glob(os.path.join(output_dir, "**/*.mp4"), recursive=True)
+    # Last resort: most recent mp4
+    mp4_files = glob.glob(os.path.join(COMFYUI_DIR, "output", "**/*.mp4"), recursive=True)
     if mp4_files:
         latest = max(mp4_files, key=os.path.getmtime)
-        print(f"[Output] Found video (glob fallback): {latest}")
+        print(f"[Output] Found video (glob): {latest}")
         return latest
 
     return None
 
 
+# ---------------------------------------------------------------------------
+# Main handler
+# ---------------------------------------------------------------------------
 def handler(job: dict) -> dict:
     """
     RunPod serverless handler.
 
-    Expected input:
+    Input:
     {
-        "input_image": "base64 data URI or raw base64",
-        "input_audio": "base64 data URI or raw base64" (optional, for STS mode),
-        "input_text": "text for TTS" (optional, for TTS mode),
+        "input_image": "base64",
+        "input_audio": "base64" (STS mode),
+        "input_text": "text" (TTS mode),
         "voice_id": "elevenlabs voice ID",
-        "positive_prompt": "scene description for video generation",
-        "mode": "tts" | "sts" (optional, default "tts")
-    }
-
-    Returns:
-    {
-        "video_url": "https://s3.../video.mp4",
-        "filename": "ai-talk-xxxxx.mp4",
-        "execution_time_s": 123.4
+        "positive_prompt": "scene description",
+        "mode": "tts" | "sts"
     }
     """
     start_time = time.time()
     job_input = job.get("input", {})
+    mode = job_input.get("mode", "tts")
 
     print("=" * 60)
     print("  AI Talk Handler - New Job")
     print("=" * 60)
-    print(f"  Mode: {job_input.get('mode', 'tts')}")
+    print(f"  Mode: {mode}")
     print(f"  Voice ID: {job_input.get('voice_id', 'default')}")
-    print(f"  Has image: {'input_image' in job_input}")
-    print(f"  Has audio: {'input_audio' in job_input}")
-    print(f"  Has text: {'input_text' in job_input}")
+    print(f"  Has image: {bool(job_input.get('input_image'))}")
+    print(f"  Has audio: {bool(job_input.get('input_audio'))}")
+    print(f"  Has text: {bool(job_input.get('input_text'))}")
     print(f"  Prompt: {str(job_input.get('positive_prompt', ''))[:100]}...")
 
     try:
-        # 1. Load base workflow
+        # 1. Load and prepare workflow
         print("\n[Step 1] Loading workflow...")
         workflow = load_workflow()
 
-        # 2. Inject user inputs
-        print("[Step 2] Injecting inputs into workflow...")
-        workflow = inject_inputs(workflow, job_input)
+        print("[Step 2] Preparing workflow for mode:", mode)
+        workflow = prepare_workflow(workflow, job_input)
 
-        # 3. Queue prompt in ComfyUI
+        # 3. Queue prompt
         print("[Step 3] Queueing prompt in ComfyUI...")
         prompt_id = queue_prompt(workflow)
 
-        # 4. Wait for execution to complete (no 5-min timeout!)
+        # 4. Wait for completion
         print("[Step 4] Waiting for execution...")
         history_entry = poll_until_complete(prompt_id)
 
-        # 5. Find the output video
+        # 5. Find output video
         print("[Step 5] Locating output video...")
         video_path = find_output_video(history_entry)
 
@@ -347,20 +343,12 @@ def handler(job: dict) -> dict:
             "file_size_mb": round(file_size_mb, 2),
         }
 
-    except TimeoutError as e:
-        execution_time = time.time() - start_time
-        print(f"\n[ERROR] Timeout after {execution_time:.1f}s: {e}")
-        raise
-
     except Exception as e:
         execution_time = time.time() - start_time
         print(f"\n[ERROR] Failed after {execution_time:.1f}s: {e}")
         raise
 
 
-# ---------------------------------------------------------------------------
-# Start RunPod serverless worker
-# ---------------------------------------------------------------------------
 if __name__ == "__main__":
     print("Starting AI Talk RunPod handler...")
     runpod.serverless.start({"handler": handler})
