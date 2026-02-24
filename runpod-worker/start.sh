@@ -10,7 +10,7 @@ VOLUME_DIR="/runpod-volume"
 MODELS_DIR="${VOLUME_DIR}/models"
 
 # =============================================================================
-# 1. Symlink models from Network Volume to ComfyUI
+# 1. Verify and symlink models from Network Volume to ComfyUI
 # =============================================================================
 echo "[1/4] Setting up model symlinks from Network Volume..."
 
@@ -23,62 +23,93 @@ if [ -d "${VOLUME_DIR}" ]; then
     mkdir -p ${COMFYUI_DIR}/models/vae
     mkdir -p ${COMFYUI_DIR}/models/clip_vision
     mkdir -p ${COMFYUI_DIR}/models/loras/wan2.2
-    mkdir -p ${COMFYUI_DIR}/models/custom  # for wav2vec, infinitetalk, etc.
+    mkdir -p ${COMFYUI_DIR}/custom_nodes/ComfyUI-WanVideoWrapper/models
+
+    MISSING=0
 
     # --- Diffusion models ---
     if [ -f "${MODELS_DIR}/diffusion_models/wan2.1-i2v-14b-720p-Q8_0.gguf" ]; then
         ln -sf "${MODELS_DIR}/diffusion_models/wan2.1-i2v-14b-720p-Q8_0.gguf" \
             "${COMFYUI_DIR}/models/diffusion_models/wan2.1-i2v-14b-720p-Q8_0.gguf"
-        echo "  -> Linked: wan2.1-i2v-14b-720p-Q8_0.gguf"
+        echo "  OK  Linked: wan2.1-i2v-14b-720p-Q8_0.gguf"
+    else
+        echo "  MISSING: diffusion_models/wan2.1-i2v-14b-720p-Q8_0.gguf"
+        MISSING=$((MISSING + 1))
     fi
 
     # --- InfiniteTalk model ---
-    # WanVideoWrapper looks in custom_nodes/ComfyUI-WanVideoWrapper/models/ or models/diffusion_models/
+    # MultiTalkModelLoader scans: custom_nodes/ComfyUI-WanVideoWrapper/models/
     if [ -f "${MODELS_DIR}/infinitetalk/Wan2_1-InfiniTetalk-Single_fp16.safetensors" ]; then
-        mkdir -p "${COMFYUI_DIR}/custom_nodes/ComfyUI-WanVideoWrapper/models"
         ln -sf "${MODELS_DIR}/infinitetalk/Wan2_1-InfiniTetalk-Single_fp16.safetensors" \
             "${COMFYUI_DIR}/custom_nodes/ComfyUI-WanVideoWrapper/models/Wan2_1-InfiniTetalk-Single_fp16.safetensors"
-        echo "  -> Linked: Wan2_1-InfiniTetalk-Single_fp16.safetensors"
+        echo "  OK  Linked: Wan2_1-InfiniTetalk-Single_fp16.safetensors -> WanVideoWrapper/models/"
+    else
+        echo "  MISSING: infinitetalk/Wan2_1-InfiniTetalk-Single_fp16.safetensors"
+        echo "         NOTE: If you have 'infinitetalk_single.safetensors' that is the WRONG file."
+        echo "         Re-run download_models.sh to get the correct fp16 version."
+        MISSING=$((MISSING + 1))
     fi
 
     # --- Text encoder ---
     if [ -f "${MODELS_DIR}/text_encoders/umt5-xxl-enc-bf16.safetensors" ]; then
         ln -sf "${MODELS_DIR}/text_encoders/umt5-xxl-enc-bf16.safetensors" \
             "${COMFYUI_DIR}/models/text_encoders/umt5-xxl-enc-bf16.safetensors"
-        echo "  -> Linked: umt5-xxl-enc-bf16.safetensors"
+        echo "  OK  Linked: umt5-xxl-enc-bf16.safetensors"
+    else
+        echo "  MISSING: text_encoders/umt5-xxl-enc-bf16.safetensors"
+        MISSING=$((MISSING + 1))
     fi
 
     # --- VAE ---
     if [ -f "${MODELS_DIR}/vae/Wan2_1_VAE_bf16.safetensors" ]; then
         ln -sf "${MODELS_DIR}/vae/Wan2_1_VAE_bf16.safetensors" \
             "${COMFYUI_DIR}/models/vae/Wan2_1_VAE_bf16.safetensors"
-        echo "  -> Linked: Wan2_1_VAE_bf16.safetensors"
+        echo "  OK  Linked: Wan2_1_VAE_bf16.safetensors"
+    else
+        echo "  MISSING: vae/Wan2_1_VAE_bf16.safetensors"
+        MISSING=$((MISSING + 1))
     fi
 
     # --- CLIP Vision ---
     if [ -f "${MODELS_DIR}/clip_vision/clip_vision_h.safetensors" ]; then
         ln -sf "${MODELS_DIR}/clip_vision/clip_vision_h.safetensors" \
             "${COMFYUI_DIR}/models/clip_vision/clip_vision_h.safetensors"
-        echo "  -> Linked: clip_vision_h.safetensors"
+        echo "  OK  Linked: clip_vision_h.safetensors"
+    else
+        echo "  MISSING: clip_vision/clip_vision_h.safetensors"
+        MISSING=$((MISSING + 1))
     fi
 
     # --- Wav2Vec2 ---
-    # WanVideoWrapper looks in custom_nodes/ComfyUI-WanVideoWrapper/models/ or models/
+    # Wav2VecModelLoader scans: custom_nodes/ComfyUI-WanVideoWrapper/models/
     if [ -f "${MODELS_DIR}/wav2vec/wav2vec2-chinese-base_fp16.safetensors" ]; then
-        mkdir -p "${COMFYUI_DIR}/custom_nodes/ComfyUI-WanVideoWrapper/models"
         ln -sf "${MODELS_DIR}/wav2vec/wav2vec2-chinese-base_fp16.safetensors" \
             "${COMFYUI_DIR}/custom_nodes/ComfyUI-WanVideoWrapper/models/wav2vec2-chinese-base_fp16.safetensors"
-        echo "  -> Linked: wav2vec2-chinese-base_fp16.safetensors"
+        echo "  OK  Linked: wav2vec2-chinese-base_fp16.safetensors -> WanVideoWrapper/models/"
+    else
+        echo "  MISSING: wav2vec/wav2vec2-chinese-base_fp16.safetensors"
+        MISSING=$((MISSING + 1))
     fi
 
     # --- LoRA ---
     if [ -f "${MODELS_DIR}/loras/wan2.2/lightx2v_I2V_14B_480p_cfg_step_distill_rank128_bf16.safetensors" ]; then
         ln -sf "${MODELS_DIR}/loras/wan2.2/lightx2v_I2V_14B_480p_cfg_step_distill_rank128_bf16.safetensors" \
             "${COMFYUI_DIR}/models/loras/wan2.2/lightx2v_I2V_14B_480p_cfg_step_distill_rank128_bf16.safetensors"
-        echo "  -> Linked: lightx2v LoRA"
+        echo "  OK  Linked: lightx2v LoRA"
+    else
+        echo "  MISSING: loras/wan2.2/lightx2v_I2V_14B_480p_cfg_step_distill_rank128_bf16.safetensors"
+        echo "         NOTE: Check if file is inside a 'Lightx2v/' subfolder and move it up."
+        MISSING=$((MISSING + 1))
     fi
 
-    echo "  Model symlinks complete!"
+    echo ""
+    if [ $MISSING -gt 0 ]; then
+        echo "  WARNING: ${MISSING} model(s) missing! The workflow may fail."
+        echo "  Run download_models.sh on a Pod with this Network Volume to fix."
+        echo ""
+    else
+        echo "  All 7 models linked successfully!"
+    fi
 else
     echo "  WARNING: Network Volume not found at ${VOLUME_DIR}"
     echo "  Models must be available locally in ${COMFYUI_DIR}/models/"
