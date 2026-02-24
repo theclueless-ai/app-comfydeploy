@@ -124,8 +124,7 @@ export const workflows: WorkflowConfig[] = [
     id: "ai-talk",
     name: "AI Talk",
     description: "Generate talking head videos with AI-powered lip sync and voice synthesis.",
-    deploymentId: "", // Will use RUNPOD_AITALK_ENDPOINT_ID from env
-    backend: "runpod",
+    deploymentId: "", // Will use COMFYDEPLOY_AITALK_DEPLOYMENT_ID from env
     inputs: [
       {
         id: "input_image",
@@ -137,21 +136,13 @@ export const workflows: WorkflowConfig[] = [
         accept: "image/*",
       },
       {
-        id: "voice_id",
-        name: "voice_id",
-        type: "voice-select",
-        label: "Select Voice",
-        description: "",
-        required: true,
-      },
-      {
-        id: "speech_text",
-        name: "speech_text",
+        id: "positive_prompt",
+        name: "positive_prompt",
         type: "text",
-        label: "Speech Text",
-        description: "",
+        label: "Positive Prompt",
+        description: "Describe the scene, motion and expressions for the talking video",
         required: true,
-        placeholder: "Enter the text for the character to speak...",
+        placeholder: "The girl with pink hair smoothly turns her head from the side to face the camera directly...",
       },
     ],
   },

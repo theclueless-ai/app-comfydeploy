@@ -110,30 +110,24 @@ export default function Home() {
     return () => clearInterval(pollInterval);
   }, [runId, status, activeTab]);
 
-  // Poll for RunPod status (Vellum and AI Talk workflows)
+  // Poll for RunPod status (Vellum workflow)
   useEffect(() => {
-    if (!runId || status === "completed" || status === "failed" || (activeTab !== "vellum" && activeTab !== "ai-talk")) {
+    if (!runId || status === "completed" || status === "failed" || activeTab !== "vellum") {
       return;
     }
 
-    const statusEndpoint = activeTab === "vellum" ? "/api/vellum-status" : "/api/ai-talk-status";
-
     const pollInterval = setInterval(async () => {
       try {
-        const response = await fetch(`${statusEndpoint}?jobId=${runId}`);
+        const response = await fetch(`/api/vellum-status?jobId=${runId}`);
         const data = await response.json();
 
-        console.log(`${activeTab} status data:`, data);
+        console.log("vellum status data:", data);
 
         if (data.status === "completed") {
           setStatus("completed");
           if (data.images && data.images.length > 0) {
             setResultImages(data.images);
             console.log(`Received ${data.images.length} images from RunPod`);
-          } else if (data.videos && data.videos.length > 0) {
-            // For AI Talk, videos are returned
-            setResultImages(data.videos);
-            console.log(`Received ${data.videos.length} videos from RunPod`);
           }
           clearInterval(pollInterval);
           setIsLoading(false);
@@ -146,7 +140,73 @@ export default function Home() {
           setStatus("running");
         }
       } catch (error) {
-        console.error(`${activeTab} polling error:`, error);
+        console.error("vellum polling error:", error);
+      }
+    }, 3000);
+
+    return () => clearInterval(pollInterval);
+  }, [runId, status, activeTab]);
+
+  // Poll for ComfyDeploy status (AI Talk workflow)
+  useEffect(() => {
+    if (!runId || status === "completed" || status === "failed" || activeTab !== "ai-talk") {
+      return;
+    }
+
+    const pollInterval = setInterval(async () => {
+      try {
+        // First check webhook endpoint
+        const webhookResponse = await fetch(`/api/webhook?runId=${runId}`);
+        const webhookData = await webhookResponse.json();
+
+        console.log("AI Talk webhook data:", webhookData);
+
+        if (webhookData.status === "completed") {
+          setStatus("completed");
+          if (webhookData.images && webhookData.images.length > 0) {
+            setResultImages(webhookData.images);
+            console.log(`Received ${webhookData.images.length} results from webhook`);
+          }
+          clearInterval(pollInterval);
+          setIsLoading(false);
+          return;
+        }
+
+        if (webhookData.status === "failed") {
+          setStatus("failed");
+          setError(webhookData.error);
+          clearInterval(pollInterval);
+          setIsLoading(false);
+          return;
+        }
+
+        // Fallback to status API
+        const response = await fetch(`/api/ai-talk-status?runId=${runId}`);
+        const data = await response.json();
+
+        console.log("AI Talk status data:", data);
+
+        if (data.status === "completed") {
+          setStatus("completed");
+          if (data.videos && data.videos.length > 0) {
+            setResultImages(data.videos);
+            console.log(`Received ${data.videos.length} videos from ComfyDeploy`);
+          } else if (data.images && data.images.length > 0) {
+            setResultImages(data.images);
+            console.log(`Received ${data.images.length} results from ComfyDeploy`);
+          }
+          clearInterval(pollInterval);
+          setIsLoading(false);
+        } else if (data.status === "failed") {
+          setStatus("failed");
+          setError(data.error || "Workflow failed");
+          clearInterval(pollInterval);
+          setIsLoading(false);
+        } else if (data.status === "running") {
+          setStatus("running");
+        }
+      } catch (error) {
+        console.error("AI Talk polling error:", error);
       }
     }, 3000);
 
