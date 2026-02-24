@@ -8,6 +8,7 @@ import { BuilderInput } from "./builder-input";
 import { SliderInput } from "./slider-input";
 import { ButtonGroupInput } from "./button-group-input";
 import { VoiceSelectInput } from "./voice-select-input";
+import { AudioModeInput } from "./audio-mode-input";
 import { WorkflowConfig } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { Sparkles, Loader2 } from "lucide-react";
@@ -24,6 +25,7 @@ export function WorkflowForm({
   isLoading,
 }: WorkflowFormProps) {
   const [inputs, setInputs] = useState<Record<string, File | string | number | null>>({});
+  const [audioMode, setAudioMode] = useState<"tts" | "sts">("tts");
 
   // Initialize default values for select, slider, and button-group inputs
   useEffect(() => {
@@ -47,15 +49,31 @@ export function WorkflowForm({
 
     // Validate required inputs
     const missingInputs = workflow.inputs
-      .filter((input) => input.required && !inputs[input.id])
-      .map((input) => input.label);
+      .filter((input) => {
+        if (input.type === "audio-mode") {
+          // For audio-mode, validate based on current mode
+          if (audioMode === "tts") {
+            const text = inputs["input_text"];
+            return !text || (typeof text === "string" && text.trim() === "");
+          } else {
+            return !inputs["input_audio"];
+          }
+        }
+        return input.required && !inputs[input.id];
+      })
+      .map((input) => {
+        if (input.type === "audio-mode") {
+          return audioMode === "tts" ? "Text" : "Audio";
+        }
+        return input.label;
+      });
 
     if (missingInputs.length > 0) {
       alert(`Please provide: ${missingInputs.join(", ")}`);
       return;
     }
 
-    // Filter out null values
+    // Filter out null values and add mode
     const validInputs = Object.entries(inputs).reduce(
       (acc, [key, value]) => {
         if (value !== null && value !== undefined) acc[key] = value;
@@ -63,6 +81,9 @@ export function WorkflowForm({
       },
       {} as Record<string, File | string | number>
     );
+
+    // Add the audio mode so the API route knows which path to use
+    validInputs["mode"] = audioMode;
 
     await onSubmit(validInputs);
   };
@@ -98,6 +119,27 @@ export function WorkflowForm({
                   setInputs((prev) => ({ ...prev, [input.id]: file }))
                 }
                 accept={input.accept}
+                required={input.required}
+              />
+            );
+          }
+
+          if (input.type === "audio-mode") {
+            return (
+              <AudioModeInput
+                key={input.id}
+                label={input.label}
+                description={input.description}
+                audioFile={(inputs["input_audio"] as File) || null}
+                text={(inputs["input_text"] as string) || ""}
+                mode={audioMode}
+                onAudioChange={(file) =>
+                  setInputs((prev) => ({ ...prev, input_audio: file }))
+                }
+                onTextChange={(text) =>
+                  setInputs((prev) => ({ ...prev, input_text: text }))
+                }
+                onModeChange={setAudioMode}
                 required={input.required}
               />
             );
