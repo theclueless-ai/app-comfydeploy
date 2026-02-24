@@ -151,7 +151,7 @@
   },
   "235": {
     "inputs": {
-      "blocks_to_swap": 0,
+      "blocks_to_swap": 11,
       "offload_img_emb": false,
       "offload_txt_emb": false,
       "use_non_blocking": true,
@@ -254,14 +254,12 @@
   },
   "324": {
     "inputs": {
-      "mode": "pixels",
-      "width": 0,
-      "height": 0,
-      "interpolation_mode": "crop",
-      "resize_mode": "area",
-      "image": ["737", 0],
-      "width_connection": ["318", 0],
-      "height_connection": ["320", 0]
+      "measurement": "pixels",
+      "width": ["318", 0],
+      "height": ["320", 0],
+      "fit": "crop",
+      "method": "area",
+      "image": ["737", 0]
     },
     "class_type": "Image Resize (rgthree)",
     "_meta": { "title": "Image Resize (64-aligned)" }
