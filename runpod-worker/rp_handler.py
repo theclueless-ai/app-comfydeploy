@@ -41,11 +41,13 @@ MAX_EXECUTION_TIME = 1800  # 30 minutes
 # S3
 # ---------------------------------------------------------------------------
 def get_s3_client():
+    from botocore.config import Config
     kwargs = {
         "service_name": "s3",
         "region_name": S3_REGION,
         "aws_access_key_id": S3_ACCESS_KEY,
         "aws_secret_access_key": S3_SECRET_KEY,
+        "config": Config(signature_version="s3v4"),
     }
     if S3_ENDPOINT_URL:
         kwargs["endpoint_url"] = S3_ENDPOINT_URL
