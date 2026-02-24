@@ -5,8 +5,8 @@ Receives inputs from the Next.js app, injects them into the ComfyUI workflow,
 executes it, and uploads the resulting video to S3.
 
 Supports two modes:
-  - TTS mode: text + voice_id → ElevenLabs TTS → InfiniteTalk video
-  - STS mode: audio + voice_id → ElevenLabs Voice Changer → InfiniteTalk video
+  - TTS mode: text + voice_id -> ElevenLabs TTS node in ComfyUI -> InfiniteTalk video
+  - STS mode: audio + voice_id -> ElevenLabs STS API (handler) -> LoadAudio -> InfiniteTalk video
 """
 
 import runpod
@@ -16,9 +16,9 @@ import time
 import uuid
 import base64
 import glob
+import tempfile
 import requests
 import boto3
-from urllib.parse import urlparse
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -34,13 +34,88 @@ S3_ENDPOINT_URL = os.environ.get("AWS_S3_ENDPOINT_URL", None)  # For R2/MinIO
 S3_ACCESS_KEY = os.environ.get("AWS_ACCESS_KEY_ID", "")
 S3_SECRET_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY", "")
 
-# ElevenLabs API key (injected into workflow nodes)
+# ElevenLabs API key (injected into workflow nodes + used for STS API)
 ELEVENLABS_API_KEY = os.environ.get("ELEVENLABS_API_KEY", "")
 
 # Max wait time for a single workflow execution (30 minutes)
 MAX_EXECUTION_TIME = 1800
 
 
+# ---------------------------------------------------------------------------
+# ElevenLabs Speech-to-Speech API (for STS mode)
+# ---------------------------------------------------------------------------
+def elevenlabs_speech_to_speech(
+    audio_bytes: bytes,
+    voice_id: str,
+    model_id: str = "eleven_english_sts_v2",
+    stability: float = 0.3,
+    similarity_boost: float = 0.85,
+    style: float = 0.3,
+) -> bytes:
+    """
+    Call ElevenLabs Speech-to-Speech API.
+    Takes raw audio bytes + voice_id, returns transformed audio bytes.
+    """
+    if not ELEVENLABS_API_KEY:
+        raise RuntimeError("ELEVENLABS_API_KEY is not set")
+
+    url = f"https://api.elevenlabs.io/v1/speech-to-speech/{voice_id}"
+
+    headers = {
+        "xi-api-key": ELEVENLABS_API_KEY,
+    }
+
+    voice_settings = json.dumps({
+        "stability": stability,
+        "similarity_boost": similarity_boost,
+        "style": style,
+    })
+
+    files = {
+        "audio": ("input_audio.mp3", audio_bytes, "audio/mpeg"),
+    }
+    data = {
+        "model_id": model_id,
+        "voice_settings": voice_settings,
+    }
+
+    print(f"[ElevenLabs STS] Calling API for voice_id={voice_id}, model={model_id}")
+
+    resp = requests.post(url, headers=headers, files=files, data=data)
+
+    if resp.status_code != 200:
+        raise RuntimeError(
+            f"ElevenLabs STS API error: {resp.status_code} - {resp.text[:500]}"
+        )
+
+    print(f"[ElevenLabs STS] Got {len(resp.content)} bytes of audio")
+    return resp.content
+
+
+def decode_base64_audio(audio_data: str) -> bytes:
+    """Decode base64 audio data (with or without data URI prefix)."""
+    if "," in audio_data:
+        audio_data = audio_data.split(",", 1)[1]
+    return base64.b64decode(audio_data)
+
+
+def save_audio_to_comfyui_input(audio_bytes: bytes, filename: str) -> str:
+    """
+    Save audio bytes to ComfyUI's input directory so LoadAudio can find it.
+    Returns the filename (relative to input dir).
+    """
+    input_dir = os.path.join(COMFYUI_DIR, "input")
+    os.makedirs(input_dir, exist_ok=True)
+    filepath = os.path.join(input_dir, filename)
+    with open(filepath, "wb") as f:
+        f.write(audio_bytes)
+    print(f"[Audio] Saved {len(audio_bytes)} bytes to {filepath}")
+    return filename
+
+
+# ---------------------------------------------------------------------------
+# S3
+# ---------------------------------------------------------------------------
 def get_s3_client():
     """Create boto3 S3 client."""
     kwargs = {
@@ -80,62 +155,101 @@ def upload_to_s3(file_path: str, content_type: str = "video/mp4") -> str:
     return presigned_url
 
 
+# ---------------------------------------------------------------------------
+# Workflow loading and input injection
+# ---------------------------------------------------------------------------
 def load_workflow() -> dict:
     """Load the base workflow JSON."""
     with open(WORKFLOW_PATH, "r") as f:
         return json.load(f)
 
 
-def inject_inputs(workflow: dict, inputs: dict) -> dict:
+def inject_inputs_tts(workflow: dict, inputs: dict) -> dict:
     """
-    Inject user inputs into the workflow nodes.
+    Inject inputs for TTS mode.
+    Text + voice_id -> ElevenlabsTextToSpeech (node 250) -> audio -> video
 
-    Node mapping (from ai-talk-workflow.json):
-      - 737: easy loadImageBase64 → base64_data (input image)
-      - 250: ElevenlabsTextToSpeech → text, voice_id, api_key
-      - 225: WanVideoTextEncodeCached → positive_prompt
-      - 214: MultiTalkWav2VecEmbeds → audio comes from node 250 output
+    Node mapping:
+      - 737: easy loadImageBase64 -> base64_data (input image)
+      - 250: ElevenlabsTextToSpeech -> text, voice_id, api_key
+      - 225: WanVideoTextEncodeCached -> positive_prompt
+      - 214: MultiTalkWav2VecEmbeds -> audio_1 from node 250
     """
     # --- Input image (Node 737) ---
     if "input_image" in inputs:
         image_data = inputs["input_image"]
-        # Remove data URI prefix if present - node expects raw base64
         if "," in image_data:
             image_data = image_data.split(",", 1)[1]
         workflow["737"]["inputs"]["base64_data"] = image_data
 
     # --- ElevenLabs TTS node (Node 250) ---
-    # Always inject API key
     if ELEVENLABS_API_KEY:
         workflow["250"]["inputs"]["api_key"] = ELEVENLABS_API_KEY
 
-    # Voice ID
-    if "voice_id" in inputs and inputs["voice_id"]:
+    if inputs.get("voice_id"):
         workflow["250"]["inputs"]["voice_id"] = inputs["voice_id"]
 
-    # Text for TTS (positive_prompt doubles as speech text)
-    if "input_text" in inputs and inputs["input_text"]:
+    if inputs.get("input_text"):
         workflow["250"]["inputs"]["text"] = inputs["input_text"]
 
-    # --- Positive prompt for video generation (Node 225) ---
-    if "positive_prompt" in inputs and inputs["positive_prompt"]:
+    # --- Positive prompt (Node 225) ---
+    if inputs.get("positive_prompt"):
         workflow["225"]["inputs"]["positive_prompt"] = inputs["positive_prompt"]
 
-    # --- Mode: If user sent audio directly, swap ElevenLabs node for direct audio ---
-    # In STS mode, the audio is sent as input_audio and we need to handle it differently
-    if "input_audio" in inputs and inputs["input_audio"]:
-        audio_data = inputs["input_audio"]
-        # If audio is provided, save it to disk and point wav2vec node to it
-        # This bypasses the ElevenLabs TTS node
-        if "mode" in inputs and inputs["mode"] == "sts":
-            # STS mode: audio goes through ElevenLabs Voice Changer first
-            # The STS workflow variation would be handled here
-            # For now, we keep TTS mode as default
-            pass
+    # Audio routing: node 214 audio_1 -> node 250 (TTS output)
+    workflow["214"]["inputs"]["audio_1"] = ["250", 0]
 
+    print("[Workflow] TTS mode: text -> node 250 (TTS) -> node 214 (wav2vec)")
     return workflow
 
 
+def inject_inputs_sts(workflow: dict, inputs: dict, audio_filename: str) -> dict:
+    """
+    Inject inputs for STS mode.
+    Audio file (already processed by ElevenLabs STS API) -> LoadAudio -> video
+
+    Adds a LoadAudio node (node "900") to load the STS-processed audio,
+    then rewires node 214 to use it instead of node 250 (TTS).
+    """
+    # --- Input image (Node 737) ---
+    if "input_image" in inputs:
+        image_data = inputs["input_image"]
+        if "," in image_data:
+            image_data = image_data.split(",", 1)[1]
+        workflow["737"]["inputs"]["base64_data"] = image_data
+
+    # --- Positive prompt (Node 225) ---
+    if inputs.get("positive_prompt"):
+        workflow["225"]["inputs"]["positive_prompt"] = inputs["positive_prompt"]
+
+    # --- Remove TTS node (250) - not needed in STS mode ---
+    if "250" in workflow:
+        del workflow["250"]
+
+    # --- Add LoadAudio node (node 900) ---
+    workflow["900"] = {
+        "inputs": {
+            "audio": audio_filename,
+        },
+        "class_type": "LoadAudio",
+        "_meta": {
+            "title": "Load Audio (STS)"
+        }
+    }
+
+    # --- Rewire node 214: audio_1 now comes from LoadAudio (900) ---
+    workflow["214"]["inputs"]["audio_1"] = ["900", 0]
+
+    # --- Inject API key into TTS node in case it's still referenced ---
+    # (already deleted above, but just in case)
+
+    print(f"[Workflow] STS mode: {audio_filename} -> node 900 (LoadAudio) -> node 214 (wav2vec)")
+    return workflow
+
+
+# ---------------------------------------------------------------------------
+# ComfyUI interaction
+# ---------------------------------------------------------------------------
 def queue_prompt(workflow: dict) -> str:
     """Send workflow to ComfyUI and return the prompt_id."""
     payload = {"prompt": workflow}
@@ -214,11 +328,7 @@ def find_output_video(history_entry: dict) -> str | None:
                     subfolder = item.get("subfolder", "")
                     file_type = item.get("type", "output")
 
-                    if file_type == "output":
-                        video_path = os.path.join(
-                            COMFYUI_DIR, "output", subfolder, filename
-                        )
-                    elif file_type == "temp":
+                    if file_type == "temp":
                         video_path = os.path.join(
                             COMFYUI_DIR, "temp", subfolder, filename
                         )
@@ -268,6 +378,9 @@ def find_output_video(history_entry: dict) -> str | None:
     return None
 
 
+# ---------------------------------------------------------------------------
+# Main handler
+# ---------------------------------------------------------------------------
 def handler(job: dict) -> dict:
     """
     RunPod serverless handler.
@@ -275,31 +388,28 @@ def handler(job: dict) -> dict:
     Expected input:
     {
         "input_image": "base64 data URI or raw base64",
-        "input_audio": "base64 data URI or raw base64" (optional, for STS mode),
-        "input_text": "text for TTS" (optional, for TTS mode),
+        "input_audio": "base64 data URI or raw base64" (for STS mode),
+        "input_text": "text for TTS" (for TTS mode),
         "voice_id": "elevenlabs voice ID",
         "positive_prompt": "scene description for video generation",
-        "mode": "tts" | "sts" (optional, default "tts")
+        "mode": "tts" | "sts" (default "tts")
     }
 
-    Returns:
-    {
-        "video_url": "https://s3.../video.mp4",
-        "filename": "ai-talk-xxxxx.mp4",
-        "execution_time_s": 123.4
-    }
+    TTS mode: input_text -> ElevenlabsTextToSpeech node -> wav2vec -> video
+    STS mode: input_audio -> ElevenLabs STS API -> LoadAudio node -> wav2vec -> video
     """
     start_time = time.time()
     job_input = job.get("input", {})
+    mode = job_input.get("mode", "tts")
 
     print("=" * 60)
     print("  AI Talk Handler - New Job")
     print("=" * 60)
-    print(f"  Mode: {job_input.get('mode', 'tts')}")
+    print(f"  Mode: {mode}")
     print(f"  Voice ID: {job_input.get('voice_id', 'default')}")
-    print(f"  Has image: {'input_image' in job_input}")
-    print(f"  Has audio: {'input_audio' in job_input}")
-    print(f"  Has text: {'input_text' in job_input}")
+    print(f"  Has image: {bool(job_input.get('input_image'))}")
+    print(f"  Has audio: {bool(job_input.get('input_audio'))}")
+    print(f"  Has text: {bool(job_input.get('input_text'))}")
     print(f"  Prompt: {str(job_input.get('positive_prompt', ''))[:100]}...")
 
     try:
@@ -307,9 +417,36 @@ def handler(job: dict) -> dict:
         print("\n[Step 1] Loading workflow...")
         workflow = load_workflow()
 
-        # 2. Inject user inputs
-        print("[Step 2] Injecting inputs into workflow...")
-        workflow = inject_inputs(workflow, job_input)
+        # 2. Process audio and inject inputs based on mode
+        if mode == "sts":
+            # --- STS MODE ---
+            # a) Decode user's input audio from base64
+            print("[Step 2] STS mode - processing audio...")
+            input_audio = job_input.get("input_audio", "")
+            if not input_audio:
+                raise ValueError("STS mode requires input_audio")
+
+            raw_audio = decode_base64_audio(input_audio)
+            print(f"  Decoded input audio: {len(raw_audio)} bytes")
+
+            # b) Call ElevenLabs Speech-to-Speech API
+            voice_id = job_input.get("voice_id", "gdMFOufuI36UmxNKJhtv")
+            sts_audio = elevenlabs_speech_to_speech(
+                audio_bytes=raw_audio,
+                voice_id=voice_id,
+            )
+
+            # c) Save STS audio to ComfyUI input directory
+            audio_filename = f"sts_audio_{uuid.uuid4().hex[:8]}.mp3"
+            save_audio_to_comfyui_input(sts_audio, audio_filename)
+
+            # d) Inject inputs with STS routing
+            workflow = inject_inputs_sts(workflow, job_input, audio_filename)
+
+        else:
+            # --- TTS MODE ---
+            print("[Step 2] TTS mode - injecting inputs...")
+            workflow = inject_inputs_tts(workflow, job_input)
 
         # 3. Queue prompt in ComfyUI
         print("[Step 3] Queueing prompt in ComfyUI...")
