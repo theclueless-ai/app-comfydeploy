@@ -45,14 +45,16 @@ export async function GET() {
 
     const data: ElevenLabsVoicesResponse = await response.json();
 
-    // Transform the response to include only the necessary fields
-    const voices = data.voices.map((voice) => ({
-      voice_id: voice.voice_id,
-      name: voice.name,
-      category: voice.category,
-      labels: voice.labels,
-      preview_url: voice.preview_url,
-    }));
+    // Filter to only "My voices" (exclude default/premade library voices)
+    const voices = data.voices
+      .filter((voice) => voice.category !== "premade")
+      .map((voice) => ({
+        voice_id: voice.voice_id,
+        name: voice.name,
+        category: voice.category,
+        labels: voice.labels,
+        preview_url: voice.preview_url,
+      }));
 
     return NextResponse.json({ voices });
   } catch (error) {
