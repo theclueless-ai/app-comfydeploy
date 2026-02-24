@@ -23,7 +23,7 @@ if [ -d "${VOLUME_DIR}" ]; then
     mkdir -p ${COMFYUI_DIR}/models/vae
     mkdir -p ${COMFYUI_DIR}/models/clip_vision
     mkdir -p ${COMFYUI_DIR}/models/loras/wan2.2
-    mkdir -p ${COMFYUI_DIR}/custom_nodes/ComfyUI-WanVideoWrapper/models
+    mkdir -p ${COMFYUI_DIR}/models/wav2vec2
 
     MISSING=0
 
@@ -38,11 +38,11 @@ if [ -d "${VOLUME_DIR}" ]; then
     fi
 
     # --- InfiniteTalk model ---
-    # MultiTalkModelLoader scans: custom_nodes/ComfyUI-WanVideoWrapper/models/
+    # MultiTalkModelLoader scans: models/diffusion_models/ + models/unet_gguf/
     if [ -f "${MODELS_DIR}/infinitetalk/Wan2_1-InfiniTetalk-Single_fp16.safetensors" ]; then
         ln -sf "${MODELS_DIR}/infinitetalk/Wan2_1-InfiniTetalk-Single_fp16.safetensors" \
-            "${COMFYUI_DIR}/custom_nodes/ComfyUI-WanVideoWrapper/models/Wan2_1-InfiniTetalk-Single_fp16.safetensors"
-        echo "  OK  Linked: Wan2_1-InfiniTetalk-Single_fp16.safetensors -> WanVideoWrapper/models/"
+            "${COMFYUI_DIR}/models/diffusion_models/Wan2_1-InfiniTetalk-Single_fp16.safetensors"
+        echo "  OK  Linked: Wan2_1-InfiniTetalk-Single_fp16.safetensors -> models/diffusion_models/"
     else
         echo "  MISSING: infinitetalk/Wan2_1-InfiniTetalk-Single_fp16.safetensors"
         echo "         NOTE: If you have 'infinitetalk_single.safetensors' that is the WRONG file."
@@ -81,11 +81,11 @@ if [ -d "${VOLUME_DIR}" ]; then
     fi
 
     # --- Wav2Vec2 ---
-    # Wav2VecModelLoader scans: custom_nodes/ComfyUI-WanVideoWrapper/models/
+    # Wav2VecModelLoader scans: models/wav2vec2/ (note: wav2vec2 with "2" at the end)
     if [ -f "${MODELS_DIR}/wav2vec/wav2vec2-chinese-base_fp16.safetensors" ]; then
         ln -sf "${MODELS_DIR}/wav2vec/wav2vec2-chinese-base_fp16.safetensors" \
-            "${COMFYUI_DIR}/custom_nodes/ComfyUI-WanVideoWrapper/models/wav2vec2-chinese-base_fp16.safetensors"
-        echo "  OK  Linked: wav2vec2-chinese-base_fp16.safetensors -> WanVideoWrapper/models/"
+            "${COMFYUI_DIR}/models/wav2vec2/wav2vec2-chinese-base_fp16.safetensors"
+        echo "  OK  Linked: wav2vec2-chinese-base_fp16.safetensors -> models/wav2vec2/"
     else
         echo "  MISSING: wav2vec/wav2vec2-chinese-base_fp16.safetensors"
         MISSING=$((MISSING + 1))
