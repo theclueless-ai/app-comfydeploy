@@ -129,9 +129,12 @@ export function ResultDisplay({ status, images, error }: ResultDisplayProps) {
         )}
 
         {status === "failed" && (
-          <div className="py-4">
+          <div className="py-4 space-y-3">
             <p className="text-sm text-red-500">
-              {error || "An error occurred while processing your workflow."}
+              {error || "Ocurrió un error al procesar tu solicitud. Por favor, inténtalo de nuevo."}
+            </p>
+            <p className="text-xs text-[rgb(var(--muted-foreground))]">
+              Si el problema persiste, contacta a soporte.
             </p>
           </div>
         )}

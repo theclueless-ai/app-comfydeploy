@@ -6,6 +6,7 @@ import { useAuth } from "@/components/auth-provider";
 import StellaSidebar from "@/components/stella/sidebar";
 import StellaStepper from "@/components/stella/stepper";
 import { compressImage, formatBytes } from "@/lib/utils";
+import { sanitizeErrorMessage } from "@/lib/error-messages";
 import {
   Upload,
   X,
@@ -243,7 +244,7 @@ export default function StellaDashboard() {
       setRunId(data.runId);
       setStatus("running");
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Error desconocido");
+      setError(sanitizeErrorMessage(err instanceof Error ? err.message : null));
       setIsGenerating(false);
       setStatus("failed");
     }
@@ -729,9 +730,14 @@ export default function StellaDashboard() {
 
       {/* Error */}
       {error && (
-        <div className="flex items-center gap-2.5 p-4 bg-red-50 border border-red-100 rounded-xl">
-          <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
-          <p className="text-xs text-red-600">{error}</p>
+        <div className="flex flex-col gap-1.5 p-4 bg-red-50 border border-red-100 rounded-xl">
+          <div className="flex items-center gap-2.5">
+            <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
+            <p className="text-xs text-red-600">{error}</p>
+          </div>
+          <p className="text-[10px] text-red-400 ml-6.5">
+            Si el problema persiste, contacta a soporte.
+          </p>
         </div>
       )}
 
