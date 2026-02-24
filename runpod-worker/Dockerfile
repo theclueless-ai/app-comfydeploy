@@ -87,6 +87,7 @@ RUN mkdir -p ${COMFYUI_DIR}/models/diffusion_models \
     ${COMFYUI_DIR}/models/vae \
     ${COMFYUI_DIR}/models/clip_vision \
     ${COMFYUI_DIR}/models/loras/wan2.2 \
+    ${COMFYUI_DIR}/models/wav2vec2 \
     /runpod-volume/models
 
 # ---- Environment variables (set at RunPod endpoint level) ----
