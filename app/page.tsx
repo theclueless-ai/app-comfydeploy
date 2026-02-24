@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Header } from "@/components/header";
 import { WorkflowForm } from "@/components/workflow-form";
+import { AvatarForm } from "@/components/avatar-form";
 import { ResultDisplay } from "@/components/result-display";
 import { Gallery } from "@/components/gallery";
 import { WorkflowTabs, WorkflowTab } from "@/components/workflow-tabs";
@@ -26,11 +27,16 @@ export default function Home() {
   const fashionWorkflow = getDefaultWorkflow();
   const vellumWorkflow = getVellumWorkflow();
   const aiTalkWorkflow = getAiTalkWorkflow();
+  const avatarInfo = { name: "Avatar Generator", description: "Generate unique character portraits with customizable features, powered by local ComfyUI." };
   const workflow = activeTab === "fashion"
     ? fashionWorkflow
     : activeTab === "vellum"
       ? vellumWorkflow
-      : aiTalkWorkflow;
+      : activeTab === "ai-talk"
+        ? aiTalkWorkflow
+        : null;
+  const activeWorkflowName = workflow?.name ?? avatarInfo.name;
+  const activeWorkflowDescription = workflow?.description ?? avatarInfo.description;
 
   const { history, totalImages, addToHistory, clearHistory } = useHistory();
 
@@ -214,16 +220,53 @@ export default function Home() {
     return () => clearInterval(pollInterval);
   }, [runId, status, activeTab]);
 
+  // Poll for local ComfyUI status (Avatar workflow)
+  useEffect(() => {
+    if (!runId || status === "completed" || status === "failed" || activeTab !== "avatar") {
+      return;
+    }
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const response = await fetch(`/api/avatar-status?promptId=${runId}`);
+        const data = await response.json();
+
+        console.log("Avatar status data:", data);
+
+        if (data.status === "completed") {
+          setStatus("completed");
+          if (data.images && data.images.length > 0) {
+            setResultImages(data.images);
+            console.log(`Received ${data.images.length} images from local ComfyUI`);
+          }
+          clearInterval(pollInterval);
+          setIsLoading(false);
+        } else if (data.status === "failed") {
+          setStatus("failed");
+          setError(data.error || "Avatar generation failed");
+          clearInterval(pollInterval);
+          setIsLoading(false);
+        } else if (data.status === "running") {
+          setStatus("running");
+        }
+      } catch (error) {
+        console.error("Avatar polling error:", error);
+      }
+    }, 3000);
+
+    return () => clearInterval(pollInterval);
+  }, [runId, status, activeTab]);
+
   // Save to history when run completes successfully
   useEffect(() => {
     if (status === "completed" && resultImages.length > 0 && runId) {
       addToHistory({
         runId,
         images: resultImages,
-        workflowName: workflow.name,
+        workflowName: activeWorkflowName,
       });
     }
-  }, [status, resultImages, runId, workflow.name, addToHistory]);
+  }, [status, resultImages, runId, activeWorkflowName, addToHistory]);
 
   const handleSubmit = async (inputs: Record<string, File | string | number>) => {
     setIsLoading(true);
@@ -247,7 +290,9 @@ export default function Home() {
         ? "/api/run-workflow"
         : activeTab === "vellum"
           ? "/api/run-vellum"
-          : "/api/run-ai-talk";
+          : activeTab === "ai-talk"
+            ? "/api/run-ai-talk"
+            : "/api/run-avatar";
 
       const response = await fetch(apiEndpoint, {
         method: "POST",
@@ -260,8 +305,8 @@ export default function Home() {
         throw new Error(data.error || "Failed to run workflow");
       }
 
-      // ComfyDeploy returns runId, RunPod returns jobId
-      const id = data.runId || data.jobId;
+      // ComfyDeploy returns runId, RunPod returns jobId, local ComfyUI returns promptId
+      const id = data.runId || data.jobId || data.promptId;
       setRunId(id);
       setStatus("running");
     } catch (error) {
@@ -286,10 +331,10 @@ export default function Home() {
           {/* Hero Section */}
           <div className="mb-6 animate-fade-in">
             <h2 className="font-work-sans text-md md:text-xl font-bold mb-2 bg-gradient-to-r from-brand-pink via-brand-pink-light to-brand-pink bg-clip-text text-transparent tracking-tighter">
-              {workflow.name}
+              {activeWorkflowName}
             </h2>
             <p className="text-xs text-[rgb(var(--muted-foreground))] tracking-tight">
-              {workflow.description}
+              {activeWorkflowDescription}
             </p>
           </div>
 
@@ -308,13 +353,22 @@ export default function Home() {
                   ? "Upload Images"
                   : activeTab === "vellum"
                     ? "Image Upscaling"
-                    : "Generate Talking Video"}
+                    : activeTab === "ai-talk"
+                      ? "Generate Talking Video"
+                      : "Character Settings"}
               </h3>
-              <WorkflowForm
-                workflow={workflow}
-                onSubmit={handleSubmit}
-                isLoading={isLoading}
-              />
+              {activeTab === "avatar" ? (
+                <AvatarForm
+                  onSubmit={handleSubmit}
+                  isLoading={isLoading}
+                />
+              ) : workflow ? (
+                <WorkflowForm
+                  workflow={workflow}
+                  onSubmit={handleSubmit}
+                  isLoading={isLoading}
+                />
+              ) : null}
             </div>
 
             {/* Result Section */}
