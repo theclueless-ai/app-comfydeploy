@@ -136,13 +136,12 @@ export const workflows: WorkflowConfig[] = [
         accept: "image/*",
       },
       {
-        id: "input_audio",
-        name: "input_audio",
-        type: "audio",
-        label: "Audio",
-        description: "Upload the audio for the character to speak",
+        id: "audio_mode",
+        name: "audio_mode",
+        type: "audio-mode",
+        label: "Audio Source",
+        description: "Choose to write text (TTS) or upload audio (Voice Changer)",
         required: true,
-        accept: "audio/*",
       },
       {
         id: "voice_id",

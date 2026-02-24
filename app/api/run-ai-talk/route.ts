@@ -26,11 +26,33 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get the audio file (optional for TTS mode, required for STS mode)
+    // Get mode from frontend (explicit choice)
+    const modeParam = formData.get("mode");
+    const mode = modeParam === "sts" ? "sts" : "tts";
+
+    // Get the audio file (required for STS mode)
     const audioFile = formData.get("input_audio");
 
-    // Get the text input (for TTS mode)
+    // Get the text input (required for TTS mode)
     const inputText = formData.get("input_text");
+
+    // Validate mode-specific inputs
+    const hasAudio = audioFile && audioFile instanceof File && audioFile.size > 0;
+    const hasText = inputText && typeof inputText === "string" && inputText.trim() !== "";
+
+    if (mode === "sts" && !hasAudio) {
+      return NextResponse.json(
+        { error: "Audio file is required for Voice Changer mode" },
+        { status: 400 }
+      );
+    }
+
+    if (mode === "tts" && !hasText) {
+      return NextResponse.json(
+        { error: "Text is required for Text-to-Speech mode" },
+        { status: 400 }
+      );
+    }
 
     // Get the positive prompt
     const positivePrompt = formData.get("positive_prompt");
@@ -46,11 +68,6 @@ export async function POST(request: NextRequest) {
     const selectedVoiceId = voiceId && typeof voiceId === "string" && voiceId.trim() !== ""
       ? voiceId.trim()
       : "gdMFOufuI36UmxNKJhtv"; // Default voice ID
-
-    // Determine mode based on inputs
-    const hasAudio = audioFile && audioFile instanceof File && audioFile.size > 0;
-    const hasText = inputText && typeof inputText === "string" && inputText.trim() !== "";
-    const mode = hasAudio && !hasText ? "sts" : "tts";
 
     console.log("=== AI Talk RunPod Request ===");
     console.log("Image:", imageFile.name, imageFile.type, imageFile.size);
