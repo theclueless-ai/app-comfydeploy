@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
     const inputs: Record<string, string> = {
       input_image: imageBase64,
       input_audio: audioBase64,
-      input_text: selectedVoiceId,
+      voice_id: selectedVoiceId,
       positive_prompt: positivePrompt.trim(),
     };
 
