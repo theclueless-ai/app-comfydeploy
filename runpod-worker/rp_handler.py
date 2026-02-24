@@ -27,7 +27,7 @@ COMFYUI_DIR = "/comfyui"
 WORKFLOW_PATH = os.path.join(COMFYUI_DIR, "workflow_api.json")
 
 S3_BUCKET = os.environ.get("AWS_S3_BUCKET", "")
-S3_REGION = os.environ.get("AWS_S3_REGION", "us-east-1")
+S3_REGION = os.environ.get("AWS_S3_REGION", "eu-north-1")
 S3_ENDPOINT_URL = os.environ.get("AWS_S3_ENDPOINT_URL", None)
 S3_ACCESS_KEY = os.environ.get("AWS_ACCESS_KEY_ID", "")
 S3_SECRET_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY", "")
