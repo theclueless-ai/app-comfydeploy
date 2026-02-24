@@ -4,6 +4,7 @@ import {
   mapRunPodStatus,
   extractImagesFromOutput,
 } from "@/lib/runpod";
+import { sanitizeErrorMessage } from "@/lib/error-messages";
 
 export async function GET(request: NextRequest) {
   try {
@@ -48,14 +49,15 @@ export async function GET(request: NextRequest) {
     }
 
     if (runpodStatus.error) {
-      response.error = runpodStatus.error;
+      console.error("Vellum job failed. Raw error:", runpodStatus.error);
+      response.error = sanitizeErrorMessage(runpodStatus.error);
     }
 
     return NextResponse.json(response);
   } catch (error) {
     console.error("Vellum status check error:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to get status" },
+      { error: sanitizeErrorMessage(error instanceof Error ? error.message : null) },
       { status: 500 }
     );
   }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 // import { fileToBase64 } from "@/lib/comfydeploy";
 import { fileToBase64, runWorkflowAsync, VellumWorkflowInput } from "@/lib/runpod";
+import { sanitizeErrorMessage } from "@/lib/error-messages";
 import workflow from "@/lib/vellum-upscale.json";
 
 export async function POST(request: NextRequest) {
@@ -82,7 +83,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Vellum workflow execution error:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to run workflow" },
+      { error: sanitizeErrorMessage(error instanceof Error ? error.message : null) },
       { status: 500 }
     );
   }

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { fileToBase64, runWorkflow } from "@/lib/comfydeploy";
+import { sanitizeErrorMessage } from "@/lib/error-messages";
 
 export async function POST(request: NextRequest) {
   try {
@@ -70,7 +71,7 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     console.error("Workflow execution error:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to run workflow" },
+      { error: sanitizeErrorMessage(error instanceof Error ? error.message : null) },
       { status: 500 }
     );
   }

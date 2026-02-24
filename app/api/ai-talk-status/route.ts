@@ -4,6 +4,7 @@ import {
   mapRunPodStatus,
   extractVideoFromAiTalkOutput,
 } from "@/lib/runpod";
+import { sanitizeErrorMessage } from "@/lib/error-messages";
 
 export async function GET(request: NextRequest) {
   try {
@@ -47,16 +48,17 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Include error if failed
-    if (status === "failed" && rawStatus.error) {
-      result.error = rawStatus.error;
+    // Include sanitized error if failed (raw error stays in server logs)
+    if (status === "failed") {
+      console.error("AI Talk job failed. Raw error:", rawStatus.error);
+      result.error = sanitizeErrorMessage(rawStatus.error);
     }
 
     return NextResponse.json(result);
   } catch (error) {
     console.error("AI Talk status check error:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to get status" },
+      { error: sanitizeErrorMessage(error instanceof Error ? error.message : null) },
       { status: 500 }
     );
   }

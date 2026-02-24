@@ -8,6 +8,7 @@ import { Gallery } from "@/components/gallery";
 import { WorkflowTabs, WorkflowTab } from "@/components/workflow-tabs";
 import { getDefaultWorkflow, getVellumWorkflow, getAiTalkWorkflow } from "@/lib/workflows";
 import { cn } from "@/lib/utils";
+import { sanitizeErrorMessage } from "@/lib/error-messages";
 import { useHistory } from "@/hooks/use-history";
 import { History } from "lucide-react";
 
@@ -266,7 +267,7 @@ export default function Home() {
     } catch (error) {
       console.error("Submission error:", error);
       setStatus("failed");
-      setError(error instanceof Error ? error.message : "An error occurred");
+      setError(sanitizeErrorMessage(error instanceof Error ? error.message : null));
       setIsLoading(false);
     }
   };
