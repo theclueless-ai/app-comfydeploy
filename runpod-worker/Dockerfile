@@ -4,7 +4,7 @@
 # Models: Stored on RunPod Network Volume (/runpod-volume)
 # =============================================================================
 
-FROM nvidia/cuda:12.1.1-cudnn8-devel-ubuntu22.04
+FROM nvidia/cuda:12.6.3-cudnn-devel-ubuntu22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 ENV PYTHONUNBUFFERED=1
@@ -27,12 +27,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # ---- Python base dependencies ----
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel
 
-# ---- Install PyTorch (CUDA 12.1) ----
-RUN pip install --no-cache-dir \
-    torch==2.4.0 \
-    torchvision==0.19.0 \
-    torchaudio==2.4.0 \
-    --index-url https://download.pytorch.org/whl/cu121
+# ---- Install PyTorch nightly (CUDA 12.6) ----
+# WanVideoWrapper requires torch >= 2.7.0 nightly for allow_fp16_accumulation
+RUN pip install --no-cache-dir --pre \
+    torch torchvision torchaudio \
+    --index-url https://download.pytorch.org/whl/nightly/cu126
 
 # ---- Clone ComfyUI ----
 RUN git clone https://github.com/comfyanonymous/ComfyUI.git ${COMFYUI_DIR} \
