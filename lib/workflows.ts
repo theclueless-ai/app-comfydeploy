@@ -136,6 +136,23 @@ export const workflows: WorkflowConfig[] = [
         accept: "image/*",
       },
       {
+        id: "input_audio",
+        name: "input_audio",
+        type: "audio",
+        label: "Audio",
+        description: "Upload the audio for the character to speak",
+        required: true,
+        accept: "audio/*",
+      },
+      {
+        id: "voice_id",
+        name: "voice_id",
+        type: "voice-select",
+        label: "Select Voice",
+        description: "ElevenLabs voice for voice changing",
+        required: true,
+      },
+      {
         id: "positive_prompt",
         name: "positive_prompt",
         type: "text",

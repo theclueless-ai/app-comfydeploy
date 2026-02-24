@@ -23,6 +23,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Get the audio file
+    const audioFile = formData.get("input_audio");
+    if (!audioFile || !(audioFile instanceof File) || audioFile.size === 0) {
+      return NextResponse.json(
+        { error: "Audio file is required" },
+        { status: 400 }
+      );
+    }
+
     // Get the positive prompt
     const positivePrompt = formData.get("positive_prompt");
     if (!positivePrompt || typeof positivePrompt !== "string" || positivePrompt.trim() === "") {
@@ -32,15 +41,28 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Get voice ID
+    const voiceId = formData.get("voice_id");
+    const selectedVoiceId = voiceId && typeof voiceId === "string" && voiceId.trim() !== ""
+      ? voiceId.trim()
+      : "gdMFOufuI36UmxNKJhtv"; // Default voice ID
+
     console.log("=== AI Talk ComfyDeploy Request ===");
     console.log("Image:", imageFile.name, imageFile.type, imageFile.size);
+    console.log("Audio:", audioFile.name, audioFile.type, audioFile.size);
     console.log("Positive Prompt:", positivePrompt.substring(0, 100) + "...");
+    console.log("Voice ID:", selectedVoiceId);
 
-    // Convert image to base64 data URI (ComfyDeploy expects data:image/xxx;base64,xxx format)
+    // Convert image to base64 data URI
     const imageBase64 = await fileToBase64(imageFile);
+
+    // Convert audio to base64 data URI
+    const audioBase64 = await fileToBase64(audioFile);
 
     const inputs: Record<string, string> = {
       input_image: imageBase64,
+      input_audio: audioBase64,
+      voice_id: selectedVoiceId,
       positive_prompt: positivePrompt.trim(),
     };
 

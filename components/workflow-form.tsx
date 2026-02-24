@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { ImageUpload } from "./image-upload";
+import { AudioUpload } from "./audio-upload";
 import { SelectInput } from "./select-input";
 import { BuilderInput } from "./builder-input";
 import { SliderInput } from "./slider-input";
@@ -73,6 +74,22 @@ export function WorkflowForm({
           if (input.type === "image") {
             return (
               <ImageUpload
+                key={input.id}
+                label={input.label}
+                description={input.description}
+                value={(inputs[input.id] as File) || null}
+                onChange={(file) =>
+                  setInputs((prev) => ({ ...prev, [input.id]: file }))
+                }
+                accept={input.accept}
+                required={input.required}
+              />
+            );
+          }
+
+          if (input.type === "audio") {
+            return (
+              <AudioUpload
                 key={input.id}
                 label={input.label}
                 description={input.description}
