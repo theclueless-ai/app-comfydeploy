@@ -1,15 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
-import { fileToBase64, runWorkflow } from "@/lib/comfydeploy";
+import {
+  fileToBase64 as runpodFileToBase64,
+  runAiTalkWorkflowAsync,
+} from "@/lib/runpod";
 
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
 
-    const deploymentId = process.env.COMFYDEPLOY_AITALK_DEPLOYMENT_ID;
+    const endpointId = process.env.RUNPOD_AITALK_ENDPOINT_ID;
 
-    if (!deploymentId) {
+    if (!endpointId) {
       return NextResponse.json(
-        { error: "COMFYDEPLOY_AITALK_DEPLOYMENT_ID is not configured" },
+        { error: "RUNPOD_AITALK_ENDPOINT_ID is not configured" },
         { status: 500 }
       );
     }
@@ -23,14 +26,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get the audio file
+    // Get the audio file (optional for TTS mode, required for STS mode)
     const audioFile = formData.get("input_audio");
-    if (!audioFile || !(audioFile instanceof File) || audioFile.size === 0) {
-      return NextResponse.json(
-        { error: "Audio file is required" },
-        { status: 400 }
-      );
-    }
+
+    // Get the text input (for TTS mode)
+    const inputText = formData.get("input_text");
 
     // Get the positive prompt
     const positivePrompt = formData.get("positive_prompt");
@@ -47,38 +47,44 @@ export async function POST(request: NextRequest) {
       ? voiceId.trim()
       : "gdMFOufuI36UmxNKJhtv"; // Default voice ID
 
-    console.log("=== AI Talk ComfyDeploy Request ===");
+    // Determine mode based on inputs
+    const hasAudio = audioFile && audioFile instanceof File && audioFile.size > 0;
+    const hasText = inputText && typeof inputText === "string" && inputText.trim() !== "";
+    const mode = hasAudio && !hasText ? "sts" : "tts";
+
+    console.log("=== AI Talk RunPod Request ===");
     console.log("Image:", imageFile.name, imageFile.type, imageFile.size);
-    console.log("Audio:", audioFile.name, audioFile.type, audioFile.size);
+    console.log("Mode:", mode);
+    if (hasAudio) console.log("Audio:", (audioFile as File).name, (audioFile as File).type, (audioFile as File).size);
+    if (hasText) console.log("Text:", (inputText as string).substring(0, 100) + "...");
     console.log("Positive Prompt:", positivePrompt.substring(0, 100) + "...");
     console.log("Voice ID:", selectedVoiceId);
 
     // Convert image to base64 data URI
-    const imageBase64 = await fileToBase64(imageFile);
+    const imageBase64 = await runpodFileToBase64(imageFile);
 
-    // Convert audio to base64 data URI
-    const audioBase64 = await fileToBase64(audioFile);
+    // Convert audio to base64 if provided
+    let audioBase64 = "";
+    if (hasAudio) {
+      audioBase64 = await runpodFileToBase64(audioFile as File);
+    }
 
-    const inputs: Record<string, string> = {
+    console.log("Running AI Talk workflow via RunPod:");
+    console.log("- Endpoint ID:", endpointId);
+    console.log("- Mode:", mode);
+
+    const result = await runAiTalkWorkflowAsync({
       input_image: imageBase64,
-      input_audio: audioBase64,
+      input_audio: audioBase64 || undefined,
+      input_text: hasText ? (inputText as string).trim() : undefined,
       voice_id: selectedVoiceId,
       positive_prompt: positivePrompt.trim(),
-    };
-
-    // Construct webhook URL
-    const webhookUrl = `${process.env.WEBHOOK_BASE_URL || request.nextUrl.origin}/api/webhook`;
-
-    console.log("Running AI Talk workflow with:");
-    console.log("- Deployment ID:", deploymentId);
-    console.log("- Input keys:", Object.keys(inputs));
-    console.log("- Webhook URL:", webhookUrl);
-
-    const result = await runWorkflow(deploymentId, inputs, webhookUrl);
+      mode,
+    });
 
     return NextResponse.json({
       success: true,
-      runId: result.runId,
+      runId: result.jobId,
     });
   } catch (error) {
     console.error("AI Talk workflow execution error:", error);

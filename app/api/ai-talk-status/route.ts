@@ -1,62 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getRunStatus } from "@/lib/comfydeploy";
-
-/**
- * Extract videos/media from ComfyDeploy outputs
- * AI Talk returns video files from VHS_VideoCombine node
- */
-function extractMediaFromOutputs(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  outputs: any[]
-): Array<{ url: string; filename: string }> {
-  const media: Array<{ url: string; filename: string }> = [];
-
-  if (!outputs || !Array.isArray(outputs)) {
-    return media;
-  }
-
-  for (const output of outputs) {
-    const data = output.data || output;
-
-    // Check for videos array
-    if (data.videos && Array.isArray(data.videos)) {
-      for (const video of data.videos) {
-        if (video.url) {
-          media.push({
-            url: video.url,
-            filename: video.filename || "video.mp4",
-          });
-        }
-      }
-    }
-
-    // Check for images array (fallback, some nodes output as images)
-    if (data.images && Array.isArray(data.images)) {
-      for (const image of data.images) {
-        if (image.url) {
-          media.push({
-            url: image.url,
-            filename: image.filename || "output.png",
-          });
-        }
-      }
-    }
-
-    // Check for gifs array (VHS_VideoCombine may output as gifs)
-    if (data.gifs && Array.isArray(data.gifs)) {
-      for (const gif of data.gifs) {
-        if (gif.url) {
-          media.push({
-            url: gif.url,
-            filename: gif.filename || "video.mp4",
-          });
-        }
-      }
-    }
-  }
-
-  return media;
-}
+import {
+  getAiTalkJobStatus,
+  mapRunPodStatus,
+  extractVideoFromAiTalkOutput,
+} from "@/lib/runpod";
 
 export async function GET(request: NextRequest) {
   try {
@@ -70,25 +17,14 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    console.log("Checking AI Talk ComfyDeploy status:", runId);
+    console.log("Checking AI Talk RunPod status:", runId);
 
-    const rawStatus = await getRunStatus(runId);
+    const rawStatus = await getAiTalkJobStatus(runId);
 
-    console.log("Raw ComfyDeploy status:", JSON.stringify(rawStatus, null, 2));
+    console.log("Raw RunPod status:", JSON.stringify(rawStatus, null, 2));
 
-    // Extract media from outputs
-    const media = extractMediaFromOutputs(rawStatus?.outputs || []);
-    console.log("Extracted media:", media.length, media);
-
-    // Map ComfyDeploy status to app status
-    const statusMap: Record<string, string> = {
-      success: "completed",
-      failed: "failed",
-      running: "running",
-      "not-started": "queued",
-      queued: "queued",
-    };
-    const status = statusMap[rawStatus?.status || ""] || rawStatus?.status || "queued";
+    // Map RunPod status to app status
+    const status = mapRunPodStatus(rawStatus.status);
 
     const result: {
       runId: string;
@@ -101,10 +37,19 @@ export async function GET(request: NextRequest) {
       status,
     };
 
-    if (media.length > 0) {
-      result.videos = media;
-      // Also set as images for compatibility with ResultDisplay
-      result.images = media;
+    // Extract video from output when completed
+    if (status === "completed" && rawStatus.output) {
+      const videos = extractVideoFromAiTalkOutput(rawStatus.output);
+      if (videos.length > 0) {
+        result.videos = videos;
+        // Also set as images for compatibility with ResultDisplay
+        result.images = videos;
+      }
+    }
+
+    // Include error if failed
+    if (status === "failed" && rawStatus.error) {
+      result.error = rawStatus.error;
     }
 
     return NextResponse.json(result);

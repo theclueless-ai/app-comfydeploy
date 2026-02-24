@@ -1,6 +1,10 @@
 /**
  * RunPod Serverless API Integration
  * For executing ComfyUI workflows on RunPod serverless endpoints
+ *
+ * Supports two endpoints:
+ * - Vellum (upscaling): RUNPOD_ENDPOINT_ID
+ * - AI Talk (talking head video): RUNPOD_AITALK_ENDPOINT_ID
  */
 
 // Environment variable validation - lazy check at runtime
@@ -22,6 +26,21 @@ function getRunPodConfig() {
   }
 
   return { apiKey: apiKey || "", endpointId: endpointId || "", baseUrl };
+}
+
+function getRunPodAiTalkConfig() {
+  const apiKey = process.env.RUNPOD_API_KEY;
+  const endpointId = process.env.RUNPOD_AITALK_ENDPOINT_ID;
+  const baseUrl = process.env.BASE_URL_RUNPOD || "https://api.runpod.ai/v2";
+
+  if (!apiKey) {
+    throw new Error("RUNPOD_API_KEY is not set in environment variables");
+  }
+  if (!endpointId) {
+    throw new Error("RUNPOD_AITALK_ENDPOINT_ID is not set in environment variables");
+  }
+
+  return { apiKey, endpointId, baseUrl };
 }
 
 export interface RunPodJobResponse {
@@ -415,4 +434,174 @@ function isS3Url(url: string): boolean {
   } catch {
     return false;
   }
+}
+
+// =============================================================================
+// AI Talk - RunPod Serverless (InfiniteTalk/WanVideo workflow)
+// =============================================================================
+
+/**
+ * AI Talk workflow inputs sent to the RunPod handler.
+ * The handler injects these into the ComfyUI workflow nodes.
+ */
+export interface AiTalkWorkflowInput {
+  input_image: string;      // Base64 data URI of the face image
+  input_audio?: string;     // Base64 data URI of audio (for STS mode)
+  input_text?: string;      // Text for TTS mode
+  voice_id: string;         // ElevenLabs voice ID
+  positive_prompt: string;  // Scene/motion description for video generation
+  mode?: "tts" | "sts";    // TTS (text-to-speech) or STS (speech-to-speech)
+}
+
+/**
+ * RunPod AI Talk status response.
+ * The handler returns a video_url after uploading to S3.
+ */
+export interface AiTalkStatusResponse {
+  id: string;
+  status: "IN_QUEUE" | "IN_PROGRESS" | "COMPLETED" | "FAILED" | "CANCELLED";
+  output?: {
+    video_url?: string;
+    filename?: string;
+    execution_time_s?: number;
+    file_size_mb?: number;
+  };
+  error?: string;
+}
+
+/**
+ * Submit an AI Talk job to RunPod (async).
+ * Returns a job ID for status polling.
+ */
+export async function runAiTalkWorkflowAsync(
+  input: AiTalkWorkflowInput
+): Promise<{ jobId: string }> {
+  const { apiKey, endpointId, baseUrl } = getRunPodAiTalkConfig();
+  const url = `${baseUrl}/${endpointId}/run`;
+
+  const payload = {
+    input: {
+      input_image: input.input_image,
+      input_audio: input.input_audio || "",
+      input_text: input.input_text || "",
+      voice_id: input.voice_id,
+      positive_prompt: input.positive_prompt,
+      mode: input.mode || "tts",
+    },
+  };
+
+  console.log("=== RunPod AI Talk API Call (async) ===");
+  console.log("URL:", url);
+  console.log("Endpoint ID:", endpointId);
+  console.log("Voice ID:", input.voice_id);
+  console.log("Mode:", input.mode || "tts");
+  console.log("Has image:", !!input.input_image);
+  console.log("Has audio:", !!input.input_audio);
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  console.log("Response status:", response.status);
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("RunPod AI Talk API Error:", errorText);
+    throw new Error(`RunPod AI Talk API error: ${response.status} - ${errorText}`);
+  }
+
+  const result: RunPodJobResponse = await response.json();
+  console.log("AI Talk job started with ID:", result.id);
+
+  return { jobId: result.id };
+}
+
+/**
+ * Check the status of an AI Talk RunPod job.
+ */
+export async function getAiTalkJobStatus(
+  jobId: string
+): Promise<AiTalkStatusResponse> {
+  const { apiKey, endpointId, baseUrl } = getRunPodAiTalkConfig();
+  const url = `${baseUrl}/${endpointId}/status/${jobId}`;
+
+  console.log("Checking AI Talk job status:", jobId);
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+    },
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("RunPod AI Talk Status API Error:", errorText);
+    throw new Error(
+      `RunPod AI Talk status error: ${response.status} - ${errorText}`
+    );
+  }
+
+  const result: AiTalkStatusResponse = await response.json();
+  console.log("AI Talk job status:", result.status);
+
+  return result;
+}
+
+/**
+ * Extract video URL from AI Talk RunPod output.
+ * The handler uploads the video to S3 and returns a presigned URL.
+ */
+export function extractVideoFromAiTalkOutput(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  output: any
+): Array<{ url: string; filename: string }> {
+  if (!output) {
+    console.log("extractVideoFromAiTalkOutput: output is null/undefined");
+    return [];
+  }
+
+  const videos: Array<{ url: string; filename: string }> = [];
+
+  // Format 1: Direct video_url from handler
+  if (output.video_url && typeof output.video_url === "string") {
+    console.log("extractVideoFromAiTalkOutput: Found video_url");
+    videos.push({
+      url: output.video_url,
+      filename: output.filename || "ai-talk-video.mp4",
+    });
+  }
+
+  // Format 2: Nested output (RunPod sometimes wraps)
+  if (output.output?.video_url && typeof output.output.video_url === "string") {
+    console.log("extractVideoFromAiTalkOutput: Found nested video_url");
+    videos.push({
+      url: output.output.video_url,
+      filename: output.output.filename || "ai-talk-video.mp4",
+    });
+  }
+
+  // Format 3: Fallback to generic S3 URL search
+  if (videos.length === 0) {
+    for (const [key, value] of Object.entries(output)) {
+      if (
+        typeof value === "string" &&
+        (value.includes("amazonaws.com") || value.includes(".mp4"))
+      ) {
+        console.log(`extractVideoFromAiTalkOutput: Found URL in field '${key}'`);
+        videos.push({
+          url: value,
+          filename: extractFilenameFromUrl(value),
+        });
+      }
+    }
+  }
+
+  console.log("extractVideoFromAiTalkOutput: Total videos found:", videos.length);
+  return videos;
 }
