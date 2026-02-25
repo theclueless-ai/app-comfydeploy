@@ -29,6 +29,10 @@ yarn-error.log*
 .env*.local
 .env
 
+# stored images
+/data/generations/*
+!/data/generations/.gitkeep
+
 # vercel
 .vercel
 

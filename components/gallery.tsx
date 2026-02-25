@@ -70,6 +70,7 @@ export function Gallery({ history, onClearHistory, onReuseParameters }: GalleryP
   const handleDownload = async (url: string, filename: string) => {
     try {
       const response = await fetch(url);
+      if (!response.ok) throw new Error("Failed to fetch");
       const blob = await response.blob();
       const downloadUrl = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -81,6 +82,7 @@ export function Gallery({ history, onClearHistory, onReuseParameters }: GalleryP
       window.URL.revokeObjectURL(downloadUrl);
     } catch (error) {
       console.error("Download failed:", error);
+      alert("No se pudo descargar la imagen.");
     }
   };
 

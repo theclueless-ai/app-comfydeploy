@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 
 const s3Client = new S3Client({
   region: process.env.AWS_REGION || "us-east-1",
@@ -10,6 +10,10 @@ const s3Client = new S3Client({
 
 const BUCKET_NAME = process.env.AWS_S3_BUCKET || "";
 
+/**
+ * Upload image to S3 and return the S3 key (not a public URL).
+ * Images are served via /api/s3-image?key=... instead of direct S3 URLs.
+ */
 export async function uploadImageToS3(
   imageBuffer: Buffer,
   filename: string,
@@ -26,22 +30,25 @@ export async function uploadImageToS3(
     })
   );
 
-  // Return the public URL
-  return `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION || "us-east-1"}.amazonaws.com/${key}`;
+  // Return a local API URL that serves the image from S3
+  return `/api/s3-image?key=${encodeURIComponent(key)}`;
 }
 
-export async function uploadImageFromUrl(
-  imageUrl: string,
-  filename: string
-): Promise<string> {
-  const response = await fetch(imageUrl);
-  if (!response.ok) {
-    throw new Error(`Failed to fetch image from ${imageUrl}: ${response.status}`);
-  }
+/**
+ * Get an image from S3 by key.
+ */
+export async function getImageFromS3(
+  key: string
+): Promise<{ data: Uint8Array; contentType: string }> {
+  const response = await s3Client.send(
+    new GetObjectCommand({
+      Bucket: BUCKET_NAME,
+      Key: key,
+    })
+  );
 
-  const contentType = response.headers.get("content-type") || "image/png";
-  const arrayBuffer = await response.arrayBuffer();
-  const buffer = Buffer.from(arrayBuffer);
+  const data = await response.Body!.transformToByteArray();
+  const contentType = response.ContentType || "image/png";
 
-  return uploadImageToS3(buffer, filename, contentType);
+  return { data, contentType };
 }

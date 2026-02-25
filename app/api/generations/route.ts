@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "@/lib/auth";
 import { query } from "@/lib/db";
-import { uploadImageFromUrl } from "@/lib/s3";
+import { uploadImageToS3 } from "@/lib/s3";
+import { fetchComfyUIImage } from "@/lib/comfyui-local";
 import { cookies } from "next/headers";
 
 // GET /api/generations - Retrieve user's generation history
@@ -90,25 +91,42 @@ export async function POST(request: NextRequest) {
 
     const generationId = genResult.rows[0].id;
 
-    // Upload images to S3 and save URLs
+    // Upload images to S3 and save the S3 URL in the DB
     const savedImages: Array<{ url: string; filename: string }> = [];
 
     for (const image of images) {
       let finalUrl = image.url;
 
-      // If S3 is configured, upload the image
-      if (process.env.AWS_S3_BUCKET) {
-        try {
-          // Build the full URL for local images (avatar proxy URLs)
-          const imageUrl = image.url.startsWith("http")
-            ? image.url
-            : `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}${image.url}`;
+      try {
+        let imageData: ArrayBuffer;
+        let contentType: string;
 
-          finalUrl = await uploadImageFromUrl(imageUrl, image.filename);
-        } catch (uploadError) {
-          console.error("S3 upload failed, storing original URL:", uploadError);
-          // Fall back to original URL if S3 upload fails
+        // Parse the proxy URL to get ComfyUI params and fetch directly
+        if (image.url.includes("/api/avatar-image")) {
+          const urlParams = new URL(image.url, "http://localhost").searchParams;
+          const result = await fetchComfyUIImage(
+            urlParams.get("filename") || image.filename,
+            urlParams.get("subfolder") || "",
+            urlParams.get("type") || "output"
+          );
+          imageData = result.data;
+          contentType = result.contentType;
+        } else {
+          // External URL - fetch directly
+          const response = await fetch(image.url);
+          if (!response.ok) throw new Error(`Fetch failed: ${response.status}`);
+          imageData = await response.arrayBuffer();
+          contentType = response.headers.get("content-type") || "image/png";
         }
+
+        finalUrl = await uploadImageToS3(
+          Buffer.from(imageData),
+          image.filename,
+          contentType
+        );
+      } catch (uploadError) {
+        console.error("S3 upload failed for image:", uploadError);
+        // fallback: keep original URL
       }
 
       await query(
