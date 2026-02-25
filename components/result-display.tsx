@@ -21,32 +21,18 @@ export function ResultDisplay({ status, images, error }: ResultDisplayProps) {
     return null;
   }
 
-  const handleDownload = async (imageUrl: string, filename: string, index: number) => {
-    setDownloadingIndex(index);
-    try {
-      const response = await fetch(imageUrl);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch image: ${response.status}`);
-      }
-      const contentType = response.headers.get("content-type") || "";
-      if (contentType.includes("application/json") || contentType.includes("text/html")) {
-        throw new Error("Response is an error, not an image");
-      }
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename || `theclueless-result-${index + 1}.png`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
-    } catch (error) {
-      console.error("Download failed:", error);
-      alert("No se pudo descargar la imagen. Es posible que ya no esté disponible.");
-    } finally {
-      setDownloadingIndex(null);
-    }
+  const handleDownload = (imageUrl: string, filename: string, index: number) => {
+    // For external URLs (S3), use server proxy to avoid CORS issues
+    const downloadUrl = imageUrl.startsWith("http")
+      ? `/api/download-image?url=${encodeURIComponent(imageUrl)}&filename=${encodeURIComponent(filename || `theclueless-result-${index + 1}.png`)}`
+      : imageUrl;
+
+    const a = document.createElement("a");
+    a.href = downloadUrl;
+    a.download = filename || `theclueless-result-${index + 1}.png`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   };
 
   return (

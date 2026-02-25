@@ -23,25 +23,10 @@ export async function uploadImageToS3(
       Key: key,
       Body: imageBuffer,
       ContentType: contentType,
+      ACL: "public-read",
     })
   );
 
   // Return the public URL
   return `https://${BUCKET_NAME}.s3.${process.env.AWS_REGION || "us-east-1"}.amazonaws.com/${key}`;
-}
-
-export async function uploadImageFromUrl(
-  imageUrl: string,
-  filename: string
-): Promise<string> {
-  const response = await fetch(imageUrl);
-  if (!response.ok) {
-    throw new Error(`Failed to fetch image from ${imageUrl}: ${response.status}`);
-  }
-
-  const contentType = response.headers.get("content-type") || "image/png";
-  const arrayBuffer = await response.arrayBuffer();
-  const buffer = Buffer.from(arrayBuffer);
-
-  return uploadImageToS3(buffer, filename, contentType);
 }

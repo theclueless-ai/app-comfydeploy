@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "@/lib/auth";
 import { query } from "@/lib/db";
-import { uploadImageFromUrl } from "@/lib/s3";
+import { uploadImageToS3 } from "@/lib/s3";
+import { fetchComfyUIImage } from "@/lib/comfyui-local";
 import { cookies } from "next/headers";
 
 // GET /api/generations - Retrieve user's generation history
@@ -94,17 +95,38 @@ export async function POST(request: NextRequest) {
     const savedImages: Array<{ url: string; filename: string }> = [];
 
     for (const image of images) {
-      // Build full URL for proxy images (e.g. /api/avatar-image?...)
-      const imageUrl = image.url.startsWith("http")
-        ? image.url
-        : `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}${image.url}`;
+      let finalUrl = image.url;
 
-      let finalUrl: string;
       try {
-        finalUrl = await uploadImageFromUrl(imageUrl, image.filename);
+        let imageData: ArrayBuffer;
+        let contentType: string;
+
+        // Parse the proxy URL to get ComfyUI params and fetch directly
+        if (image.url.includes("/api/avatar-image")) {
+          const urlParams = new URL(image.url, "http://localhost").searchParams;
+          const result = await fetchComfyUIImage(
+            urlParams.get("filename") || image.filename,
+            urlParams.get("subfolder") || "",
+            urlParams.get("type") || "output"
+          );
+          imageData = result.data;
+          contentType = result.contentType;
+        } else {
+          // External URL - fetch directly
+          const response = await fetch(image.url);
+          if (!response.ok) throw new Error(`Fetch failed: ${response.status}`);
+          imageData = await response.arrayBuffer();
+          contentType = response.headers.get("content-type") || "image/png";
+        }
+
+        finalUrl = await uploadImageToS3(
+          Buffer.from(imageData),
+          image.filename,
+          contentType
+        );
       } catch (uploadError) {
         console.error("S3 upload failed for image:", uploadError);
-        finalUrl = image.url; // fallback to original URL
+        // fallback: keep original URL
       }
 
       await query(

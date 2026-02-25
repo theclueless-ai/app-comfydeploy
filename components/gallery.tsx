@@ -67,29 +67,18 @@ export function Gallery({ history, onClearHistory, onReuseParameters }: GalleryP
     }))
   );
 
-  const handleDownload = async (url: string, filename: string) => {
-    try {
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch image: ${response.status}`);
-      }
-      const contentType = response.headers.get("content-type") || "";
-      if (contentType.includes("application/json") || contentType.includes("text/html")) {
-        throw new Error("Response is an error, not an image");
-      }
-      const blob = await response.blob();
-      const downloadUrl = window.URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = downloadUrl;
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(downloadUrl);
-    } catch (error) {
-      console.error("Download failed:", error);
-      alert("No se pudo descargar la imagen. Es posible que ya no esté disponible.");
-    }
+  const handleDownload = (url: string, filename: string) => {
+    // For external URLs (S3), use server proxy to avoid CORS issues
+    const downloadUrl = url.startsWith("http")
+      ? `/api/download-image?url=${encodeURIComponent(url)}&filename=${encodeURIComponent(filename)}`
+      : url;
+
+    const link = document.createElement("a");
+    link.href = downloadUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const handleImageClick = (image: typeof allImages[0]) => {
