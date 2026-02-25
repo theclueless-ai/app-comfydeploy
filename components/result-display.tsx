@@ -101,6 +101,7 @@ export function ResultDisplay({ status, images, error }: ResultDisplayProps) {
                       src={image.url}
                       alt={`Generated result ${index + 1}`}
                       fill
+                      unoptimized
                       className="object-cover"
                     />
                   </div>
