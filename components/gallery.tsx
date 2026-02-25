@@ -74,8 +74,8 @@ export function Gallery({ history, onClearHistory, onReuseParameters }: GalleryP
         throw new Error(`Failed to fetch image: ${response.status}`);
       }
       const contentType = response.headers.get("content-type") || "";
-      if (!contentType.startsWith("image/")) {
-        throw new Error("Response is not an image");
+      if (contentType.includes("application/json") || contentType.includes("text/html")) {
+        throw new Error("Response is an error, not an image");
       }
       const blob = await response.blob();
       const downloadUrl = window.URL.createObjectURL(blob);
