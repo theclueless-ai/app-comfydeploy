@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { SelectInput } from "./select-input";
 import { cn } from "@/lib/utils";
 import { Sparkles, Loader2, ChevronDown } from "lucide-react";
@@ -15,6 +15,8 @@ import {
 interface AvatarFormProps {
   onSubmit: (inputs: Record<string, string | number>) => Promise<void>;
   isLoading: boolean;
+  reusedParameters?: Record<string, string | number> | null;
+  onParametersApplied?: () => void;
 }
 
 type CharacterType = "HUMAN" | "NON-HUMAN";
@@ -99,7 +101,7 @@ function ColorGradingSlider({
   );
 }
 
-export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
+export function AvatarForm({ onSubmit, isLoading, reusedParameters, onParametersApplied }: AvatarFormProps) {
   // Character type
   const [characterType, setCharacterType] = useState<CharacterType>("HUMAN");
 
@@ -146,6 +148,56 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
   const updateColorGrading = (field: keyof ColorGradingValues, value: number) => {
     setColorGrading((prev) => ({ ...prev, [field]: value }));
   };
+
+  // Apply reused parameters from gallery
+  useEffect(() => {
+    if (!reusedParameters) return;
+
+    const p = reusedParameters;
+
+    if (p.character_type) setCharacterType(p.character_type as CharacterType);
+    if (p.seed !== undefined) setSeed(String(p.seed));
+    if (p.render_style) setRenderStyle(String(p.render_style));
+    if (p.lighting) setLighting(String(p.lighting));
+    if (p.background) setBackground(String(p.background));
+
+    // Human features
+    if (p.A_gender) setGender(String(p.A_gender));
+    if (p.A_ethnicity) setEthnicity(String(p.A_ethnicity));
+    if (p.A_age_range) setAgeRange(String(p.A_age_range));
+    if (p.A_skin_tone) setSkinTone(String(p.A_skin_tone));
+    if (p.A_face_shape) setFaceShape(String(p.A_face_shape));
+    if (p.A_hair_color) setHairColor(String(p.A_hair_color));
+    if (p.A_hair_style) setHairStyle(String(p.A_hair_style));
+    if (p.A_eye_color) setEyeColor(String(p.A_eye_color));
+    if (p.A_eye_shape) setEyeShape(String(p.A_eye_shape));
+    if (p.A_nose) setNose(String(p.A_nose));
+    if (p.A_lips) setLips(String(p.A_lips));
+    if (p.A_freckles) setFreckles(String(p.A_freckles));
+    if (p.A_expression) setExpression(String(p.A_expression));
+    if (p.A_distinctive_features) setDistinctiveFeatures(String(p.A_distinctive_features));
+
+    // Non-human features
+    if (p.B_skin_texture) setSkinTexture(String(p.B_skin_texture));
+    if (p.B_skin_color) setSkinColor(String(p.B_skin_color));
+    if (p.B_eyes) setEyes(String(p.B_eyes));
+    if (p.B_face_structure) setFaceStructure(String(p.B_face_structure));
+    if (p.B_organic_additions) setOrganicAdditions(String(p.B_organic_additions));
+
+    // Color grading
+    const cg: Partial<ColorGradingValues> = {};
+    if (p.temperature !== undefined) cg.temperature = Number(p.temperature);
+    if (p.hue !== undefined) cg.hue = Number(p.hue);
+    if (p.brightness !== undefined) cg.brightness = Number(p.brightness);
+    if (p.contrast !== undefined) cg.contrast = Number(p.contrast);
+    if (p.saturation !== undefined) cg.saturation = Number(p.saturation);
+    if (p.gamma !== undefined) cg.gamma = Number(p.gamma);
+    if (Object.keys(cg).length > 0) {
+      setColorGrading((prev) => ({ ...prev, ...cg }));
+    }
+
+    onParametersApplied?.();
+  }, [reusedParameters, onParametersApplied]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -258,6 +310,9 @@ export function AvatarForm({ onSubmit, isLoading }: AvatarFormProps) {
             "hover:border-brand-pink/50"
           )}
         />
+        <p className="text-[10px] text-[rgb(var(--muted-foreground))]/60">
+          Range: 0 — 4,294,967,295
+        </p>
       </div>
 
       {/* Human Features */}

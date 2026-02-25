@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Header } from "@/components/header";
 import { WorkflowForm } from "@/components/workflow-form";
 import { AvatarForm } from "@/components/avatar-form";
@@ -11,6 +11,7 @@ import { getDefaultWorkflow, getVellumWorkflow, getAiTalkWorkflow } from "@/lib/
 import { cn } from "@/lib/utils";
 import { sanitizeErrorMessage } from "@/lib/error-messages";
 import { useHistory } from "@/hooks/use-history";
+import { useAuth } from "@/components/auth-provider";
 import { History } from "lucide-react";
 
 type RunStatus = "queued" | "running" | "completed" | "failed" | null;
@@ -23,6 +24,12 @@ export default function Home() {
   const [resultImages, setResultImages] = useState<Array<{ url: string; filename: string }>>([]);
   const [error, setError] = useState<string>();
   const [showGallery, setShowGallery] = useState(false);
+
+  // Track submitted parameters for saving with history
+  const lastSubmittedParams = useRef<Record<string, string | number> | null>(null);
+
+  const { user } = useAuth();
+  const isAuthenticated = !!user;
 
   const fashionWorkflow = getDefaultWorkflow();
   const vellumWorkflow = getVellumWorkflow();
@@ -38,7 +45,7 @@ export default function Home() {
   const activeWorkflowName = workflow?.name ?? avatarInfo.name;
   const activeWorkflowDescription = workflow?.description ?? avatarInfo.description;
 
-  const { history, totalImages, addToHistory, clearHistory } = useHistory();
+  const { history, totalImages, addToHistory, clearHistory } = useHistory({ isAuthenticated });
 
   // Reset state when changing tabs
   const handleTabChange = (tab: WorkflowTab) => {
@@ -264,15 +271,34 @@ export default function Home() {
         runId,
         images: resultImages,
         workflowName: activeWorkflowName,
+        parameters: lastSubmittedParams.current ?? undefined,
       });
     }
   }, [status, resultImages, runId, activeWorkflowName, addToHistory]);
+
+  // Handle reuse parameters from gallery
+  const handleReuseParameters = (parameters: Record<string, string | number>) => {
+    // Switch to the correct tab based on workflow if needed
+    // Set the parameters to be picked up by the form
+    setReusedParameters(parameters);
+  };
+
+  const [reusedParameters, setReusedParameters] = useState<Record<string, string | number> | null>(null);
 
   const handleSubmit = async (inputs: Record<string, File | string | number>) => {
     setIsLoading(true);
     setStatus("queued");
     setError(undefined);
     setResultImages([]);
+
+    // Capture text/number parameters (skip File objects)
+    const params: Record<string, string | number> = {};
+    Object.entries(inputs).forEach(([key, value]) => {
+      if (!(value instanceof File)) {
+        params[key] = value;
+      }
+    });
+    lastSubmittedParams.current = params;
 
     try {
       const formData = new FormData();
@@ -361,12 +387,16 @@ export default function Home() {
                 <AvatarForm
                   onSubmit={handleSubmit}
                   isLoading={isLoading}
+                  reusedParameters={reusedParameters}
+                  onParametersApplied={() => setReusedParameters(null)}
                 />
               ) : workflow ? (
                 <WorkflowForm
                   workflow={workflow}
                   onSubmit={handleSubmit}
                   isLoading={isLoading}
+                  reusedParameters={reusedParameters}
+                  onParametersApplied={() => setReusedParameters(null)}
                 />
               ) : null}
             </div>
@@ -428,7 +458,11 @@ export default function Home() {
 
               {showGallery && (
                 <div className="animate-slide-up">
-                  <Gallery history={history} onClearHistory={clearHistory} />
+                  <Gallery
+                    history={history}
+                    onClearHistory={clearHistory}
+                    onReuseParameters={handleReuseParameters}
+                  />
                 </div>
               )}
             </div>

@@ -9,6 +9,7 @@ export interface HistoryRun {
   timestamp: number; // Unix timestamp
   images: HistoryImage[];
   workflowName?: string;
+  parameters?: Record<string, string | number>;
 }
 
 const HISTORY_KEY = "comfydeploy_history";

@@ -17,12 +17,16 @@ interface WorkflowFormProps {
   workflow: WorkflowConfig;
   onSubmit: (inputs: Record<string, File | string | number>) => Promise<void>;
   isLoading: boolean;
+  reusedParameters?: Record<string, string | number> | null;
+  onParametersApplied?: () => void;
 }
 
 export function WorkflowForm({
   workflow,
   onSubmit,
   isLoading,
+  reusedParameters,
+  onParametersApplied,
 }: WorkflowFormProps) {
   const [inputs, setInputs] = useState<Record<string, File | string | number | null>>({});
   const [audioMode, setAudioMode] = useState<"tts" | "sts">("tts");
@@ -43,6 +47,32 @@ export function WorkflowForm({
     });
     setInputs(defaultInputs);
   }, [workflow]);
+
+  // Apply reused parameters from gallery
+  useEffect(() => {
+    if (!reusedParameters) return;
+
+    setInputs((prev) => {
+      const updated = { ...prev };
+      for (const [key, value] of Object.entries(reusedParameters)) {
+        // Only apply params that match workflow input IDs (skip file-type inputs)
+        const matchingInput = workflow.inputs.find((i) => i.id === key);
+        if (matchingInput && matchingInput.type !== "image" && matchingInput.type !== "audio") {
+          updated[key] = value;
+        }
+        // Also apply input_text for audio-mode workflows
+        if (key === "input_text" || key === "mode") {
+          updated[key] = value;
+          if (key === "mode" && (value === "tts" || value === "sts")) {
+            setAudioMode(value);
+          }
+        }
+      }
+      return updated;
+    });
+
+    onParametersApplied?.();
+  }, [reusedParameters, workflow, onParametersApplied]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
