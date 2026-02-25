@@ -2,7 +2,12 @@
 
 import { cn } from "@/lib/utils";
 
-export type WorkflowTab = "fashion" | "vellum" | "ai-talk";
+export type WorkflowTab = "fashion" | "vellum" | "ai-talk" | "avatar" | "avatarT";
+
+const externalTabs: Record<string, string> = {
+  avatar: "http://192.168.1.10:3000/",
+  avatarT: "http://192.168.193.229:3000/",
+};
 
 interface WorkflowTabsProps {
   activeTab: WorkflowTab;
@@ -14,14 +19,24 @@ export function WorkflowTabs({ activeTab, onTabChange }: WorkflowTabsProps) {
     { id: "fashion", label: "AI Fashion Commerce" },
     { id: "vellum", label: "Vellum 2.0" },
     { id: "ai-talk", label: "AI Talk" },
+    { id: "avatar", label: "Avatar Generator" },
+    { id: "avatarT", label: "Avatar Generator T" },
   ];
+
+  const handleTabClick = (tabId: WorkflowTab) => {
+    if (externalTabs[tabId]) {
+      window.open(externalTabs[tabId], "_blank");
+    } else {
+      onTabChange(tabId);
+    }
+  };
 
   return (
     <div className="flex gap-1 p-1 rounded-lg bg-[rgb(var(--card))] border border-[rgb(var(--border))]">
       {tabs.map((tab) => (
         <button
           key={tab.id}
-          onClick={() => onTabChange(tab.id)}
+          onClick={() => handleTabClick(tab.id)}
           className={cn(
             "px-4 py-2 rounded-md text-sm font-medium transition-all duration-200",
             "focus:outline-none focus:ring-2 focus:ring-brand-pink/50",
