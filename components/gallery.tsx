@@ -70,6 +70,13 @@ export function Gallery({ history, onClearHistory, onReuseParameters }: GalleryP
   const handleDownload = async (url: string, filename: string) => {
     try {
       const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch image: ${response.status}`);
+      }
+      const contentType = response.headers.get("content-type") || "";
+      if (!contentType.startsWith("image/")) {
+        throw new Error("Response is not an image");
+      }
       const blob = await response.blob();
       const downloadUrl = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -81,6 +88,7 @@ export function Gallery({ history, onClearHistory, onReuseParameters }: GalleryP
       window.URL.revokeObjectURL(downloadUrl);
     } catch (error) {
       console.error("Download failed:", error);
+      alert("No se pudo descargar la imagen. Es posible que ya no esté disponible.");
     }
   };
 

@@ -1,8 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyToken } from "@/lib/auth";
 import { query } from "@/lib/db";
-import { uploadImageFromUrl } from "@/lib/s3";
+import { saveImageFromUrl } from "@/lib/local-storage";
 import { cookies } from "next/headers";
+
+// Dynamically import S3 only if configured
+async function getS3Uploader() {
+  if (!process.env.AWS_S3_BUCKET) return null;
+  try {
+    const { uploadImageFromUrl } = await import("@/lib/s3");
+    return uploadImageFromUrl;
+  } catch {
+    return null;
+  }
+}
 
 // GET /api/generations - Retrieve user's generation history
 export async function GET() {
@@ -90,24 +101,36 @@ export async function POST(request: NextRequest) {
 
     const generationId = genResult.rows[0].id;
 
-    // Upload images to S3 and save URLs
+    // Upload images to persistent storage (S3 or local filesystem)
     const savedImages: Array<{ url: string; filename: string }> = [];
+    const s3Upload = await getS3Uploader();
 
     for (const image of images) {
       let finalUrl = image.url;
 
-      // If S3 is configured, upload the image
-      if (process.env.AWS_S3_BUCKET) {
-        try {
-          // Build the full URL for local images (avatar proxy URLs)
-          const imageUrl = image.url.startsWith("http")
-            ? image.url
-            : `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}${image.url}`;
+      // Build the full URL for local images (avatar proxy URLs)
+      const imageUrl = image.url.startsWith("http")
+        ? image.url
+        : `${process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"}${image.url}`;
 
-          finalUrl = await uploadImageFromUrl(imageUrl, image.filename);
+      if (s3Upload) {
+        // Try S3 first
+        try {
+          finalUrl = await s3Upload(imageUrl, image.filename);
         } catch (uploadError) {
-          console.error("S3 upload failed, storing original URL:", uploadError);
-          // Fall back to original URL if S3 upload fails
+          console.error("S3 upload failed, trying local storage:", uploadError);
+          try {
+            finalUrl = await saveImageFromUrl(imageUrl, image.filename);
+          } catch (localError) {
+            console.error("Local storage also failed:", localError);
+          }
+        }
+      } else {
+        // No S3 configured - save to local filesystem
+        try {
+          finalUrl = await saveImageFromUrl(imageUrl, image.filename);
+        } catch (localError) {
+          console.error("Local image save failed, storing original URL:", localError);
         }
       }
 

@@ -25,6 +25,13 @@ export function ResultDisplay({ status, images, error }: ResultDisplayProps) {
     setDownloadingIndex(index);
     try {
       const response = await fetch(imageUrl);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch image: ${response.status}`);
+      }
+      const contentType = response.headers.get("content-type") || "";
+      if (!contentType.startsWith("image/")) {
+        throw new Error("Response is not an image");
+      }
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -36,7 +43,7 @@ export function ResultDisplay({ status, images, error }: ResultDisplayProps) {
       document.body.removeChild(a);
     } catch (error) {
       console.error("Download failed:", error);
-      alert("Failed to download image");
+      alert("No se pudo descargar la imagen. Es posible que ya no esté disponible.");
     } finally {
       setDownloadingIndex(null);
     }
