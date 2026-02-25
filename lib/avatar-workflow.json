@@ -47,7 +47,7 @@
   },
   "16": {
     "inputs": {
-      "unet_name": "Zit\\zImageTurboAIO_zImageTurboFP16AIO.safetensors",
+      "unet_name": "Zit/zImageTurboAIO_zImageTurboFP16AIO.safetensors",
       "weight_dtype": "default"
     },
     "class_type": "UNETLoader",
@@ -57,7 +57,7 @@
   },
   "17": {
     "inputs": {
-      "vae_name": "Flux\\ae.safetensors"
+      "vae_name": "Flux/ae.safetensors"
     },
     "class_type": "VAELoader",
     "_meta": {
@@ -136,17 +136,17 @@
       },
       "lora_1": {
         "on": false,
-        "lora": "Z-Image\\(ZIT)_CinematicShot.safetensors",
+        "lora": "Z-Image/(ZIT)_CinematicShot.safetensors",
         "strength": 0.55
       },
       "lora_2": {
         "on": false,
-        "lora": "Z-Image\\(ZIT)_Smallbreasts_v1.safetensors",
+        "lora": "Z-Image/(ZIT)_Smallbreasts_v1.safetensors",
         "strength": 0.75
       },
       "lora_3": {
         "on": false,
-        "lora": "Z-Image\\(ZIT)_AfterDark_v2.safetensors",
+        "lora": "Z-Image/(ZIT)_AfterDark_v2.safetensors",
         "strength": 0.75
       },
       "➕ Add Lora": "",
@@ -364,7 +364,7 @@
   },
   "176": {
     "inputs": {
-      "ckpt_name": "Sdxl\\cyberrealisticXL_v80.safetensors"
+      "ckpt_name": "Sdxl/cyberrealisticXL_v80.safetensors"
     },
     "class_type": "CheckpointLoaderSimple",
     "_meta": {
@@ -444,17 +444,17 @@
       },
       "lora_1": {
         "on": true,
-        "lora": "sDXL\\DetailedEyes_V3.safetensors",
+        "lora": "sDXL/DetailedEyes_V3.safetensors",
         "strength": 0.4
       },
       "lora_2": {
         "on": true,
-        "lora": "sDXL\\skin_4-000015.safetensors",
+        "lora": "sDXL/skin_4-000015.safetensors",
         "strength": 0.5
       },
       "lora_3": {
         "on": false,
-        "lora": "SDXL\\(SDXL)_No_More_Sameface-Face_Randomizer.safetensors",
+        "lora": "SDXL/(SDXL)_No_More_Sameface-Face_Randomizer.safetensors",
         "strength": 0.85
       },
       "➕ Add Lora": "",
