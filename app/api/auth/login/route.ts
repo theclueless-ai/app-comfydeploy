@@ -35,9 +35,12 @@ export async function POST(request: Request) {
     });
 
     // Set HTTP-only cookie for the token
+    // Only set Secure flag when actually using HTTPS (not just production mode)
+    const requestUrl = new URL(request.url);
+    const isHttps = requestUrl.protocol === 'https:';
     response.cookies.set('auth-token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: isHttps,
       sameSite: 'lax',
       maxAge: 60 * 60 * 24, // 24 hours
       path: '/'

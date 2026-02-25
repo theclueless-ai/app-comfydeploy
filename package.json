@@ -4,13 +4,14 @@
   "description": "Modern workflow execution app powered by ComfyDeploy",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -H 0.0.0.0",
     "build": "next build",
-    "start": "next start",
+    "start": "next start -H 0.0.0.0",
     "lint": "next lint",
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.997.0",
     "bcryptjs": "^3.0.3",
     "clsx": "^2.1.1",
     "comfydeploy": "^0.0.19-beta.10",

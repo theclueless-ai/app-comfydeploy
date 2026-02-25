@@ -1,22 +1,60 @@
 "use client";
 
 import { useState } from "react";
-import { Download, Trash2, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { Download, Trash2, X, ChevronLeft, ChevronRight, RotateCcw, ChevronDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { HistoryRun, formatTimestamp } from "@/lib/history";
+
+// Human-readable labels for parameter keys
+const PARAM_LABELS: Record<string, string> = {
+  character_type: "Character Type",
+  seed: "Seed",
+  render_style: "Render Style",
+  lighting: "Lighting",
+  background: "Background",
+  A_gender: "Gender",
+  A_ethnicity: "Ethnicity",
+  A_age_range: "Age Range",
+  A_skin_tone: "Skin Tone",
+  A_face_shape: "Face Shape",
+  A_hair_color: "Hair Color",
+  A_hair_style: "Hair Style",
+  A_eye_color: "Eye Color",
+  A_eye_shape: "Eye Shape",
+  A_nose: "Nose",
+  A_lips: "Lips",
+  A_freckles: "Freckles",
+  A_expression: "Expression",
+  A_distinctive_features: "Distinctive Features",
+  B_skin_texture: "Skin Texture",
+  B_skin_color: "Skin Color",
+  B_eyes: "Eyes",
+  B_face_structure: "Face Structure",
+  B_organic_additions: "Organic Additions",
+  temperature: "Temperature",
+  hue: "Hue",
+  brightness: "Brightness",
+  contrast: "Contrast",
+  saturation: "Saturation",
+  gamma: "Gamma",
+};
 
 interface GalleryProps {
   history: HistoryRun[];
   onClearHistory: () => void;
+  onReuseParameters?: (parameters: Record<string, string | number>) => void;
 }
 
-export function Gallery({ history, onClearHistory }: GalleryProps) {
+export function Gallery({ history, onClearHistory, onReuseParameters }: GalleryProps) {
   const [selectedImage, setSelectedImage] = useState<{
     url: string;
     filename: string;
     runId: string;
     timestamp: number;
+    workflowName?: string;
+    parameters?: Record<string, string | number>;
   } | null>(null);
+  const [showParams, setShowParams] = useState(false);
 
   // Get all images flattened with metadata
   const allImages = history.flatMap((run) =>
@@ -25,6 +63,7 @@ export function Gallery({ history, onClearHistory }: GalleryProps) {
       runId: run.runId,
       timestamp: run.timestamp,
       workflowName: run.workflowName,
+      parameters: run.parameters,
     }))
   );
 
@@ -47,10 +86,12 @@ export function Gallery({ history, onClearHistory }: GalleryProps) {
 
   const handleImageClick = (image: typeof allImages[0]) => {
     setSelectedImage(image);
+    setShowParams(false);
   };
 
   const handleCloseModal = () => {
     setSelectedImage(null);
+    setShowParams(false);
   };
 
   const handleNextImage = () => {
@@ -60,6 +101,7 @@ export function Gallery({ history, onClearHistory }: GalleryProps) {
     );
     const nextIndex = (currentIndex + 1) % allImages.length;
     setSelectedImage(allImages[nextIndex]);
+    setShowParams(false);
   };
 
   const handlePrevImage = () => {
@@ -69,6 +111,14 @@ export function Gallery({ history, onClearHistory }: GalleryProps) {
     );
     const prevIndex = (currentIndex - 1 + allImages.length) % allImages.length;
     setSelectedImage(allImages[prevIndex]);
+    setShowParams(false);
+  };
+
+  const handleReuseParameters = () => {
+    if (selectedImage?.parameters && onReuseParameters) {
+      onReuseParameters(selectedImage.parameters);
+      handleCloseModal();
+    }
   };
 
   if (history.length === 0) {
@@ -141,9 +191,16 @@ export function Gallery({ history, onClearHistory }: GalleryProps) {
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
               <div className="absolute bottom-2 left-2 right-2">
                 <p className="text-xs text-white truncate">{image.filename}</p>
-                <p className="text-xs text-gray-300 mt-0.5">
-                  {formatTimestamp(image.timestamp)}
-                </p>
+                <div className="flex items-center gap-1 mt-0.5">
+                  <p className="text-xs text-gray-300">
+                    {formatTimestamp(image.timestamp)}
+                  </p>
+                  {image.parameters && (
+                    <span className="text-[10px] bg-brand-pink/20 text-brand-pink px-1 rounded">
+                      params
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -158,7 +215,7 @@ export function Gallery({ history, onClearHistory }: GalleryProps) {
         >
           <button
             onClick={handleCloseModal}
-            className="absolute top-4 right-4 p-2 rounded-full bg-gray-800/80 hover:bg-gray-700 text-white transition-colors"
+            className="absolute top-4 right-4 p-2 rounded-full bg-gray-800/80 hover:bg-gray-700 text-white transition-colors z-10"
           >
             <X className="w-5 h-5" />
           </button>
@@ -171,7 +228,7 @@ export function Gallery({ history, onClearHistory }: GalleryProps) {
                   e.stopPropagation();
                   handlePrevImage();
                 }}
-                className="absolute left-4 p-2 rounded-full bg-gray-800/80 hover:bg-gray-700 text-white transition-colors"
+                className="absolute left-4 p-2 rounded-full bg-gray-800/80 hover:bg-gray-700 text-white transition-colors z-10"
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
@@ -180,7 +237,7 @@ export function Gallery({ history, onClearHistory }: GalleryProps) {
                   e.stopPropagation();
                   handleNextImage();
                 }}
-                className="absolute right-4 p-2 rounded-full bg-gray-800/80 hover:bg-gray-700 text-white transition-colors"
+                className="absolute right-4 p-2 rounded-full bg-gray-800/80 hover:bg-gray-700 text-white transition-colors z-10"
               >
                 <ChevronRight className="w-5 h-5" />
               </button>
@@ -188,37 +245,93 @@ export function Gallery({ history, onClearHistory }: GalleryProps) {
           )}
 
           <div
-            className="max-w-4xl max-h-[90vh] flex flex-col"
+            className="max-w-4xl max-h-[90vh] flex flex-col overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
             <img
               src={selectedImage.url}
               alt={selectedImage.filename}
-              className="max-w-full max-h-[80vh] object-contain rounded-lg"
+              className="max-w-full max-h-[60vh] object-contain rounded-lg"
             />
-            <div className="mt-4 bg-gray-800/90 rounded-lg p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-white">
+            <div className="mt-4 bg-gray-800/90 rounded-lg p-4 space-y-3">
+              {/* File info and actions */}
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-white truncate">
                     {selectedImage.filename}
                   </p>
-                  <p className="text-xs text-gray-400 mt-1">
+                  <p className="text-xs text-gray-400 mt-0.5">
                     {formatTimestamp(selectedImage.timestamp)}
+                    {selectedImage.workflowName && (
+                      <span className="ml-2 text-brand-pink">{selectedImage.workflowName}</span>
+                    )}
                   </p>
                 </div>
-                <button
-                  onClick={() =>
-                    handleDownload(selectedImage.url, selectedImage.filename)
-                  }
-                  className={cn(
-                    "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                    "bg-brand-pink hover:bg-brand-pink-dark text-gray-900"
+                <div className="flex items-center gap-2 shrink-0">
+                  {selectedImage.parameters && onReuseParameters && (
+                    <button
+                      onClick={handleReuseParameters}
+                      className={cn(
+                        "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                        "bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 border border-blue-500/30"
+                      )}
+                    >
+                      <RotateCcw className="w-4 h-4" />
+                      Reuse Parameters
+                    </button>
                   )}
-                >
-                  <Download className="w-4 h-4" />
-                  Download
-                </button>
+                  <button
+                    onClick={() =>
+                      handleDownload(selectedImage.url, selectedImage.filename)
+                    }
+                    className={cn(
+                      "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                      "bg-brand-pink hover:bg-brand-pink-dark text-gray-900"
+                    )}
+                  >
+                    <Download className="w-4 h-4" />
+                    Download
+                  </button>
+                </div>
               </div>
+
+              {/* Parameters section */}
+              {selectedImage.parameters && Object.keys(selectedImage.parameters).length > 0 && (
+                <div>
+                  <button
+                    onClick={() => setShowParams(!showParams)}
+                    className={cn(
+                      "w-full flex items-center justify-between px-3 py-2 rounded-md text-xs font-medium",
+                      "bg-gray-700/50 border border-gray-600/50",
+                      "text-gray-300 hover:text-white",
+                      "transition-all duration-200"
+                    )}
+                  >
+                    <span>Generation Parameters ({Object.keys(selectedImage.parameters).length})</span>
+                    <ChevronDown
+                      className={cn(
+                        "w-3.5 h-3.5 transition-transform duration-200",
+                        showParams && "rotate-180"
+                      )}
+                    />
+                  </button>
+
+                  {showParams && (
+                    <div className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 px-3 py-2 bg-gray-900/50 rounded-md max-h-[200px] overflow-y-auto">
+                      {Object.entries(selectedImage.parameters).map(([key, value]) => (
+                        <div key={key} className="flex items-center justify-between gap-2 py-0.5">
+                          <span className="text-[11px] text-gray-400 truncate">
+                            {PARAM_LABELS[key] || key}
+                          </span>
+                          <span className="text-[11px] text-white font-medium truncate max-w-[120px]">
+                            {String(value)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>
