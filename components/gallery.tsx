@@ -67,18 +67,23 @@ export function Gallery({ history, onClearHistory, onReuseParameters }: GalleryP
     }))
   );
 
-  const handleDownload = (url: string, filename: string) => {
-    // For external URLs (S3), use server proxy to avoid CORS issues
-    const downloadUrl = url.startsWith("http")
-      ? `/api/download-image?url=${encodeURIComponent(url)}&filename=${encodeURIComponent(filename)}`
-      : url;
-
-    const link = document.createElement("a");
-    link.href = downloadUrl;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+  const handleDownload = async (url: string, filename: string) => {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error("Failed to fetch");
+      const blob = await response.blob();
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (error) {
+      console.error("Download failed:", error);
+      alert("No se pudo descargar la imagen.");
+    }
   };
 
   const handleImageClick = (image: typeof allImages[0]) => {
