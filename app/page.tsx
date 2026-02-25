@@ -17,7 +17,7 @@ import { History } from "lucide-react";
 type RunStatus = "queued" | "running" | "completed" | "failed" | null;
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<WorkflowTab>("avatar");
+  const [activeTab, setActiveTab] = useState<WorkflowTab>("fashion");
   const [isLoading, setIsLoading] = useState(false);
   const [runId, setRunId] = useState<string | null>(null);
   const [status, setStatus] = useState<RunStatus>(null);
