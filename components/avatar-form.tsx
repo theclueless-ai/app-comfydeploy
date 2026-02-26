@@ -115,6 +115,7 @@ export function AvatarForm({ onSubmit, isLoading, reusedParameters, onParameters
   const [gender, setGender] = useState("female");
   const [ethnicity, setEthnicity] = useState("RANDOM");
   const [ageRange, setAgeRange] = useState("RANDOM");
+  const [faceAspect, setFaceAspect] = useState("RANDOM");
   const [skinTone, setSkinTone] = useState("RANDOM");
   const [faceShape, setFaceShape] = useState("RANDOM");
   const [hairColor, setHairColor] = useState("RANDOM");
@@ -165,6 +166,7 @@ export function AvatarForm({ onSubmit, isLoading, reusedParameters, onParameters
     if (p.A_gender) setGender(String(p.A_gender));
     if (p.A_ethnicity) setEthnicity(String(p.A_ethnicity));
     if (p.A_age_range) setAgeRange(String(p.A_age_range));
+    if (p.A_face_aspect) setFaceAspect(String(p.A_face_aspect));
     if (p.A_skin_tone) setSkinTone(String(p.A_skin_tone));
     if (p.A_face_shape) setFaceShape(String(p.A_face_shape));
     if (p.A_hair_color) setHairColor(String(p.A_hair_color));
@@ -214,6 +216,7 @@ export function AvatarForm({ onSubmit, isLoading, reusedParameters, onParameters
       A_gender: gender,
       A_ethnicity: ethnicity,
       A_age_range: ageRange,
+      A_face_aspect: faceAspect,
       A_skin_tone: skinTone,
       A_face_shape: faceShape,
       A_hair_color: hairColor,
@@ -336,6 +339,12 @@ export function AvatarForm({ onSubmit, isLoading, reusedParameters, onParameters
             value={ageRange}
             onChange={setAgeRange}
             options={withRandom([...HUMAN_DATA.age_range])}
+          />
+          <SelectInput
+            label="Face Aspect"
+            value={faceAspect}
+            onChange={setFaceAspect}
+            options={withRandom([...HUMAN_DATA.face_aspect])}
           />
           <SelectInput
             label="Skin Tone"

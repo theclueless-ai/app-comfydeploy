@@ -15,6 +15,7 @@ const PARAM_LABELS: Record<string, string> = {
   A_gender: "Gender",
   A_ethnicity: "Ethnicity",
   A_age_range: "Age Range",
+  A_face_aspect: "Face Aspect",
   A_skin_tone: "Skin Tone",
   A_face_shape: "Face Shape",
   A_hair_color: "Hair Color",
