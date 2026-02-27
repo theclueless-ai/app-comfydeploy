@@ -149,7 +149,7 @@ export default function StellaDashboard() {
     ) => {
       const file = e.target.files?.[0];
       if (!file) return;
-      if (file.size > 10 * 1024 * 1024) {
+      if (file.size > 15 * 1024 * 1024) {
         alert("El archivo es demasiado grande. Máximo 10 MB.");
         return;
       }
