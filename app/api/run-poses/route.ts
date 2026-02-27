@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Upload the image to local ComfyUI
-    const imageBuffer = Buffer.from(await imageFile.arrayBuffer());
+    const imageBuffer = new Uint8Array(await imageFile.arrayBuffer());
     const uploadedFilename = await uploadImage(
       imageBuffer,
       imageFile.name,
