@@ -1,0 +1,2040 @@
+{
+  "9": {
+    "inputs": {
+      "filename_prefix": "Flux2-Klein",
+      "images": [
+        "230:205",
+        0
+      ]
+    },
+    "class_type": "SaveImage",
+    "_meta": {
+      "title": "Guardar Imagen"
+    }
+  },
+  "99": {
+    "inputs": {
+      "image": "Z-Image-Final_00001_.png"
+    },
+    "class_type": "LoadImage",
+    "_meta": {
+      "title": "Cargar Imagen"
+    }
+  },
+  "100": {
+    "inputs": {
+      "value": "Keep the same person, same environment, same camera position, same framing, and same focal length. Rotate head exactly 45 degrees yaw to the subject's left (horizontal rotation). Tilt head upward 20 degrees pitch. Eyes looking top-left. Do not change camera angle. Plain studio background. Preserve exact bone structure, proportions, and identity.\n*\nKeep the same person, same environment, same camera position, same framing, and same focal length. Yaw 0 degrees (strict frontal). Tilt head backward 35 degrees pitch. Eyes looking straight upward. Full underside of jaw visible. Do not change camera angle. Plain studio background. Preserve exact bone structure, proportions, and identity.\n*\nKeep the same person, same environment, same camera position, same framing, and same focal length. Rotate head exactly 45 degrees yaw to the subject's right. Tilt head upward 20 degrees pitch. Eyes looking top-right. Do not change camera angle. Plain studio background. Preserve exact bone structure, proportions, and identity.\n*\nKeep the same person, same environment, same camera position, same framing, and same focal length. Rotate head exactly 90 degrees yaw to the subject's left (true profile). Pitch 0 degrees. Only one eye visible. Camera remains fixed. Plain studio background. Preserve exact bone structure, proportions, and identity.\n*\nKeep the same person, same environment, same camera position, same framing, and same focal length. Yaw 0 degrees. Pitch 0 degrees. Perfect frontal symmetry. Eyes looking directly into camera. Camera remains fixed. Plain studio background. Preserve exact bone structure, proportions, and identity.\n*\nKeep the same person, same environment, same camera position, same framing, and same focal length. Rotate head exactly 90 degrees yaw to the subject's right (true profile). Pitch 0 degrees. Only one eye visible. Camera remains fixed. Plain studio background. Preserve exact bone structure, proportions, and identity.\n*\nKeep the same person, same environment, same camera position, same framing, and same focal length. Rotate head exactly 45 degrees yaw to the subject's left. Tilt head downward 25 degrees pitch. Eyes looking down-left. Camera remains fixed. Plain studio background. Preserve exact bone structure, proportions, and identity.\n*\nKeep the same person, same environment, same camera position, same framing, and same focal length. Yaw 0 degrees. Tilt head downward 30 degrees pitch. Chin close to chest. Eyes looking straight downward. Camera remains fixed. Plain studio background. Preserve exact bone structure, proportions, and identity.\n*\nKeep the same person, same environment, same camera position, same framing, and same focal length. Rotate head exactly 45 degrees yaw to the subject's right. Tilt head downward 25 degrees pitch. Eyes looking down-right. Camera remains fixed. Plain studio background. Preserve exact bone structure, proportions, and identity."
+    },
+    "class_type": "PrimitiveStringMultiline",
+    "_meta": {
+      "title": "Prompt"
+    }
+  },
+  "101": {
+    "inputs": {
+      "text": [
+        "100",
+        0
+      ],
+      "delimiter": "*"
+    },
+    "class_type": "QOL Split String",
+    "_meta": {
+      "title": "QOL Split String"
+    }
+  },
+  "106": {
+    "inputs": {
+      "unet_name": "Klein\\flux-2-klein-9b.safetensors",
+      "weight_dtype": "default"
+    },
+    "class_type": "UNETLoader",
+    "_meta": {
+      "title": "Cargar Modelo de Difusión"
+    }
+  },
+  "107": {
+    "inputs": {
+      "clip_name": "qwen_3_8b_fp8mixed.safetensors",
+      "type": "flux2",
+      "device": "default"
+    },
+    "class_type": "CLIPLoader",
+    "_meta": {
+      "title": "Cargar CLIP"
+    }
+  },
+  "108": {
+    "inputs": {
+      "vae_name": "Flux2\\ae.safetensors"
+    },
+    "class_type": "VAELoader",
+    "_meta": {
+      "title": "Cargar VAE"
+    }
+  },
+  "109": {
+    "inputs": {
+      "upscale_method": "nearest-exact",
+      "megapixels": 1,
+      "resolution_steps": 1,
+      "image": [
+        "99",
+        0
+      ]
+    },
+    "class_type": "ImageScaleToTotalPixels",
+    "_meta": {
+      "title": "Escalar Imagen a Total de Pixeles"
+    }
+  },
+  "119": {
+    "inputs": {
+      "filename_prefix": "Flux2-Klein",
+      "images": [
+        "230:168",
+        0
+      ]
+    },
+    "class_type": "SaveImage",
+    "_meta": {
+      "title": "Guardar Imagen"
+    }
+  },
+  "120": {
+    "inputs": {
+      "filename_prefix": "Flux2-Klein",
+      "images": [
+        "230:104",
+        0
+      ]
+    },
+    "class_type": "SaveImage",
+    "_meta": {
+      "title": "Guardar Imagen"
+    }
+  },
+  "121": {
+    "inputs": {
+      "filename_prefix": "Flux2-Klein",
+      "images": [
+        "230:216",
+        0
+      ]
+    },
+    "class_type": "SaveImage",
+    "_meta": {
+      "title": "Guardar Imagen"
+    }
+  },
+  "122": {
+    "inputs": {
+      "filename_prefix": "Flux2-Klein",
+      "images": [
+        "230:179",
+        0
+      ]
+    },
+    "class_type": "SaveImage",
+    "_meta": {
+      "title": "Guardar Imagen"
+    }
+  },
+  "123": {
+    "inputs": {
+      "filename_prefix": "Flux2-Klein",
+      "images": [
+        "230:142",
+        0
+      ]
+    },
+    "class_type": "SaveImage",
+    "_meta": {
+      "title": "Guardar Imagen"
+    }
+  },
+  "124": {
+    "inputs": {
+      "filename_prefix": "Flux2-Klein",
+      "images": [
+        "230:227",
+        0
+      ]
+    },
+    "class_type": "SaveImage",
+    "_meta": {
+      "title": "Guardar Imagen"
+    }
+  },
+  "125": {
+    "inputs": {
+      "filename_prefix": "Flux2-Klein",
+      "images": [
+        "230:190",
+        0
+      ]
+    },
+    "class_type": "SaveImage",
+    "_meta": {
+      "title": "Guardar Imagen"
+    }
+  },
+  "126": {
+    "inputs": {
+      "filename_prefix": "Flux2-Klein",
+      "images": [
+        "230:153",
+        0
+      ]
+    },
+    "class_type": "SaveImage",
+    "_meta": {
+      "title": "Guardar Imagen"
+    }
+  },
+  "230:102": {
+    "inputs": {
+      "sampler_name": "euler"
+    },
+    "class_type": "KSamplerSelect",
+    "_meta": {
+      "title": "KSamplerSelect"
+    }
+  },
+  "230:105": {
+    "inputs": {
+      "noise_seed": 171559628536117
+    },
+    "class_type": "RandomNoise",
+    "_meta": {
+      "title": "Ruido aleatorio"
+    }
+  },
+  "230:110": {
+    "inputs": {
+      "cfg": 1,
+      "model": [
+        "106",
+        0
+      ],
+      "positive": [
+        "230:114:77",
+        0
+      ],
+      "negative": [
+        "230:114:76",
+        0
+      ]
+    },
+    "class_type": "CFGGuider",
+    "_meta": {
+      "title": "GuíaCFG"
+    }
+  },
+  "230:111": {
+    "inputs": {
+      "steps": 4,
+      "width": [
+        "230:116",
+        0
+      ],
+      "height": [
+        "230:116",
+        1
+      ]
+    },
+    "class_type": "Flux2Scheduler",
+    "_meta": {
+      "title": "Flux2Scheduler"
+    }
+  },
+  "230:113": {
+    "inputs": {
+      "conditioning": [
+        "230:112",
+        0
+      ]
+    },
+    "class_type": "ConditioningZeroOut",
+    "_meta": {
+      "title": "Acondicionamiento Cero"
+    }
+  },
+  "230:114:76": {
+    "inputs": {
+      "conditioning": [
+        "230:113",
+        0
+      ],
+      "latent": [
+        "230:114:78",
+        0
+      ]
+    },
+    "class_type": "ReferenceLatent",
+    "_meta": {
+      "title": "Latente de Referencia"
+    }
+  },
+  "230:114:78": {
+    "inputs": {
+      "pixels": [
+        "109",
+        0
+      ],
+      "vae": [
+        "108",
+        0
+      ]
+    },
+    "class_type": "VAEEncode",
+    "_meta": {
+      "title": "VAE Codificar"
+    }
+  },
+  "230:114:77": {
+    "inputs": {
+      "conditioning": [
+        "230:112",
+        0
+      ],
+      "latent": [
+        "230:114:78",
+        0
+      ]
+    },
+    "class_type": "ReferenceLatent",
+    "_meta": {
+      "title": "Latente de Referencia"
+    }
+  },
+  "230:115": {
+    "inputs": {
+      "width": [
+        "230:116",
+        0
+      ],
+      "height": [
+        "230:116",
+        1
+      ],
+      "batch_size": 1
+    },
+    "class_type": "EmptyFlux2LatentImage",
+    "_meta": {
+      "title": "Empty Flux 2 Latent"
+    }
+  },
+  "230:116": {
+    "inputs": {
+      "image": [
+        "109",
+        0
+      ]
+    },
+    "class_type": "GetImageSize",
+    "_meta": {
+      "title": "Obtener Tamaño de Imagen"
+    }
+  },
+  "230:112": {
+    "inputs": {
+      "text": [
+        "101",
+        2
+      ],
+      "clip": [
+        "107",
+        0
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode (Positive Prompt)"
+    }
+  },
+  "230:103": {
+    "inputs": {
+      "noise": [
+        "230:105",
+        0
+      ],
+      "guider": [
+        "230:110",
+        0
+      ],
+      "sampler": [
+        "230:102",
+        0
+      ],
+      "sigmas": [
+        "230:111",
+        0
+      ],
+      "latent_image": [
+        "230:115",
+        0
+      ]
+    },
+    "class_type": "SamplerCustomAdvanced",
+    "_meta": {
+      "title": "SamplerCustomAdvanced"
+    }
+  },
+  "230:133": {
+    "inputs": {
+      "sampler_name": "euler"
+    },
+    "class_type": "KSamplerSelect",
+    "_meta": {
+      "title": "KSamplerSelect"
+    }
+  },
+  "230:134": {
+    "inputs": {
+      "noise_seed": 643640780200081
+    },
+    "class_type": "RandomNoise",
+    "_meta": {
+      "title": "Ruido aleatorio"
+    }
+  },
+  "230:135": {
+    "inputs": {
+      "cfg": 1,
+      "model": [
+        "106",
+        0
+      ],
+      "positive": [
+        "230:138:77",
+        0
+      ],
+      "negative": [
+        "230:138:76",
+        0
+      ]
+    },
+    "class_type": "CFGGuider",
+    "_meta": {
+      "title": "GuíaCFG"
+    }
+  },
+  "230:136": {
+    "inputs": {
+      "steps": 4,
+      "width": [
+        "230:140",
+        0
+      ],
+      "height": [
+        "230:140",
+        1
+      ]
+    },
+    "class_type": "Flux2Scheduler",
+    "_meta": {
+      "title": "Flux2Scheduler"
+    }
+  },
+  "230:137": {
+    "inputs": {
+      "conditioning": [
+        "230:141",
+        0
+      ]
+    },
+    "class_type": "ConditioningZeroOut",
+    "_meta": {
+      "title": "Acondicionamiento Cero"
+    }
+  },
+  "230:138:76": {
+    "inputs": {
+      "conditioning": [
+        "230:137",
+        0
+      ],
+      "latent": [
+        "230:138:78",
+        0
+      ]
+    },
+    "class_type": "ReferenceLatent",
+    "_meta": {
+      "title": "Latente de Referencia"
+    }
+  },
+  "230:138:78": {
+    "inputs": {
+      "pixels": [
+        "109",
+        0
+      ],
+      "vae": [
+        "108",
+        0
+      ]
+    },
+    "class_type": "VAEEncode",
+    "_meta": {
+      "title": "VAE Codificar"
+    }
+  },
+  "230:138:77": {
+    "inputs": {
+      "conditioning": [
+        "230:141",
+        0
+      ],
+      "latent": [
+        "230:138:78",
+        0
+      ]
+    },
+    "class_type": "ReferenceLatent",
+    "_meta": {
+      "title": "Latente de Referencia"
+    }
+  },
+  "230:139": {
+    "inputs": {
+      "width": [
+        "230:140",
+        0
+      ],
+      "height": [
+        "230:140",
+        1
+      ],
+      "batch_size": 1
+    },
+    "class_type": "EmptyFlux2LatentImage",
+    "_meta": {
+      "title": "Empty Flux 2 Latent"
+    }
+  },
+  "230:140": {
+    "inputs": {
+      "image": [
+        "109",
+        0
+      ]
+    },
+    "class_type": "GetImageSize",
+    "_meta": {
+      "title": "Obtener Tamaño de Imagen"
+    }
+  },
+  "230:141": {
+    "inputs": {
+      "text": [
+        "101",
+        5
+      ],
+      "clip": [
+        "107",
+        0
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode (Positive Prompt)"
+    }
+  },
+  "230:143": {
+    "inputs": {
+      "noise": [
+        "230:134",
+        0
+      ],
+      "guider": [
+        "230:135",
+        0
+      ],
+      "sampler": [
+        "230:133",
+        0
+      ],
+      "sigmas": [
+        "230:136",
+        0
+      ],
+      "latent_image": [
+        "230:139",
+        0
+      ]
+    },
+    "class_type": "SamplerCustomAdvanced",
+    "_meta": {
+      "title": "SamplerCustomAdvanced"
+    }
+  },
+  "230:144": {
+    "inputs": {
+      "sampler_name": "euler"
+    },
+    "class_type": "KSamplerSelect",
+    "_meta": {
+      "title": "KSamplerSelect"
+    }
+  },
+  "230:145": {
+    "inputs": {
+      "noise_seed": 763909292410981
+    },
+    "class_type": "RandomNoise",
+    "_meta": {
+      "title": "Ruido aleatorio"
+    }
+  },
+  "230:146": {
+    "inputs": {
+      "cfg": 1,
+      "model": [
+        "106",
+        0
+      ],
+      "positive": [
+        "230:149:77",
+        0
+      ],
+      "negative": [
+        "230:149:76",
+        0
+      ]
+    },
+    "class_type": "CFGGuider",
+    "_meta": {
+      "title": "GuíaCFG"
+    }
+  },
+  "230:147": {
+    "inputs": {
+      "steps": 4,
+      "width": [
+        "230:151",
+        0
+      ],
+      "height": [
+        "230:151",
+        1
+      ]
+    },
+    "class_type": "Flux2Scheduler",
+    "_meta": {
+      "title": "Flux2Scheduler"
+    }
+  },
+  "230:148": {
+    "inputs": {
+      "conditioning": [
+        "230:152",
+        0
+      ]
+    },
+    "class_type": "ConditioningZeroOut",
+    "_meta": {
+      "title": "Acondicionamiento Cero"
+    }
+  },
+  "230:149:76": {
+    "inputs": {
+      "conditioning": [
+        "230:148",
+        0
+      ],
+      "latent": [
+        "230:149:78",
+        0
+      ]
+    },
+    "class_type": "ReferenceLatent",
+    "_meta": {
+      "title": "Latente de Referencia"
+    }
+  },
+  "230:149:78": {
+    "inputs": {
+      "pixels": [
+        "109",
+        0
+      ],
+      "vae": [
+        "108",
+        0
+      ]
+    },
+    "class_type": "VAEEncode",
+    "_meta": {
+      "title": "VAE Codificar"
+    }
+  },
+  "230:149:77": {
+    "inputs": {
+      "conditioning": [
+        "230:152",
+        0
+      ],
+      "latent": [
+        "230:149:78",
+        0
+      ]
+    },
+    "class_type": "ReferenceLatent",
+    "_meta": {
+      "title": "Latente de Referencia"
+    }
+  },
+  "230:150": {
+    "inputs": {
+      "width": [
+        "230:151",
+        0
+      ],
+      "height": [
+        "230:151",
+        1
+      ],
+      "batch_size": 1
+    },
+    "class_type": "EmptyFlux2LatentImage",
+    "_meta": {
+      "title": "Empty Flux 2 Latent"
+    }
+  },
+  "230:151": {
+    "inputs": {
+      "image": [
+        "109",
+        0
+      ]
+    },
+    "class_type": "GetImageSize",
+    "_meta": {
+      "title": "Obtener Tamaño de Imagen"
+    }
+  },
+  "230:152": {
+    "inputs": {
+      "text": [
+        "101",
+        8
+      ],
+      "clip": [
+        "107",
+        0
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode (Positive Prompt)"
+    }
+  },
+  "230:154": {
+    "inputs": {
+      "noise": [
+        "230:145",
+        0
+      ],
+      "guider": [
+        "230:146",
+        0
+      ],
+      "sampler": [
+        "230:144",
+        0
+      ],
+      "sigmas": [
+        "230:147",
+        0
+      ],
+      "latent_image": [
+        "230:150",
+        0
+      ]
+    },
+    "class_type": "SamplerCustomAdvanced",
+    "_meta": {
+      "title": "SamplerCustomAdvanced"
+    }
+  },
+  "230:159": {
+    "inputs": {
+      "sampler_name": "euler"
+    },
+    "class_type": "KSamplerSelect",
+    "_meta": {
+      "title": "KSamplerSelect"
+    }
+  },
+  "230:160": {
+    "inputs": {
+      "noise_seed": 713186091631546
+    },
+    "class_type": "RandomNoise",
+    "_meta": {
+      "title": "Ruido aleatorio"
+    }
+  },
+  "230:161": {
+    "inputs": {
+      "cfg": 1,
+      "model": [
+        "106",
+        0
+      ],
+      "positive": [
+        "230:164:77",
+        0
+      ],
+      "negative": [
+        "230:164:76",
+        0
+      ]
+    },
+    "class_type": "CFGGuider",
+    "_meta": {
+      "title": "GuíaCFG"
+    }
+  },
+  "230:162": {
+    "inputs": {
+      "steps": 4,
+      "width": [
+        "230:166",
+        0
+      ],
+      "height": [
+        "230:166",
+        1
+      ]
+    },
+    "class_type": "Flux2Scheduler",
+    "_meta": {
+      "title": "Flux2Scheduler"
+    }
+  },
+  "230:163": {
+    "inputs": {
+      "conditioning": [
+        "230:167",
+        0
+      ]
+    },
+    "class_type": "ConditioningZeroOut",
+    "_meta": {
+      "title": "Acondicionamiento Cero"
+    }
+  },
+  "230:164:76": {
+    "inputs": {
+      "conditioning": [
+        "230:163",
+        0
+      ],
+      "latent": [
+        "230:164:78",
+        0
+      ]
+    },
+    "class_type": "ReferenceLatent",
+    "_meta": {
+      "title": "Latente de Referencia"
+    }
+  },
+  "230:164:78": {
+    "inputs": {
+      "pixels": [
+        "109",
+        0
+      ],
+      "vae": [
+        "108",
+        0
+      ]
+    },
+    "class_type": "VAEEncode",
+    "_meta": {
+      "title": "VAE Codificar"
+    }
+  },
+  "230:164:77": {
+    "inputs": {
+      "conditioning": [
+        "230:167",
+        0
+      ],
+      "latent": [
+        "230:164:78",
+        0
+      ]
+    },
+    "class_type": "ReferenceLatent",
+    "_meta": {
+      "title": "Latente de Referencia"
+    }
+  },
+  "230:165": {
+    "inputs": {
+      "width": [
+        "230:166",
+        0
+      ],
+      "height": [
+        "230:166",
+        1
+      ],
+      "batch_size": 1
+    },
+    "class_type": "EmptyFlux2LatentImage",
+    "_meta": {
+      "title": "Empty Flux 2 Latent"
+    }
+  },
+  "230:166": {
+    "inputs": {
+      "image": [
+        "109",
+        0
+      ]
+    },
+    "class_type": "GetImageSize",
+    "_meta": {
+      "title": "Obtener Tamaño de Imagen"
+    }
+  },
+  "230:167": {
+    "inputs": {
+      "text": [
+        "101",
+        1
+      ],
+      "clip": [
+        "107",
+        0
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode (Positive Prompt)"
+    }
+  },
+  "230:169": {
+    "inputs": {
+      "noise": [
+        "230:160",
+        0
+      ],
+      "guider": [
+        "230:161",
+        0
+      ],
+      "sampler": [
+        "230:159",
+        0
+      ],
+      "sigmas": [
+        "230:162",
+        0
+      ],
+      "latent_image": [
+        "230:165",
+        0
+      ]
+    },
+    "class_type": "SamplerCustomAdvanced",
+    "_meta": {
+      "title": "SamplerCustomAdvanced"
+    }
+  },
+  "230:170": {
+    "inputs": {
+      "sampler_name": "euler"
+    },
+    "class_type": "KSamplerSelect",
+    "_meta": {
+      "title": "KSamplerSelect"
+    }
+  },
+  "230:171": {
+    "inputs": {
+      "noise_seed": 887491056588225
+    },
+    "class_type": "RandomNoise",
+    "_meta": {
+      "title": "Ruido aleatorio"
+    }
+  },
+  "230:172": {
+    "inputs": {
+      "cfg": 1,
+      "model": [
+        "106",
+        0
+      ],
+      "positive": [
+        "230:175:77",
+        0
+      ],
+      "negative": [
+        "230:175:76",
+        0
+      ]
+    },
+    "class_type": "CFGGuider",
+    "_meta": {
+      "title": "GuíaCFG"
+    }
+  },
+  "230:173": {
+    "inputs": {
+      "steps": 4,
+      "width": [
+        "230:177",
+        0
+      ],
+      "height": [
+        "230:177",
+        1
+      ]
+    },
+    "class_type": "Flux2Scheduler",
+    "_meta": {
+      "title": "Flux2Scheduler"
+    }
+  },
+  "230:174": {
+    "inputs": {
+      "conditioning": [
+        "230:178",
+        0
+      ]
+    },
+    "class_type": "ConditioningZeroOut",
+    "_meta": {
+      "title": "Acondicionamiento Cero"
+    }
+  },
+  "230:175:76": {
+    "inputs": {
+      "conditioning": [
+        "230:174",
+        0
+      ],
+      "latent": [
+        "230:175:78",
+        0
+      ]
+    },
+    "class_type": "ReferenceLatent",
+    "_meta": {
+      "title": "Latente de Referencia"
+    }
+  },
+  "230:175:78": {
+    "inputs": {
+      "pixels": [
+        "109",
+        0
+      ],
+      "vae": [
+        "108",
+        0
+      ]
+    },
+    "class_type": "VAEEncode",
+    "_meta": {
+      "title": "VAE Codificar"
+    }
+  },
+  "230:175:77": {
+    "inputs": {
+      "conditioning": [
+        "230:178",
+        0
+      ],
+      "latent": [
+        "230:175:78",
+        0
+      ]
+    },
+    "class_type": "ReferenceLatent",
+    "_meta": {
+      "title": "Latente de Referencia"
+    }
+  },
+  "230:176": {
+    "inputs": {
+      "width": [
+        "230:177",
+        0
+      ],
+      "height": [
+        "230:177",
+        1
+      ],
+      "batch_size": 1
+    },
+    "class_type": "EmptyFlux2LatentImage",
+    "_meta": {
+      "title": "Empty Flux 2 Latent"
+    }
+  },
+  "230:177": {
+    "inputs": {
+      "image": [
+        "109",
+        0
+      ]
+    },
+    "class_type": "GetImageSize",
+    "_meta": {
+      "title": "Obtener Tamaño de Imagen"
+    }
+  },
+  "230:178": {
+    "inputs": {
+      "text": [
+        "101",
+        4
+      ],
+      "clip": [
+        "107",
+        0
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode (Positive Prompt)"
+    }
+  },
+  "230:180": {
+    "inputs": {
+      "noise": [
+        "230:171",
+        0
+      ],
+      "guider": [
+        "230:172",
+        0
+      ],
+      "sampler": [
+        "230:170",
+        0
+      ],
+      "sigmas": [
+        "230:173",
+        0
+      ],
+      "latent_image": [
+        "230:176",
+        0
+      ]
+    },
+    "class_type": "SamplerCustomAdvanced",
+    "_meta": {
+      "title": "SamplerCustomAdvanced"
+    }
+  },
+  "230:181": {
+    "inputs": {
+      "sampler_name": "euler"
+    },
+    "class_type": "KSamplerSelect",
+    "_meta": {
+      "title": "KSamplerSelect"
+    }
+  },
+  "230:182": {
+    "inputs": {
+      "noise_seed": 930140102120506
+    },
+    "class_type": "RandomNoise",
+    "_meta": {
+      "title": "Ruido aleatorio"
+    }
+  },
+  "230:183": {
+    "inputs": {
+      "cfg": 1,
+      "model": [
+        "106",
+        0
+      ],
+      "positive": [
+        "230:186:77",
+        0
+      ],
+      "negative": [
+        "230:186:76",
+        0
+      ]
+    },
+    "class_type": "CFGGuider",
+    "_meta": {
+      "title": "GuíaCFG"
+    }
+  },
+  "230:184": {
+    "inputs": {
+      "steps": 4,
+      "width": [
+        "230:188",
+        0
+      ],
+      "height": [
+        "230:188",
+        1
+      ]
+    },
+    "class_type": "Flux2Scheduler",
+    "_meta": {
+      "title": "Flux2Scheduler"
+    }
+  },
+  "230:185": {
+    "inputs": {
+      "conditioning": [
+        "230:189",
+        0
+      ]
+    },
+    "class_type": "ConditioningZeroOut",
+    "_meta": {
+      "title": "Acondicionamiento Cero"
+    }
+  },
+  "230:186:76": {
+    "inputs": {
+      "conditioning": [
+        "230:185",
+        0
+      ],
+      "latent": [
+        "230:186:78",
+        0
+      ]
+    },
+    "class_type": "ReferenceLatent",
+    "_meta": {
+      "title": "Latente de Referencia"
+    }
+  },
+  "230:186:78": {
+    "inputs": {
+      "pixels": [
+        "109",
+        0
+      ],
+      "vae": [
+        "108",
+        0
+      ]
+    },
+    "class_type": "VAEEncode",
+    "_meta": {
+      "title": "VAE Codificar"
+    }
+  },
+  "230:186:77": {
+    "inputs": {
+      "conditioning": [
+        "230:189",
+        0
+      ],
+      "latent": [
+        "230:186:78",
+        0
+      ]
+    },
+    "class_type": "ReferenceLatent",
+    "_meta": {
+      "title": "Latente de Referencia"
+    }
+  },
+  "230:187": {
+    "inputs": {
+      "width": [
+        "230:188",
+        0
+      ],
+      "height": [
+        "230:188",
+        1
+      ],
+      "batch_size": 1
+    },
+    "class_type": "EmptyFlux2LatentImage",
+    "_meta": {
+      "title": "Empty Flux 2 Latent"
+    }
+  },
+  "230:188": {
+    "inputs": {
+      "image": [
+        "109",
+        0
+      ]
+    },
+    "class_type": "GetImageSize",
+    "_meta": {
+      "title": "Obtener Tamaño de Imagen"
+    }
+  },
+  "230:189": {
+    "inputs": {
+      "text": [
+        "101",
+        7
+      ],
+      "clip": [
+        "107",
+        0
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode (Positive Prompt)"
+    }
+  },
+  "230:191": {
+    "inputs": {
+      "noise": [
+        "230:182",
+        0
+      ],
+      "guider": [
+        "230:183",
+        0
+      ],
+      "sampler": [
+        "230:181",
+        0
+      ],
+      "sigmas": [
+        "230:184",
+        0
+      ],
+      "latent_image": [
+        "230:187",
+        0
+      ]
+    },
+    "class_type": "SamplerCustomAdvanced",
+    "_meta": {
+      "title": "SamplerCustomAdvanced"
+    }
+  },
+  "230:196": {
+    "inputs": {
+      "sampler_name": "euler"
+    },
+    "class_type": "KSamplerSelect",
+    "_meta": {
+      "title": "KSamplerSelect"
+    }
+  },
+  "230:197": {
+    "inputs": {
+      "noise_seed": 427651843739317
+    },
+    "class_type": "RandomNoise",
+    "_meta": {
+      "title": "Ruido aleatorio"
+    }
+  },
+  "230:198": {
+    "inputs": {
+      "cfg": 1,
+      "model": [
+        "106",
+        0
+      ],
+      "positive": [
+        "230:201:77",
+        0
+      ],
+      "negative": [
+        "230:201:76",
+        0
+      ]
+    },
+    "class_type": "CFGGuider",
+    "_meta": {
+      "title": "GuíaCFG"
+    }
+  },
+  "230:199": {
+    "inputs": {
+      "steps": 4,
+      "width": [
+        "230:203",
+        0
+      ],
+      "height": [
+        "230:203",
+        1
+      ]
+    },
+    "class_type": "Flux2Scheduler",
+    "_meta": {
+      "title": "Flux2Scheduler"
+    }
+  },
+  "230:200": {
+    "inputs": {
+      "conditioning": [
+        "230:204",
+        0
+      ]
+    },
+    "class_type": "ConditioningZeroOut",
+    "_meta": {
+      "title": "Acondicionamiento Cero"
+    }
+  },
+  "230:201:76": {
+    "inputs": {
+      "conditioning": [
+        "230:200",
+        0
+      ],
+      "latent": [
+        "230:201:78",
+        0
+      ]
+    },
+    "class_type": "ReferenceLatent",
+    "_meta": {
+      "title": "Latente de Referencia"
+    }
+  },
+  "230:201:78": {
+    "inputs": {
+      "pixels": [
+        "109",
+        0
+      ],
+      "vae": [
+        "108",
+        0
+      ]
+    },
+    "class_type": "VAEEncode",
+    "_meta": {
+      "title": "VAE Codificar"
+    }
+  },
+  "230:201:77": {
+    "inputs": {
+      "conditioning": [
+        "230:204",
+        0
+      ],
+      "latent": [
+        "230:201:78",
+        0
+      ]
+    },
+    "class_type": "ReferenceLatent",
+    "_meta": {
+      "title": "Latente de Referencia"
+    }
+  },
+  "230:202": {
+    "inputs": {
+      "width": [
+        "230:203",
+        0
+      ],
+      "height": [
+        "230:203",
+        1
+      ],
+      "batch_size": 1
+    },
+    "class_type": "EmptyFlux2LatentImage",
+    "_meta": {
+      "title": "Empty Flux 2 Latent"
+    }
+  },
+  "230:203": {
+    "inputs": {
+      "image": [
+        "109",
+        0
+      ]
+    },
+    "class_type": "GetImageSize",
+    "_meta": {
+      "title": "Obtener Tamaño de Imagen"
+    }
+  },
+  "230:204": {
+    "inputs": {
+      "text": [
+        "101",
+        0
+      ],
+      "clip": [
+        "107",
+        0
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode (Positive Prompt)"
+    }
+  },
+  "230:206": {
+    "inputs": {
+      "noise": [
+        "230:197",
+        0
+      ],
+      "guider": [
+        "230:198",
+        0
+      ],
+      "sampler": [
+        "230:196",
+        0
+      ],
+      "sigmas": [
+        "230:199",
+        0
+      ],
+      "latent_image": [
+        "230:202",
+        0
+      ]
+    },
+    "class_type": "SamplerCustomAdvanced",
+    "_meta": {
+      "title": "SamplerCustomAdvanced"
+    }
+  },
+  "230:207": {
+    "inputs": {
+      "sampler_name": "euler"
+    },
+    "class_type": "KSamplerSelect",
+    "_meta": {
+      "title": "KSamplerSelect"
+    }
+  },
+  "230:208": {
+    "inputs": {
+      "noise_seed": 463948157422930
+    },
+    "class_type": "RandomNoise",
+    "_meta": {
+      "title": "Ruido aleatorio"
+    }
+  },
+  "230:209": {
+    "inputs": {
+      "cfg": 1,
+      "model": [
+        "106",
+        0
+      ],
+      "positive": [
+        "230:212:77",
+        0
+      ],
+      "negative": [
+        "230:212:76",
+        0
+      ]
+    },
+    "class_type": "CFGGuider",
+    "_meta": {
+      "title": "GuíaCFG"
+    }
+  },
+  "230:210": {
+    "inputs": {
+      "steps": 4,
+      "width": [
+        "230:214",
+        0
+      ],
+      "height": [
+        "230:214",
+        1
+      ]
+    },
+    "class_type": "Flux2Scheduler",
+    "_meta": {
+      "title": "Flux2Scheduler"
+    }
+  },
+  "230:211": {
+    "inputs": {
+      "conditioning": [
+        "230:215",
+        0
+      ]
+    },
+    "class_type": "ConditioningZeroOut",
+    "_meta": {
+      "title": "Acondicionamiento Cero"
+    }
+  },
+  "230:212:76": {
+    "inputs": {
+      "conditioning": [
+        "230:211",
+        0
+      ],
+      "latent": [
+        "230:212:78",
+        0
+      ]
+    },
+    "class_type": "ReferenceLatent",
+    "_meta": {
+      "title": "Latente de Referencia"
+    }
+  },
+  "230:212:78": {
+    "inputs": {
+      "pixels": [
+        "109",
+        0
+      ],
+      "vae": [
+        "108",
+        0
+      ]
+    },
+    "class_type": "VAEEncode",
+    "_meta": {
+      "title": "VAE Codificar"
+    }
+  },
+  "230:212:77": {
+    "inputs": {
+      "conditioning": [
+        "230:215",
+        0
+      ],
+      "latent": [
+        "230:212:78",
+        0
+      ]
+    },
+    "class_type": "ReferenceLatent",
+    "_meta": {
+      "title": "Latente de Referencia"
+    }
+  },
+  "230:213": {
+    "inputs": {
+      "width": [
+        "230:214",
+        0
+      ],
+      "height": [
+        "230:214",
+        1
+      ],
+      "batch_size": 1
+    },
+    "class_type": "EmptyFlux2LatentImage",
+    "_meta": {
+      "title": "Empty Flux 2 Latent"
+    }
+  },
+  "230:214": {
+    "inputs": {
+      "image": [
+        "109",
+        0
+      ]
+    },
+    "class_type": "GetImageSize",
+    "_meta": {
+      "title": "Obtener Tamaño de Imagen"
+    }
+  },
+  "230:215": {
+    "inputs": {
+      "text": [
+        "101",
+        3
+      ],
+      "clip": [
+        "107",
+        0
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode (Positive Prompt)"
+    }
+  },
+  "230:217": {
+    "inputs": {
+      "noise": [
+        "230:208",
+        0
+      ],
+      "guider": [
+        "230:209",
+        0
+      ],
+      "sampler": [
+        "230:207",
+        0
+      ],
+      "sigmas": [
+        "230:210",
+        0
+      ],
+      "latent_image": [
+        "230:213",
+        0
+      ]
+    },
+    "class_type": "SamplerCustomAdvanced",
+    "_meta": {
+      "title": "SamplerCustomAdvanced"
+    }
+  },
+  "230:218": {
+    "inputs": {
+      "sampler_name": "euler"
+    },
+    "class_type": "KSamplerSelect",
+    "_meta": {
+      "title": "KSamplerSelect"
+    }
+  },
+  "230:219": {
+    "inputs": {
+      "noise_seed": 148340064644526
+    },
+    "class_type": "RandomNoise",
+    "_meta": {
+      "title": "Ruido aleatorio"
+    }
+  },
+  "230:220": {
+    "inputs": {
+      "cfg": 1,
+      "model": [
+        "106",
+        0
+      ],
+      "positive": [
+        "230:223:77",
+        0
+      ],
+      "negative": [
+        "230:223:76",
+        0
+      ]
+    },
+    "class_type": "CFGGuider",
+    "_meta": {
+      "title": "GuíaCFG"
+    }
+  },
+  "230:221": {
+    "inputs": {
+      "steps": 4,
+      "width": [
+        "230:225",
+        0
+      ],
+      "height": [
+        "230:225",
+        1
+      ]
+    },
+    "class_type": "Flux2Scheduler",
+    "_meta": {
+      "title": "Flux2Scheduler"
+    }
+  },
+  "230:222": {
+    "inputs": {
+      "conditioning": [
+        "230:226",
+        0
+      ]
+    },
+    "class_type": "ConditioningZeroOut",
+    "_meta": {
+      "title": "Acondicionamiento Cero"
+    }
+  },
+  "230:223:76": {
+    "inputs": {
+      "conditioning": [
+        "230:222",
+        0
+      ],
+      "latent": [
+        "230:223:78",
+        0
+      ]
+    },
+    "class_type": "ReferenceLatent",
+    "_meta": {
+      "title": "Latente de Referencia"
+    }
+  },
+  "230:223:78": {
+    "inputs": {
+      "pixels": [
+        "109",
+        0
+      ],
+      "vae": [
+        "108",
+        0
+      ]
+    },
+    "class_type": "VAEEncode",
+    "_meta": {
+      "title": "VAE Codificar"
+    }
+  },
+  "230:223:77": {
+    "inputs": {
+      "conditioning": [
+        "230:226",
+        0
+      ],
+      "latent": [
+        "230:223:78",
+        0
+      ]
+    },
+    "class_type": "ReferenceLatent",
+    "_meta": {
+      "title": "Latente de Referencia"
+    }
+  },
+  "230:224": {
+    "inputs": {
+      "width": [
+        "230:225",
+        0
+      ],
+      "height": [
+        "230:225",
+        1
+      ],
+      "batch_size": 1
+    },
+    "class_type": "EmptyFlux2LatentImage",
+    "_meta": {
+      "title": "Empty Flux 2 Latent"
+    }
+  },
+  "230:225": {
+    "inputs": {
+      "image": [
+        "109",
+        0
+      ]
+    },
+    "class_type": "GetImageSize",
+    "_meta": {
+      "title": "Obtener Tamaño de Imagen"
+    }
+  },
+  "230:226": {
+    "inputs": {
+      "text": [
+        "101",
+        6
+      ],
+      "clip": [
+        "107",
+        0
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode (Positive Prompt)"
+    }
+  },
+  "230:228": {
+    "inputs": {
+      "noise": [
+        "230:219",
+        0
+      ],
+      "guider": [
+        "230:220",
+        0
+      ],
+      "sampler": [
+        "230:218",
+        0
+      ],
+      "sigmas": [
+        "230:221",
+        0
+      ],
+      "latent_image": [
+        "230:224",
+        0
+      ]
+    },
+    "class_type": "SamplerCustomAdvanced",
+    "_meta": {
+      "title": "SamplerCustomAdvanced"
+    }
+  },
+  "230:205": {
+    "inputs": {
+      "samples": [
+        "230:206",
+        0
+      ],
+      "vae": [
+        "108",
+        0
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "Decodificación VAE"
+    }
+  },
+  "230:168": {
+    "inputs": {
+      "samples": [
+        "230:169",
+        0
+      ],
+      "vae": [
+        "108",
+        0
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "Decodificación VAE"
+    }
+  },
+  "230:104": {
+    "inputs": {
+      "samples": [
+        "230:103",
+        0
+      ],
+      "vae": [
+        "108",
+        0
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "Decodificación VAE"
+    }
+  },
+  "230:216": {
+    "inputs": {
+      "samples": [
+        "230:217",
+        0
+      ],
+      "vae": [
+        "108",
+        0
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "Decodificación VAE"
+    }
+  },
+  "230:179": {
+    "inputs": {
+      "samples": [
+        "230:180",
+        0
+      ],
+      "vae": [
+        "108",
+        0
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "Decodificación VAE"
+    }
+  },
+  "230:142": {
+    "inputs": {
+      "samples": [
+        "230:143",
+        0
+      ],
+      "vae": [
+        "108",
+        0
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "Decodificación VAE"
+    }
+  },
+  "230:227": {
+    "inputs": {
+      "samples": [
+        "230:228",
+        0
+      ],
+      "vae": [
+        "108",
+        0
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "Decodificación VAE"
+    }
+  },
+  "230:190": {
+    "inputs": {
+      "samples": [
+        "230:191",
+        0
+      ],
+      "vae": [
+        "108",
+        0
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "Decodificación VAE"
+    }
+  },
+  "230:153": {
+    "inputs": {
+      "samples": [
+        "230:154",
+        0
+      ],
+      "vae": [
+        "108",
+        0
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "Decodificación VAE"
+    }
+  }
+}

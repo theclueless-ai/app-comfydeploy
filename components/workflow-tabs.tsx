@@ -2,7 +2,7 @@
 
 import { cn } from "@/lib/utils";
 
-export type WorkflowTab = "fashion" | "vellum" | "ai-talk" | "avatar";
+export type WorkflowTab = "fashion" | "vellum" | "ai-talk" | "avatar" | "poses";
 
 interface WorkflowTabsProps {
   activeTab: WorkflowTab;
@@ -15,6 +15,7 @@ export function WorkflowTabs({ activeTab, onTabChange }: WorkflowTabsProps) {
     // { id: "vellum", label: "Vellum 2.0" },
     // { id: "ai-talk", label: "AI Talk" },
     { id: "avatar", label: "Avatar Generator" },
+    { id: "poses", label: "Poses" },
   ];
 
   return (

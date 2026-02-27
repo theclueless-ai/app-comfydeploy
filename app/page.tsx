@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { Header } from "@/components/header";
 import { WorkflowForm } from "@/components/workflow-form";
 import { AvatarForm } from "@/components/avatar-form";
+import { PosesForm } from "@/components/poses-form";
 import { ResultDisplay } from "@/components/result-display";
 import { Gallery } from "@/components/gallery";
 import { WorkflowTabs, WorkflowTab } from "@/components/workflow-tabs";
@@ -35,6 +36,7 @@ export default function Home() {
   const vellumWorkflow = getVellumWorkflow();
   const aiTalkWorkflow = getAiTalkWorkflow();
   const avatarInfo = { name: "Avatar Generator", description: "Generate unique character portraits with customizable features, powered by local ComfyUI." };
+  const posesInfo = { name: "Poses", description: "Generate 9 different head poses from a single portrait, powered by local ComfyUI." };
   const workflow = activeTab === "fashion"
     ? fashionWorkflow
     : activeTab === "vellum"
@@ -42,8 +44,8 @@ export default function Home() {
       : activeTab === "ai-talk"
         ? aiTalkWorkflow
         : null;
-  const activeWorkflowName = workflow?.name ?? avatarInfo.name;
-  const activeWorkflowDescription = workflow?.description ?? avatarInfo.description;
+  const activeWorkflowName = activeTab === "poses" ? posesInfo.name : (workflow?.name ?? avatarInfo.name);
+  const activeWorkflowDescription = activeTab === "poses" ? posesInfo.description : (workflow?.description ?? avatarInfo.description);
 
   const { history, totalImages, addToHistory, clearHistory } = useHistory({ isAuthenticated });
 
@@ -264,6 +266,43 @@ export default function Home() {
     return () => clearInterval(pollInterval);
   }, [runId, status, activeTab]);
 
+  // Poll for local ComfyUI status (Poses workflow)
+  useEffect(() => {
+    if (!runId || status === "completed" || status === "failed" || activeTab !== "poses") {
+      return;
+    }
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const response = await fetch(`/api/poses-status?promptId=${runId}`);
+        const data = await response.json();
+
+        console.log("Poses status data:", data);
+
+        if (data.status === "completed") {
+          setStatus("completed");
+          if (data.images && data.images.length > 0) {
+            setResultImages(data.images);
+            console.log(`Received ${data.images.length} images from local ComfyUI (Poses)`);
+          }
+          clearInterval(pollInterval);
+          setIsLoading(false);
+        } else if (data.status === "failed") {
+          setStatus("failed");
+          setError(data.error || "Poses generation failed");
+          clearInterval(pollInterval);
+          setIsLoading(false);
+        } else if (data.status === "running") {
+          setStatus("running");
+        }
+      } catch (error) {
+        console.error("Poses polling error:", error);
+      }
+    }, 3000);
+
+    return () => clearInterval(pollInterval);
+  }, [runId, status, activeTab]);
+
   // Save to history when run completes successfully
   useEffect(() => {
     if (status === "completed" && resultImages.length > 0 && runId) {
@@ -318,7 +357,9 @@ export default function Home() {
           ? "/api/run-vellum"
           : activeTab === "ai-talk"
             ? "/api/run-ai-talk"
-            : "/api/run-avatar";
+            : activeTab === "poses"
+              ? "/api/run-poses"
+              : "/api/run-avatar";
 
       const response = await fetch(apiEndpoint, {
         method: "POST",
@@ -381,7 +422,9 @@ export default function Home() {
                     ? "Image Upscaling"
                     : activeTab === "ai-talk"
                       ? "Generate Talking Video"
-                      : "Character Settings"}
+                      : activeTab === "poses"
+                        ? "Upload Portrait"
+                        : "Character Settings"}
               </h3>
               {activeTab === "avatar" ? (
                 <AvatarForm
@@ -389,6 +432,11 @@ export default function Home() {
                   isLoading={isLoading}
                   reusedParameters={reusedParameters}
                   onParametersApplied={() => setReusedParameters(null)}
+                />
+              ) : activeTab === "poses" ? (
+                <PosesForm
+                  onSubmit={handleSubmit}
+                  isLoading={isLoading}
                 />
               ) : workflow ? (
                 <WorkflowForm

@@ -61,6 +61,30 @@ export function getComfyUIViewUrl(
   return `${COMFYUI_URL}/view?${params.toString()}`;
 }
 
+export async function uploadImage(
+  file: Buffer,
+  filename: string,
+  contentType: string = "image/png"
+): Promise<string> {
+  const formData = new FormData();
+  const blob = new Blob([file], { type: contentType });
+  formData.append("image", blob, filename);
+  formData.append("overwrite", "true");
+
+  const response = await fetch(`${COMFYUI_URL}/upload/image`, {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`ComfyUI image upload failed (${response.status}): ${text}`);
+  }
+
+  const data = await response.json();
+  return data.name;
+}
+
 export async function fetchComfyUIImage(
   filename: string,
   subfolder: string = "",
