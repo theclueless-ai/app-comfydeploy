@@ -62,7 +62,7 @@ export function getComfyUIViewUrl(
 }
 
 export async function uploadImage(
-  file: Uint8Array,
+  file: ArrayBuffer,
   filename: string,
   contentType: string = "image/png"
 ): Promise<string> {
