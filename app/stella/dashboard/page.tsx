@@ -150,7 +150,7 @@ export default function StellaDashboard() {
       const file = e.target.files?.[0];
       if (!file) return;
       if (file.size > 15 * 1024 * 1024) {
-        alert("El archivo es demasiado grande. Máximo 10 MB.");
+        alert("El archivo es demasiado grande. Máximo 15 MB.");
         return;
       }
       const compressed = await compressImage(file);
@@ -168,8 +168,8 @@ export default function StellaDashboard() {
       e.preventDefault();
       const file = e.dataTransfer.files?.[0];
       if (!file || !file.type.startsWith("image/")) return;
-      if (file.size > 10 * 1024 * 1024) {
-        alert("El archivo es demasiado grande. Máximo 10 MB.");
+      if (file.size > 15 * 1024 * 1024) {
+        alert("El archivo es demasiado grande. Máximo 15 MB.");
         return;
       }
       const compressed = await compressImage(file);
