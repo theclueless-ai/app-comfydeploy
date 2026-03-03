@@ -348,6 +348,9 @@ export default function Home() {
       setResultImages([]);
       setError(undefined);
 
+      // Scroll to top so the Poses tab is fully visible
+      window.scrollTo(0, 0);
+
       // Set the pending image so PosesForm picks it up and auto-submits
       setPendingPosesImage(file);
     } catch (error) {
