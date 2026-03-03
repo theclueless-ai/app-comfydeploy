@@ -9,7 +9,7 @@ import { ResultDisplay } from "@/components/result-display";
 import { Gallery } from "@/components/gallery";
 import { WorkflowTabs, WorkflowTab } from "@/components/workflow-tabs";
 import { getDefaultWorkflow, getVellumWorkflow, getAiTalkWorkflow } from "@/lib/workflows";
-import { cn } from "@/lib/utils";
+import { cn, compressImage } from "@/lib/utils";
 import { sanitizeErrorMessage } from "@/lib/error-messages";
 import { useHistory } from "@/hooks/use-history";
 import { useAuth } from "@/components/auth-provider";
@@ -328,8 +328,17 @@ export default function Home() {
       const response = await fetch(imageUrl);
       if (!response.ok) throw new Error("Failed to fetch image");
       const blob = await response.blob();
-      const filename = imageUrl.split("/").pop() || "image.png";
-      const file = new File([blob], filename, { type: blob.type || "image/png" });
+
+      // Extract clean filename from URL (handle proxy URLs with query params)
+      const urlObj = new URL(imageUrl, window.location.origin);
+      const filename = urlObj.searchParams.get("filename")
+        || urlObj.pathname.split("/").pop()
+        || "image.png";
+
+      const rawFile = new File([blob], filename, { type: blob.type || "image/png" });
+
+      // Compress to match what ImageUpload does (max 2MB, 2048px, quality 0.85)
+      const file = await compressImage(rawFile, 2, 2048, 0.85);
 
       // Switch to poses tab and reset generation states
       setActiveTab("poses");
