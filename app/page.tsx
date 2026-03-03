@@ -39,9 +39,11 @@ export default function Home() {
     ? fashionWorkflow
     : activeTab === "vellum"
       ? vellumWorkflow
-      : activeTab === "ai-talk"
+      : activeTab === "aiTalk"
         ? aiTalkWorkflow
-        : null;
+        : activeTab === "aiTalkT"
+          ? aiTalkWorkflow
+          : null;
   const activeWorkflowName = workflow?.name ?? avatarInfo.name;
   const activeWorkflowDescription = workflow?.description ?? avatarInfo.description;
 
@@ -163,7 +165,7 @@ export default function Home() {
 
   // Poll for ComfyDeploy status (AI Talk workflow)
   useEffect(() => {
-    if (!runId || status === "completed" || status === "failed" || activeTab !== "ai-talk") {
+    if (!runId || status === "completed" || status === "failed" || activeTab !== "aiTalk") {
       return;
     }
 
@@ -316,7 +318,9 @@ export default function Home() {
         ? "/api/run-workflow"
         : activeTab === "vellum"
           ? "/api/run-vellum"
-          : activeTab === "ai-talk"
+          : activeTab === "aiTalk"
+            ? "/api/run-ai-talk"
+            : activeTab === "aiTalkT"
             ? "/api/run-ai-talk"
             : "/api/run-avatar";
 
@@ -379,7 +383,9 @@ export default function Home() {
                   ? "Upload Images"
                   : activeTab === "vellum"
                     ? "Image Upscaling"
-                    : activeTab === "ai-talk"
+                    : activeTab === "aiTalk"
+                      ? "Generate Talking Video"
+                      : activeTab === "aiTalkT"
                       ? "Generate Talking Video"
                       : "Character Settings"}
               </h3>
