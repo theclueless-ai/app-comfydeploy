@@ -322,7 +322,33 @@ export default function Home() {
     setReusedParameters(parameters);
   };
 
+  // Handle "Poses" button from gallery - fetch image and auto-submit to poses
+  const handleUsePoses = async (imageUrl: string) => {
+    try {
+      const response = await fetch(imageUrl);
+      if (!response.ok) throw new Error("Failed to fetch image");
+      const blob = await response.blob();
+      const filename = imageUrl.split("/").pop() || "image.png";
+      const file = new File([blob], filename, { type: blob.type || "image/png" });
+
+      // Switch to poses tab and reset generation states
+      setActiveTab("poses");
+      setIsLoading(false);
+      setRunId(null);
+      setStatus(null);
+      setResultImages([]);
+      setError(undefined);
+
+      // Set the pending image so PosesForm picks it up and auto-submits
+      setPendingPosesImage(file);
+    } catch (error) {
+      console.error("Failed to use image for poses:", error);
+      alert("No se pudo cargar la imagen para generar poses.");
+    }
+  };
+
   const [reusedParameters, setReusedParameters] = useState<Record<string, string | number> | null>(null);
+  const [pendingPosesImage, setPendingPosesImage] = useState<File | null>(null);
 
   const handleSubmit = async (inputs: Record<string, File | string | number>) => {
     setIsLoading(true);
@@ -437,6 +463,8 @@ export default function Home() {
                 <PosesForm
                   onSubmit={handleSubmit}
                   isLoading={isLoading}
+                  preloadedImage={pendingPosesImage}
+                  onPreloadedImageApplied={() => setPendingPosesImage(null)}
                 />
               ) : workflow ? (
                 <WorkflowForm
@@ -510,6 +538,7 @@ export default function Home() {
                     history={history}
                     onClearHistory={clearHistory}
                     onReuseParameters={handleReuseParameters}
+                    onUsePoses={handleUsePoses}
                   />
                 </div>
               )}

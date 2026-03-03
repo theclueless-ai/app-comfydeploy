@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ImageUpload } from "./image-upload";
 import { cn } from "@/lib/utils";
 import { Sparkles, Loader2 } from "lucide-react";
@@ -8,10 +8,28 @@ import { Sparkles, Loader2 } from "lucide-react";
 interface PosesFormProps {
   onSubmit: (inputs: Record<string, File | string | number>) => Promise<void>;
   isLoading: boolean;
+  preloadedImage?: File | null;
+  onPreloadedImageApplied?: () => void;
 }
 
-export function PosesForm({ onSubmit, isLoading }: PosesFormProps) {
+export function PosesForm({ onSubmit, isLoading, preloadedImage, onPreloadedImageApplied }: PosesFormProps) {
   const [image, setImage] = useState<File | null>(null);
+  const hasAutoSubmitted = useRef(false);
+
+  useEffect(() => {
+    if (preloadedImage && !isLoading) {
+      setImage(preloadedImage);
+      onPreloadedImageApplied?.();
+
+      if (!hasAutoSubmitted.current) {
+        hasAutoSubmitted.current = true;
+        onSubmit({ image: preloadedImage }).finally(() => {
+          hasAutoSubmitted.current = false;
+        });
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [preloadedImage]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
