@@ -21,6 +21,11 @@ export function ResultDisplay({ status, images, error }: ResultDisplayProps) {
     return null;
   }
 
+  const isVideoFile = (filename: string, url: string) => {
+    const lower = (filename || "").toLowerCase();
+    return lower.endsWith(".mp4") || lower.endsWith(".webm") || lower.endsWith(".mov") || url.includes("ai-talk-video");
+  };
+
   const handleDownload = async (imageUrl: string, filename: string, index: number) => {
     setDownloadingIndex(index);
     try {
@@ -30,14 +35,15 @@ export function ResultDisplay({ status, images, error }: ResultDisplayProps) {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = filename || `theclueless-result-${index + 1}.png`;
+      const ext = isVideoFile(filename, imageUrl) ? ".mp4" : ".png";
+      a.download = filename || `theclueless-result-${index + 1}${ext}`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
     } catch (error) {
       console.error("Download failed:", error);
-      alert("No se pudo descargar la imagen.");
+      alert("No se pudo descargar el archivo.");
     } finally {
       setDownloadingIndex(null);
     }
@@ -68,7 +74,7 @@ export function ResultDisplay({ status, images, error }: ResultDisplayProps) {
           {status === "completed" && (
             <>
               <CheckCircle2 className="w-5 h-5 text-green-500" />
-              <span className="text-sm font-medium">Completed - {images?.length || 0} {images?.length === 1 ? 'image' : 'images'}</span>
+              <span className="text-sm font-medium">Completed - {images?.length || 0} {images?.length === 1 ? 'result' : 'results'}</span>
             </>
           )}
           {status === "failed" && (
@@ -97,15 +103,27 @@ export function ResultDisplay({ status, images, error }: ResultDisplayProps) {
             )}>
               {images.map((image, index) => (
                 <div key={index} className="space-y-2">
-                  <div className="relative aspect-square w-full overflow-hidden rounded-lg border border-[rgb(var(--border))]">
-                    <Image
-                      src={image.url}
-                      alt={`Generated result ${index + 1}`}
-                      fill
-                      unoptimized
-                      className="object-cover"
-                    />
-                  </div>
+                  {isVideoFile(image.filename, image.url) ? (
+                    <div className="relative w-full overflow-hidden rounded-lg border border-[rgb(var(--border))]">
+                      <video
+                        src={image.url}
+                        controls
+                        autoPlay
+                        loop
+                        className="w-full"
+                      />
+                    </div>
+                  ) : (
+                    <div className="relative aspect-square w-full overflow-hidden rounded-lg border border-[rgb(var(--border))]">
+                      <Image
+                        src={image.url}
+                        alt={`Generated result ${index + 1}`}
+                        fill
+                        unoptimized
+                        className="object-cover"
+                      />
+                    </div>
+                  )}
                   <button
                     onClick={() => handleDownload(image.url, image.filename, index)}
                     disabled={downloadingIndex === index}
