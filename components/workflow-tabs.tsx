@@ -21,7 +21,7 @@ export function WorkflowTabs({ activeTab, onTabChange }: WorkflowTabsProps) {
     { id: "aiTalk", label: "AI Talk" },
     { id: "avatar", label: "Avatar Generator" },
     { id: "avatarT", label: "Avatar Generator T" },
-    { id: "poses", label: "Poses" },
+//    { id: "poses", label: "Poses" },
   ];
 
   const handleTabClick = (tabId: WorkflowTab) => {
