@@ -179,8 +179,17 @@ def prepare_workflow(workflow: dict, inputs: dict) -> dict:
         audio_filename = f"sts_input_{uuid.uuid4().hex[:8]}.mp3"
         save_audio_to_comfyui_input(audio_b64, audio_filename)
 
-        # Set audio file in ComfyUIDeployExternalAudio node (330)
-        workflow["330"]["inputs"]["audio_file"] = audio_filename
+        # Replace ComfyUIDeployExternalAudio (330) with native LoadAudio node
+        # The Deploy External node doesn't load local files properly in RunPod
+        workflow["330"] = {
+            "inputs": {
+                "audio": audio_filename,
+            },
+            "class_type": "LoadAudio",
+            "_meta": {
+                "title": "Load Audio (STS input)"
+            }
+        }
 
         # Keep default wiring: 214.audio_1 = ["295", 0], 361.audio = ["295", 0]
 
