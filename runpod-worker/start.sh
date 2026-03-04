@@ -24,6 +24,7 @@ if [ -d "${VOLUME_DIR}" ]; then
     mkdir -p ${COMFYUI_DIR}/models/clip_vision
     mkdir -p ${COMFYUI_DIR}/models/loras/wan2.2
     mkdir -p ${COMFYUI_DIR}/models/wav2vec2
+    mkdir -p ${COMFYUI_DIR}/models/checkpoints
 
     MISSING=0
 
@@ -102,13 +103,33 @@ if [ -d "${VOLUME_DIR}" ]; then
         MISSING=$((MISSING + 1))
     fi
 
+    # --- SeedVR2 DiT Model ---
+    if [ -f "${MODELS_DIR}/checkpoints/seedvr2_ema_7b_fp8_e4m3fn_mixed_block35_fp16.safetensors" ]; then
+        ln -sf "${MODELS_DIR}/checkpoints/seedvr2_ema_7b_fp8_e4m3fn_mixed_block35_fp16.safetensors" \
+            "${COMFYUI_DIR}/models/checkpoints/seedvr2_ema_7b_fp8_e4m3fn_mixed_block35_fp16.safetensors"
+        echo "  OK  Linked: seedvr2_ema_7b_fp8_e4m3fn_mixed_block35_fp16.safetensors"
+    else
+        echo "  MISSING: checkpoints/seedvr2_ema_7b_fp8_e4m3fn_mixed_block35_fp16.safetensors"
+        MISSING=$((MISSING + 1))
+    fi
+
+    # --- SeedVR2 VAE ---
+    if [ -f "${MODELS_DIR}/checkpoints/ema_vae_fp16.safetensors" ]; then
+        ln -sf "${MODELS_DIR}/checkpoints/ema_vae_fp16.safetensors" \
+            "${COMFYUI_DIR}/models/checkpoints/ema_vae_fp16.safetensors"
+        echo "  OK  Linked: ema_vae_fp16.safetensors (SeedVR2 VAE)"
+    else
+        echo "  MISSING: checkpoints/ema_vae_fp16.safetensors"
+        MISSING=$((MISSING + 1))
+    fi
+
     echo ""
     if [ $MISSING -gt 0 ]; then
         echo "  WARNING: ${MISSING} model(s) missing! The workflow may fail."
         echo "  Run download_models.sh on a Pod with this Network Volume to fix."
         echo ""
     else
-        echo "  All 7 models linked successfully!"
+        echo "  All 9 models linked successfully!"
     fi
 else
     echo "  WARNING: Network Volume not found at ${VOLUME_DIR}"

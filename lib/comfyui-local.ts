@@ -32,6 +32,12 @@ export interface ComfyUIHistoryEntry {
       subfolder: string;
       type: string;
     }>;
+    gifs?: Array<{
+      filename: string;
+      subfolder: string;
+      type: string;
+      format?: string;
+    }>;
     errors?: unknown;
   }>;
 }
@@ -61,6 +67,30 @@ export function getComfyUIViewUrl(
   return `${COMFYUI_URL}/view?${params.toString()}`;
 }
 
+export async function uploadImage(
+  file: ArrayBuffer,
+  filename: string,
+  contentType: string = "image/png"
+): Promise<string> {
+  const formData = new FormData();
+  const blob = new Blob([file], { type: contentType });
+  formData.append("image", blob, filename);
+  formData.append("overwrite", "true");
+
+  const response = await fetch(`${COMFYUI_URL}/upload/image`, {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`ComfyUI image upload failed (${response.status}): ${text}`);
+  }
+
+  const data = await response.json();
+  return data.name;
+}
+
 export async function fetchComfyUIImage(
   filename: string,
   subfolder: string = "",
@@ -75,5 +105,46 @@ export async function fetchComfyUIImage(
 
   const data = await response.arrayBuffer();
   const contentType = response.headers.get("content-type") || "image/png";
+  return { data, contentType };
+}
+
+export async function uploadAudio(
+  file: ArrayBuffer,
+  filename: string,
+  contentType: string = "audio/wav"
+): Promise<string> {
+  const formData = new FormData();
+  const blob = new Blob([file], { type: contentType });
+  formData.append("image", blob, filename);
+  formData.append("overwrite", "true");
+
+  const response = await fetch(`${COMFYUI_URL}/upload/image`, {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const text = await response.text();
+    throw new Error(`ComfyUI audio upload failed (${response.status}): ${text}`);
+  }
+
+  const data = await response.json();
+  return data.name;
+}
+
+export async function fetchComfyUIVideo(
+  filename: string,
+  subfolder: string = "",
+  type: string = "output"
+): Promise<{ data: ArrayBuffer; contentType: string }> {
+  const url = getComfyUIViewUrl(filename, subfolder, type);
+  const response = await fetch(url);
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch video from ComfyUI: ${response.status}`);
+  }
+
+  const data = await response.arrayBuffer();
+  const contentType = response.headers.get("content-type") || "video/mp4";
   return { data, contentType };
 }

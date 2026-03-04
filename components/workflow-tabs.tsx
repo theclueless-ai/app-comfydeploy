@@ -2,7 +2,7 @@
 
 import { cn } from "@/lib/utils";
 
-export type WorkflowTab = "fashion" | "vellum" | "aiTalk" | "aiTalkT" | "avatar" | "avatarT";
+export type WorkflowTab = "fashion" | "vellum" | "aiTalk" | "aiTalkT" | "avatar" | "avatarT" | "poses";
 
 const externalTabs: Record<string, string> = {
   avatar: "http://192.168.1.10:3000/",
@@ -21,6 +21,7 @@ export function WorkflowTabs({ activeTab, onTabChange }: WorkflowTabsProps) {
     { id: "aiTalk", label: "AI Talk" },
     { id: "avatar", label: "Avatar Generator" },
     { id: "avatarT", label: "Avatar Generator T" },
+    { id: "poses", label: "Poses" },
   ];
 
   const handleTabClick = (tabId: WorkflowTab) => {

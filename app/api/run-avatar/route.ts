@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
 
     // Human features (A_ prefix)
     const humanFields = [
-      "A_gender", "A_ethnicity", "A_age_range", "A_skin_tone", "A_face_shape",
+      "A_gender", "A_ethnicity", "A_age_range", "A_face_aspect", "A_skin_tone", "A_face_shape",
       "A_hair_color", "A_hair_style", "A_eye_color", "A_eye_shape",
       "A_nose", "A_lips", "A_freckles", "A_expression", "A_distinctive_features",
     ];

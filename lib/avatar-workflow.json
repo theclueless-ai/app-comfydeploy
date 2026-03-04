@@ -508,6 +508,7 @@
       "A_gender": "female",
       "A_ethnicity": "RANDOM",
       "A_age_range": "RANDOM",
+      "A_face_aspect": "RANDOM",
       "A_skin_tone": "RANDOM",
       "A_face_shape": "RANDOM",
       "A_hair_color": "RANDOM",

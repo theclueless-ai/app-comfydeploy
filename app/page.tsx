@@ -4,11 +4,12 @@ import { useState, useEffect, useRef } from "react";
 import { Header } from "@/components/header";
 import { WorkflowForm } from "@/components/workflow-form";
 import { AvatarForm } from "@/components/avatar-form";
+import { PosesForm } from "@/components/poses-form";
 import { ResultDisplay } from "@/components/result-display";
 import { Gallery } from "@/components/gallery";
 import { WorkflowTabs, WorkflowTab } from "@/components/workflow-tabs";
 import { getDefaultWorkflow, getVellumWorkflow, getAiTalkWorkflow } from "@/lib/workflows";
-import { cn } from "@/lib/utils";
+import { cn, compressImage } from "@/lib/utils";
 import { sanitizeErrorMessage } from "@/lib/error-messages";
 import { useHistory } from "@/hooks/use-history";
 import { useAuth } from "@/components/auth-provider";
@@ -35,17 +36,16 @@ export default function Home() {
   const vellumWorkflow = getVellumWorkflow();
   const aiTalkWorkflow = getAiTalkWorkflow();
   const avatarInfo = { name: "Avatar Generator", description: "Generate unique character portraits with customizable features, powered by local ComfyUI." };
+  const posesInfo = { name: "Poses", description: "Generate 9 different head poses from a single portrait, powered by local ComfyUI." };
   const workflow = activeTab === "fashion"
     ? fashionWorkflow
     : activeTab === "vellum"
       ? vellumWorkflow
       : activeTab === "aiTalk"
         ? aiTalkWorkflow
-        : activeTab === "aiTalkT"
-          ? aiTalkWorkflow
-          : null;
-  const activeWorkflowName = workflow?.name ?? avatarInfo.name;
-  const activeWorkflowDescription = workflow?.description ?? avatarInfo.description;
+        : null;
+  const activeWorkflowName = activeTab === "poses" ? posesInfo.name : (workflow?.name ?? avatarInfo.name);
+  const activeWorkflowDescription = activeTab === "poses" ? posesInfo.description : (workflow?.description ?? avatarInfo.description);
 
   const { history, totalImages, addToHistory, clearHistory } = useHistory({ isAuthenticated });
 
@@ -163,7 +163,7 @@ export default function Home() {
     return () => clearInterval(pollInterval);
   }, [runId, status, activeTab]);
 
-  // Poll for ComfyDeploy status (AI Talk workflow)
+  // Poll for RunPod status (AI Talk workflow)
   useEffect(() => {
     if (!runId || status === "completed" || status === "failed" || activeTab !== "aiTalk") {
       return;
@@ -206,10 +206,10 @@ export default function Home() {
           setStatus("completed");
           if (data.videos && data.videos.length > 0) {
             setResultImages(data.videos);
-            console.log(`Received ${data.videos.length} videos from ComfyDeploy`);
+            console.log(`Received ${data.videos.length} videos from RunPod`);
           } else if (data.images && data.images.length > 0) {
             setResultImages(data.images);
-            console.log(`Received ${data.images.length} results from ComfyDeploy`);
+            console.log(`Received ${data.images.length} results from RunPod`);
           }
           clearInterval(pollInterval);
           setIsLoading(false);
@@ -266,6 +266,43 @@ export default function Home() {
     return () => clearInterval(pollInterval);
   }, [runId, status, activeTab]);
 
+  // Poll for local ComfyUI status (Poses workflow)
+  useEffect(() => {
+    if (!runId || status === "completed" || status === "failed" || activeTab !== "poses") {
+      return;
+    }
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const response = await fetch(`/api/poses-status?promptId=${runId}`);
+        const data = await response.json();
+
+        console.log("Poses status data:", data);
+
+        if (data.status === "completed") {
+          setStatus("completed");
+          if (data.images && data.images.length > 0) {
+            setResultImages(data.images);
+            console.log(`Received ${data.images.length} images from local ComfyUI (Poses)`);
+          }
+          clearInterval(pollInterval);
+          setIsLoading(false);
+        } else if (data.status === "failed") {
+          setStatus("failed");
+          setError(data.error || "Poses generation failed");
+          clearInterval(pollInterval);
+          setIsLoading(false);
+        } else if (data.status === "running") {
+          setStatus("running");
+        }
+      } catch (error) {
+        console.error("Poses polling error:", error);
+      }
+    }, 3000);
+
+    return () => clearInterval(pollInterval);
+  }, [runId, status, activeTab]);
+
   // Save to history when run completes successfully
   useEffect(() => {
     if (status === "completed" && resultImages.length > 0 && runId) {
@@ -285,7 +322,45 @@ export default function Home() {
     setReusedParameters(parameters);
   };
 
+  // Handle "Poses" button from gallery - fetch image and auto-submit to poses
+  const handleUsePoses = async (imageUrl: string) => {
+    try {
+      const response = await fetch(imageUrl);
+      if (!response.ok) throw new Error("Failed to fetch image");
+      const blob = await response.blob();
+
+      // Extract clean filename from URL (handle proxy URLs with query params)
+      const urlObj = new URL(imageUrl, window.location.origin);
+      const filename = urlObj.searchParams.get("filename")
+        || urlObj.pathname.split("/").pop()
+        || "image.png";
+
+      const rawFile = new File([blob], filename, { type: blob.type || "image/png" });
+
+      // Compress to match what ImageUpload does (max 2MB, 2048px, quality 0.85)
+      const file = await compressImage(rawFile, 2, 2048, 0.85);
+
+      // Switch to poses tab and reset generation states
+      setActiveTab("poses");
+      setIsLoading(false);
+      setRunId(null);
+      setStatus(null);
+      setResultImages([]);
+      setError(undefined);
+
+      // Scroll to top so the Poses tab is fully visible
+      window.scrollTo(0, 0);
+
+      // Set the pending image so PosesForm picks it up and auto-submits
+      setPendingPosesImage(file);
+    } catch (error) {
+      console.error("Failed to use image for poses:", error);
+      alert("No se pudo cargar la imagen para generar poses.");
+    }
+  };
+
   const [reusedParameters, setReusedParameters] = useState<Record<string, string | number> | null>(null);
+  const [pendingPosesImage, setPendingPosesImage] = useState<File | null>(null);
 
   const handleSubmit = async (inputs: Record<string, File | string | number>) => {
     setIsLoading(true);
@@ -322,7 +397,9 @@ export default function Home() {
             ? "/api/run-ai-talk"
             : activeTab === "aiTalkT"
             ? "/api/run-ai-talk"
-            : "/api/run-avatar";
+            : activeTab === "poses"
+              ? "/api/run-poses"
+              : "/api/run-avatar";
 
       const response = await fetch(apiEndpoint, {
         method: "POST",
@@ -387,7 +464,9 @@ export default function Home() {
                       ? "Generate Talking Video"
                       : activeTab === "aiTalkT"
                       ? "Generate Talking Video"
-                      : "Character Settings"}
+                      : activeTab === "poses"
+                        ? "Upload Portrait"
+                        : "Character Settings"}
               </h3>
               {activeTab === "avatar" ? (
                 <AvatarForm
@@ -395,6 +474,13 @@ export default function Home() {
                   isLoading={isLoading}
                   reusedParameters={reusedParameters}
                   onParametersApplied={() => setReusedParameters(null)}
+                />
+              ) : activeTab === "poses" ? (
+                <PosesForm
+                  onSubmit={handleSubmit}
+                  isLoading={isLoading}
+                  preloadedImage={pendingPosesImage}
+                  onPreloadedImageApplied={() => setPendingPosesImage(null)}
                 />
               ) : workflow ? (
                 <WorkflowForm
@@ -468,6 +554,7 @@ export default function Home() {
                     history={history}
                     onClearHistory={clearHistory}
                     onReuseParameters={handleReuseParameters}
+                    onUsePoses={handleUsePoses}
                   />
                 </div>
               )}

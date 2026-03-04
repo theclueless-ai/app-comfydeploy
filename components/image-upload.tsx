@@ -37,9 +37,9 @@ export function ImageUpload({
     }
 
     // Check file size (warn if > 5MB before compression)
-    const maxSizeBeforeCompression = 10 * 1024 * 1024; // 10MB
+    const maxSizeBeforeCompression = 15 * 1024 * 1024; // 15MB
     if (file.size > maxSizeBeforeCompression) {
-      alert(`File is too large (${formatBytes(file.size)}). Please use an image smaller than 10MB.`);
+      alert(`File is too large (${formatBytes(file.size)}). Please use an image smaller than 15MB.`);
       return;
     }
 

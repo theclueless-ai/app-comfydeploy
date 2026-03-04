@@ -3,10 +3,10 @@ RunPod Serverless Handler - AI Talk (ComfyUI InfiniteTalk/WanVideo)
 
 Supports two modes:
   - TTS mode: text + voice_id -> ElevenlabsTextToSpeech (node 333) -> video
-  - STS mode: audio + voice_id -> LoadAudio (900) -> ElevenLabsVoiceChanger (295) -> video
+  - STS mode: audio + voice_id -> ElevenLabsVoiceChanger (295) -> video
 
-The handler loads a base workflow with BOTH nodes, then removes the
-unused path before submitting to ComfyUI.
+The handler loads a base workflow, injects user inputs into the ComfyUI Deploy
+External nodes, and handles TTS/STS mode switching by rewiring audio paths.
 """
 
 import runpod
@@ -72,8 +72,24 @@ def upload_to_s3(file_path: str, content_type: str = "video/mp4") -> str:
 
 
 # ---------------------------------------------------------------------------
-# Audio helpers
+# File helpers
 # ---------------------------------------------------------------------------
+def save_image_to_comfyui_input(image_b64: str, filename: str) -> str:
+    """Decode base64 image and save to ComfyUI input directory."""
+    image_data = image_b64
+    if "," in image_data:
+        image_data = image_data.split(",", 1)[1]
+    image_bytes = base64.b64decode(image_data)
+
+    input_dir = os.path.join(COMFYUI_DIR, "input")
+    os.makedirs(input_dir, exist_ok=True)
+    filepath = os.path.join(input_dir, filename)
+    with open(filepath, "wb") as f:
+        f.write(image_bytes)
+    print(f"[Image] Saved {len(image_bytes)} bytes to {filepath}")
+    return filename
+
+
 def save_audio_to_comfyui_input(audio_b64: str, filename: str) -> str:
     """Decode base64 audio and save to ComfyUI input directory."""
     audio_data = audio_b64
@@ -102,16 +118,26 @@ def prepare_workflow(workflow: dict, inputs: dict) -> dict:
     """
     Inject user inputs and configure the workflow for TTS or STS mode.
 
-    TTS mode (text selected):
-      - Node 333 (ElevenlabsTextToSpeech) generates audio
-      - Node 214 audio_1 = ["333", 0]
-      - Remove STS nodes: 295, 900
+    New workflow node mapping:
+      - Node 229 (LoadImage): input image filename
+      - Node 328 (ComfyUIDeployExternalText): positive_prompt
+      - Node 331 (ComfyUIDeployExternalText): voice_id
+      - Node 332 (ComfyUIDeployExternalText): input_text (TTS)
+      - Node 330 (ComfyUIDeployExternalAudio): input_audio (STS)
+      - Node 333 (ElevenlabsTextToSpeech): TTS audio generator
+      - Node 295 (ElevenLabsVoiceChanger): STS voice changer
+      - Node 214 (MultiTalkWav2VecEmbeds): audio -> wav2vec embeddings
+      - Node 361 (Audio Duration): calculates audio length for frame count
+      - Node 338 (VHS_VideoCombine): video output
 
-    STS mode (audio selected):
-      - Node 900 (LoadAudio) loads user audio
-      - Node 295 (ElevenLabsVoiceChanger) transforms voice
-      - Node 214 audio_1 = ["295", 0]
-      - Remove TTS node: 333
+    TTS mode:
+      - Node 332 receives input text -> Node 333 generates speech
+      - Rewire Node 214 audio_1 = ["333", 0] (bypass voice changer)
+      - Rewire Node 361 audio = ["333", 0] (duration from TTS)
+
+    STS mode:
+      - Node 330 receives audio file -> Node 295 changes voice
+      - Keep default wiring: Node 214 audio_1 = ["295", 0]
     """
     mode = inputs.get("mode", "tts")
 
@@ -120,16 +146,26 @@ def prepare_workflow(workflow: dict, inputs: dict) -> dict:
     for k in comment_keys:
         del workflow[k]
 
-    # --- Input image (Node 737) ---
+    # --- Input image (Node 229 - LoadImage) ---
     if inputs.get("input_image"):
-        image_data = inputs["input_image"]
-        if "," in image_data:
-            image_data = image_data.split(",", 1)[1]
-        workflow["737"]["inputs"]["base64_data"] = image_data
+        image_filename = f"input_{uuid.uuid4().hex[:8]}.png"
+        save_image_to_comfyui_input(inputs["input_image"], image_filename)
+        workflow["229"]["inputs"]["image"] = image_filename
 
-    # --- Positive prompt (Node 225) ---
+    # --- Positive prompt (Node 328 - ComfyUIDeployExternalText) ---
     if inputs.get("positive_prompt"):
-        workflow["225"]["inputs"]["positive_prompt"] = inputs["positive_prompt"]
+        workflow["328"]["inputs"]["default_value"] = inputs["positive_prompt"]
+
+    # --- Voice ID (Node 331 + direct injection into TTS/STS nodes) ---
+    voice_id = inputs.get("voice_id", "gdMFOufuI36UmxNKJhtv")
+    workflow["331"]["inputs"]["default_value"] = voice_id
+    workflow["295"]["inputs"]["voice_id"] = voice_id
+    workflow["333"]["inputs"]["voice_id"] = voice_id
+
+    # --- ElevenLabs API key injection ---
+    if ELEVENLABS_API_KEY:
+        workflow["295"]["inputs"]["api_key"] = ELEVENLABS_API_KEY
+        workflow["333"]["inputs"]["api_key"] = ELEVENLABS_API_KEY
 
     # --- Audio routing based on mode ---
     if mode == "sts":
@@ -143,35 +179,21 @@ def prepare_workflow(workflow: dict, inputs: dict) -> dict:
         audio_filename = f"sts_input_{uuid.uuid4().hex[:8]}.mp3"
         save_audio_to_comfyui_input(audio_b64, audio_filename)
 
-        # Configure LoadAudio (900) -> VoiceChanger (295) -> wav2vec (214)
-        workflow["900"]["inputs"]["audio"] = audio_filename
+        # Set audio file in ComfyUIDeployExternalAudio node (330)
+        workflow["330"]["inputs"]["audio_file"] = audio_filename
 
-        if ELEVENLABS_API_KEY:
-            workflow["295"]["inputs"]["api_key"] = ELEVENLABS_API_KEY
-        if inputs.get("voice_id"):
-            workflow["295"]["inputs"]["voice_id"] = inputs["voice_id"]
-
-        workflow["214"]["inputs"]["audio_1"] = ["295", 0]
-
-        # Remove TTS node (not needed, avoid execution)
-        workflow.pop("333", None)
+        # Keep default wiring: 214.audio_1 = ["295", 0], 361.audio = ["295", 0]
 
     else:
         print("[Workflow] TTS mode: text -> TTS (333) -> wav2vec (214)")
 
-        # Configure TTS node (333)
-        if ELEVENLABS_API_KEY:
-            workflow["333"]["inputs"]["api_key"] = ELEVENLABS_API_KEY
-        if inputs.get("voice_id"):
-            workflow["333"]["inputs"]["voice_id"] = inputs["voice_id"]
+        # Set input text in ComfyUIDeployExternalText node (332)
         if inputs.get("input_text"):
-            workflow["333"]["inputs"]["text"] = inputs["input_text"]
+            workflow["332"]["inputs"]["default_value"] = inputs["input_text"]
 
+        # Rewire audio path: bypass voice changer, TTS output goes directly
         workflow["214"]["inputs"]["audio_1"] = ["333", 0]
-
-        # Remove STS nodes (not needed, avoid execution)
-        workflow.pop("295", None)
-        workflow.pop("900", None)
+        workflow["361"]["inputs"]["audio"] = ["333", 0]
 
     return workflow
 
@@ -231,22 +253,23 @@ def poll_until_complete(prompt_id: str) -> dict:
 def find_output_video(history_entry: dict) -> str | None:
     outputs = history_entry.get("outputs", {})
 
-    # Check node 238 first (VHS_VideoCombine)
-    if "238" in outputs:
-        node_output = outputs["238"]
-        for key in ["gifs", "videos"]:
-            if key in node_output:
-                for item in node_output[key]:
-                    filename = item.get("filename", "")
-                    subfolder = item.get("subfolder", "")
-                    file_type = item.get("type", "output")
+    # Check node 338 first (VHS_VideoCombine - new workflow)
+    for node_id in ["338", "238"]:
+        if node_id in outputs:
+            node_output = outputs[node_id]
+            for key in ["gifs", "videos"]:
+                if key in node_output:
+                    for item in node_output[key]:
+                        filename = item.get("filename", "")
+                        subfolder = item.get("subfolder", "")
+                        file_type = item.get("type", "output")
 
-                    base = "temp" if file_type == "temp" else "output"
-                    video_path = os.path.join(COMFYUI_DIR, base, subfolder, filename)
+                        base = "temp" if file_type == "temp" else "output"
+                        video_path = os.path.join(COMFYUI_DIR, base, subfolder, filename)
 
-                    if os.path.exists(video_path):
-                        print(f"[Output] Found video: {video_path}")
-                        return video_path
+                        if os.path.exists(video_path):
+                            print(f"[Output] Found video: {video_path}")
+                            return video_path
 
     # Fallback: search all outputs
     for node_id, node_output in outputs.items():

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Download, Trash2, X, ChevronLeft, ChevronRight, RotateCcw, ChevronDown } from "lucide-react";
+import { Download, Trash2, X, ChevronLeft, ChevronRight, RotateCcw, ChevronDown, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { HistoryRun, formatTimestamp } from "@/lib/history";
 
@@ -15,6 +15,7 @@ const PARAM_LABELS: Record<string, string> = {
   A_gender: "Gender",
   A_ethnicity: "Ethnicity",
   A_age_range: "Age Range",
+  A_face_aspect: "Face Aspect",
   A_skin_tone: "Skin Tone",
   A_face_shape: "Face Shape",
   A_hair_color: "Hair Color",
@@ -43,9 +44,10 @@ interface GalleryProps {
   history: HistoryRun[];
   onClearHistory: () => void;
   onReuseParameters?: (parameters: Record<string, string | number>) => void;
+  onUsePoses?: (imageUrl: string) => void;
 }
 
-export function Gallery({ history, onClearHistory, onReuseParameters }: GalleryProps) {
+export function Gallery({ history, onClearHistory, onReuseParameters, onUsePoses }: GalleryProps) {
   const [selectedImage, setSelectedImage] = useState<{
     url: string;
     filename: string;
@@ -119,6 +121,13 @@ export function Gallery({ history, onClearHistory, onReuseParameters }: GalleryP
   const handleReuseParameters = () => {
     if (selectedImage?.parameters && onReuseParameters) {
       onReuseParameters(selectedImage.parameters);
+      handleCloseModal();
+    }
+  };
+
+  const handleUsePoses = () => {
+    if (selectedImage && onUsePoses) {
+      onUsePoses(selectedImage.url);
       handleCloseModal();
     }
   };
@@ -280,6 +289,18 @@ export function Gallery({ history, onClearHistory, onReuseParameters }: GalleryP
                     >
                       <RotateCcw className="w-4 h-4" />
                       Reuse Parameters
+                    </button>
+                  )}
+                  {onUsePoses && (
+                    <button
+                      onClick={handleUsePoses}
+                      className={cn(
+                        "flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                        "bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-400 border border-emerald-500/30"
+                      )}
+                    >
+                      <Users className="w-4 h-4" />
+                      Poses
                     </button>
                   )}
                   <button

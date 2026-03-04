@@ -19,8 +19,16 @@ export const HUMAN_DATA = {
     "Latino", "Indigenous", "Mixed ethnicity",
   ] as const,
   age_range: [
+    "5 year old child", "10 year old child", "15 year old teenager",
     "early 20s young adult", "mid 20s young adult", "late 20s adult",
     "early 30s adult", "mid 30s adult", "40s adult", "mature 50s adult",
+    "60s senior adult", "70s elderly adult", "75 year old elderly", "80 year old elderly",
+  ] as const,
+  face_aspect: [
+    "unattractive portrait, facial asymmetry, dull skin",
+    "attractive portrait, balanced features, clear skin",
+    "beautiful portrait, symmetrical face, bright eyes",
+    "stunning gorgeous model portrait, perfect symmetry, flawless skin, intense gaze",
   ] as const,
   skin_tone: [
     "very fair porcelain skin", "fair skin", "light skin",
