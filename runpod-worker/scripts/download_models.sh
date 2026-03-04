@@ -52,6 +52,7 @@ mkdir -p "${MODELS_DIR}/vae"
 mkdir -p "${MODELS_DIR}/clip_vision"
 mkdir -p "${MODELS_DIR}/wav2vec"
 mkdir -p "${MODELS_DIR}/loras/wan2.2"
+mkdir -p "${MODELS_DIR}/checkpoints"
 
 # Enable hf_transfer for faster downloads if available
 export HF_HUB_ENABLE_HF_TRANSFER=1
@@ -62,7 +63,7 @@ export HF_HUB_ENABLE_HF_TRANSFER=1
 #    Without it, you get a different file (infinitetalk_single.safetensors).
 # =============================================================================
 echo ""
-echo "[1/7] Downloading InfiniteTalk model..."
+echo "[1/9] Downloading InfiniteTalk model..."
 if [ ! -f "${MODELS_DIR}/infinitetalk/Wan2_1-InfiniTetalk-Single_fp16.safetensors" ]; then
     # Remove wrong file if it exists (from downloads without --revision)
     rm -f "${MODELS_DIR}/infinitetalk/infinitetalk_single.safetensors"
@@ -93,7 +94,7 @@ fi
 # 2. Wan2.1 I2V 14B GGUF (~18 GB)
 # =============================================================================
 echo ""
-echo "[2/7] Downloading Wan2.1 I2V 14B GGUF model..."
+echo "[2/9] Downloading Wan2.1 I2V 14B GGUF model..."
 if [ ! -f "${MODELS_DIR}/diffusion_models/wan2.1-i2v-14b-720p-Q8_0.gguf" ]; then
     python3 -c "
 from huggingface_hub import hf_hub_download
@@ -113,7 +114,7 @@ fi
 # 3. Text Encoder - UMT5-XXL (~11 GB)
 # =============================================================================
 echo ""
-echo "[3/7] Downloading UMT5-XXL text encoder..."
+echo "[3/9] Downloading UMT5-XXL text encoder..."
 if [ ! -f "${MODELS_DIR}/text_encoders/umt5-xxl-enc-bf16.safetensors" ]; then
     python3 -c "
 from huggingface_hub import hf_hub_download
@@ -140,7 +141,7 @@ fi
 # 4. VAE (~254 MB)
 # =============================================================================
 echo ""
-echo "[4/7] Downloading Wan2.1 VAE..."
+echo "[4/9] Downloading Wan2.1 VAE..."
 if [ ! -f "${MODELS_DIR}/vae/Wan2_1_VAE_bf16.safetensors" ]; then
     python3 -c "
 from huggingface_hub import hf_hub_download
@@ -167,7 +168,7 @@ fi
 # 5. CLIP Vision H (~3.9 GB)
 # =============================================================================
 echo ""
-echo "[5/7] Downloading CLIP Vision H..."
+echo "[5/9] Downloading CLIP Vision H..."
 if [ ! -f "${MODELS_DIR}/clip_vision/clip_vision_h.safetensors" ]; then
     python3 -c "
 from huggingface_hub import hf_hub_download
@@ -194,7 +195,7 @@ fi
 # 6. Wav2Vec2 Chinese Base (~190 MB)
 # =============================================================================
 echo ""
-echo "[6/7] Downloading Wav2Vec2 Chinese Base..."
+echo "[6/9] Downloading Wav2Vec2 Chinese Base..."
 if [ ! -f "${MODELS_DIR}/wav2vec/wav2vec2-chinese-base_fp16.safetensors" ]; then
     python3 -c "
 from huggingface_hub import hf_hub_download
@@ -216,7 +217,7 @@ fi
 #    on HF is Lightx2v/filename.safetensors. We move it up after download.
 # =============================================================================
 echo ""
-echo "[7/7] Downloading LightX2V I2V LoRA..."
+echo "[7/9] Downloading LightX2V I2V LoRA..."
 if [ ! -f "${MODELS_DIR}/loras/wan2.2/lightx2v_I2V_14B_480p_cfg_step_distill_rank128_bf16.safetensors" ]; then
     python3 -c "
 from huggingface_hub import hf_hub_download
@@ -234,6 +235,46 @@ print('Downloaded!')
             "${MODELS_DIR}/loras/wan2.2/lightx2v_I2V_14B_480p_cfg_step_distill_rank128_bf16.safetensors"
         rm -rf "${MODELS_DIR}/loras/wan2.2/Lightx2v"
     fi
+    echo "  Done!"
+else
+    echo "  Already exists, skipping."
+fi
+
+# =============================================================================
+# 8. SeedVR2 DiT Model (~14 GB)
+# =============================================================================
+echo ""
+echo "[8/9] Downloading SeedVR2 DiT model..."
+if [ ! -f "${MODELS_DIR}/checkpoints/seedvr2_ema_7b_fp8_e4m3fn_mixed_block35_fp16.safetensors" ]; then
+    python3 -c "
+from huggingface_hub import hf_hub_download
+hf_hub_download(
+    'numz/SeedVR2-models',
+    'seedvr2_ema_7b_fp8_e4m3fn_mixed_block35_fp16.safetensors',
+    local_dir='${MODELS_DIR}/checkpoints'
+)
+print('Downloaded!')
+"
+    echo "  Done!"
+else
+    echo "  Already exists, skipping."
+fi
+
+# =============================================================================
+# 9. SeedVR2 VAE (~335 MB)
+# =============================================================================
+echo ""
+echo "[9/9] Downloading SeedVR2 VAE..."
+if [ ! -f "${MODELS_DIR}/checkpoints/ema_vae_fp16.safetensors" ]; then
+    python3 -c "
+from huggingface_hub import hf_hub_download
+hf_hub_download(
+    'numz/SeedVR2-models',
+    'ema_vae_fp16.safetensors',
+    local_dir='${MODELS_DIR}/checkpoints'
+)
+print('Downloaded!')
+"
     echo "  Done!"
 else
     echo "  Already exists, skipping."
@@ -266,10 +307,12 @@ check_file "${MODELS_DIR}/vae/Wan2_1_VAE_bf16.safetensors"
 check_file "${MODELS_DIR}/clip_vision/clip_vision_h.safetensors"
 check_file "${MODELS_DIR}/wav2vec/wav2vec2-chinese-base_fp16.safetensors"
 check_file "${MODELS_DIR}/loras/wan2.2/lightx2v_I2V_14B_480p_cfg_step_distill_rank128_bf16.safetensors"
+check_file "${MODELS_DIR}/checkpoints/seedvr2_ema_7b_fp8_e4m3fn_mixed_block35_fp16.safetensors"
+check_file "${MODELS_DIR}/checkpoints/ema_vae_fp16.safetensors"
 
 echo ""
 if [ $MISSING -eq 0 ]; then
-    echo "All 7 models downloaded successfully!"
+    echo "All 9 models downloaded successfully!"
 else
     echo "WARNING: ${MISSING} model(s) missing. Check the output above."
 fi

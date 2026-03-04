@@ -2,18 +2,29 @@
   "214": {
     "inputs": {
       "normalize_loudness": true,
-      "num_frames": 1000,
+      "num_frames": [
+        "362",
+        0
+      ],
       "fps": 25,
       "audio_scale": 1,
       "audio_cfg_scale": 1,
       "multi_audio_type": "para",
       "add_noise_floor": false,
       "smooth_transients": false,
-      "wav2vec_model": ["232", 0],
-      "audio_1": ["295", 0]
+      "wav2vec_model": [
+        "232",
+        0
+      ],
+      "audio_1": [
+        "295",
+        0
+      ]
     },
     "class_type": "MultiTalkWav2VecEmbeds",
-    "_meta": { "title": "Multi/InfiniteTalk Wav2vec2 Embeds" }
+    "_meta": {
+      "title": "Multi/InfiniteTalk Wav2vec2 Embeds"
+    }
   },
   "215": {
     "inputs": {
@@ -24,16 +35,30 @@
       "force_offload": true,
       "tiles": 0,
       "ratio": 0.5,
-      "clip_vision": ["231", 0],
-      "image_1": ["324", 0]
+      "clip_vision": [
+        "231",
+        0
+      ],
+      "image_1": [
+        "324",
+        0
+      ]
     },
     "class_type": "WanVideoClipVisionEncode",
-    "_meta": { "title": "WanVideo ClipVision Encode" }
+    "_meta": {
+      "title": "WanVideo ClipVision Encode"
+    }
   },
   "216": {
     "inputs": {
-      "width": ["217", 0],
-      "height": ["217", 1],
+      "width": [
+        "217",
+        0
+      ],
+      "height": [
+        "217",
+        1
+      ],
       "frame_window_size": 81,
       "motion_frame": 25,
       "force_offload": false,
@@ -41,62 +66,99 @@
       "tiled_vae": false,
       "mode": "infinitetalk",
       "output_path": "",
-      "vae": ["228", 0],
-      "start_image": ["324", 0],
-      "clip_embeds": ["215", 0]
+      "vae": [
+        "228",
+        0
+      ],
+      "start_image": [
+        "324",
+        0
+      ],
+      "clip_embeds": [
+        "215",
+        0
+      ]
     },
     "class_type": "WanVideoImageToVideoMultiTalk",
-    "_meta": { "title": "WanVideo Long I2V Multi/InfiniteTalk" }
+    "_meta": {
+      "title": "WanVideo Long I2V Multi/InfiniteTalk"
+    }
   },
   "217": {
     "inputs": {
-      "image": ["324", 0]
+      "image": [
+        "324",
+        0
+      ]
     },
     "class_type": "GetImageSize",
-    "_meta": { "title": "Get Image Size (final)" }
+    "_meta": {
+      "title": "Obtener Tamaño de Imagen"
+    }
   },
   "218": {
     "inputs": {
       "model": "Wan2_1-InfiniTetalk-Single_fp16.safetensors"
     },
     "class_type": "MultiTalkModelLoader",
-    "_meta": { "title": "Multi/InfiniteTalk Model Loader" }
+    "_meta": {
+      "title": "Multi/InfiniteTalk Model Loader"
+    }
   },
   "220": {
     "inputs": {
       "steps": 6,
       "cfg": 1.0000000000000002,
       "shift": 11.000000000000002,
-      "seed": 71584370512286,
+      "seed": 757828341464057,
       "force_offload": true,
       "scheduler": "dpm++_sde",
       "riflex_freq_index": 0,
-      "denoise_strength": 1,
+      "denoise_strength": 0.85,
       "batched_cfg": false,
       "rope_function": "comfy",
       "start_step": 0,
       "end_step": -1,
       "add_noise_to_samples": true,
-      "model": ["234", 0],
-      "image_embeds": ["216", 0],
-      "text_embeds": ["225", 0],
-      "multitalk_embeds": ["214", 0]
+      "model": [
+        "234",
+        0
+      ],
+      "image_embeds": [
+        "216",
+        0
+      ],
+      "text_embeds": [
+        "225",
+        0
+      ],
+      "multitalk_embeds": [
+        "214",
+        0
+      ]
     },
     "class_type": "WanVideoSampler",
-    "_meta": { "title": "WanVideo Sampler" }
+    "_meta": {
+      "title": "WanVideo Sampler"
+    }
   },
   "225": {
     "inputs": {
       "model_name": "umt5-xxl-enc-bf16.safetensors",
       "precision": "bf16",
-      "positive_prompt": "",
-      "negative_prompt": "low quality, blurry, artifacts, bad anatomy, deformed hands, extra fingers, watermark, text, logo",
+      "positive_prompt": [
+        "355",
+        0
+      ],
+      "negative_prompt": "low quality, blurry, artifacts,\nface warping, face morphing,\nidentity drift, facial identity shift,\nmouth jitter, lip jitter, lip desync,\nmouth shape shifting, broken jaw,\nextra teeth, missing teeth,\nasymmetrical lips,\noverexpressive movement,\nexaggerated head movement,\nsudden jerks,\nunstable motion,\nflickering,\nframe inconsistency,\ncamera shake,\ncamera drift,\ntext, watermark, logo",
       "quantization": "disabled",
       "use_disk_cache": false,
       "device": "gpu"
     },
     "class_type": "WanVideoTextEncodeCached",
-    "_meta": { "title": "WanVideo TextEncode Cached" }
+    "_meta": {
+      "title": "WanVideo TextEncode Cached"
+    }
   },
   "228": {
     "inputs": {
@@ -106,14 +168,27 @@
       "verbose": false
     },
     "class_type": "WanVideoVAELoader",
-    "_meta": { "title": "WanVideo VAE Loader" }
+    "_meta": {
+      "title": "WanVideo VAE Loader"
+    }
+  },
+  "229": {
+    "inputs": {
+      "image": "openart-image_1772185127276_4043b0d1_1772185127429_0519d0fa.png"
+    },
+    "class_type": "LoadImage",
+    "_meta": {
+      "title": "Cargar Imagen"
+    }
   },
   "231": {
     "inputs": {
       "clip_name": "clip_vision_h.safetensors"
     },
     "class_type": "CLIPVisionLoader",
-    "_meta": { "title": "Cargar CLIP Vision" }
+    "_meta": {
+      "title": "Cargar CLIP Vision"
+    }
   },
   "232": {
     "inputs": {
@@ -122,7 +197,9 @@
       "load_device": "main_device"
     },
     "class_type": "Wav2VecModelLoader",
-    "_meta": { "title": "Wav2vec2 Model Loader" }
+    "_meta": {
+      "title": "Wav2vec2 Model Loader"
+    }
   },
   "233": {
     "inputs": {
@@ -132,7 +209,9 @@
       "merge_loras": false
     },
     "class_type": "WanVideoLoraSelect",
-    "_meta": { "title": "WanVideo Lora Select" }
+    "_meta": {
+      "title": "WanVideo Lora Select"
+    }
   },
   "234": {
     "inputs": {
@@ -142,12 +221,23 @@
       "load_device": "main_device",
       "attention_mode": "sdpa",
       "rms_norm_function": "default",
-      "block_swap_args": ["235", 0],
-      "lora": ["233", 0],
-      "multitalk_model": ["218", 0]
+      "block_swap_args": [
+        "235",
+        0
+      ],
+      "lora": [
+        "233",
+        0
+      ],
+      "multitalk_model": [
+        "218",
+        0
+      ]
     },
     "class_type": "WanVideoModelLoader",
-    "_meta": { "title": "WanVideo Model Loader" }
+    "_meta": {
+      "title": "WanVideo Model Loader"
+    }
   },
   "235": {
     "inputs": {
@@ -160,7 +250,9 @@
       "block_swap_debug": false
     },
     "class_type": "WanVideoBlockSwap",
-    "_meta": { "title": "WanVideo Block Swap" }
+    "_meta": {
+      "title": "WanVideo Block Swap"
+    }
   },
   "237": {
     "inputs": {
@@ -170,49 +262,95 @@
       "tile_stride_x": 144,
       "tile_stride_y": 128,
       "normalization": "default",
-      "vae": ["228", 0],
-      "samples": ["220", 0]
+      "vae": [
+        "228",
+        0
+      ],
+      "samples": [
+        "220",
+        0
+      ]
     },
     "class_type": "WanVideoDecode",
-    "_meta": { "title": "WanVideo Decode" }
+    "_meta": {
+      "title": "WanVideo Decode"
+    }
   },
-  "238": {
+  "239": {
     "inputs": {
-      "frame_rate": 25,
-      "loop_count": 0,
-      "filename_prefix": "Video",
-      "format": "video/h264-mp4",
-      "pix_fmt": "yuv420p",
-      "crf": 19,
-      "save_metadata": true,
-      "trim_to_audio": true,
-      "pingpong": false,
-      "save_output": true,
-      "images": ["237", 0],
-      "audio": ["214", 1]
+      "input_id": "input_image",
+      "display_name": "",
+      "description": "",
+      "default_value_url": "",
+      "default_value": [
+        "229",
+        0
+      ]
     },
-    "class_type": "VHS_VideoCombine",
-    "_meta": { "title": "Video Combine" }
+    "class_type": "ComfyUIDeployExternalImage",
+    "_meta": {
+      "title": "External Image (ComfyUI Deploy)"
+    }
   },
   "260": {
     "inputs": {
       "num_frames": 1,
-      "input_video_frames": ["237", 0]
+      "input_video_frames": [
+        "335",
+        0
+      ]
     },
     "class_type": "ExtractStartFramesForContinuations",
-    "_meta": { "title": "Extract Start Frames" }
+    "_meta": {
+      "title": "Extract Start Frames For Continuations"
+    }
   },
   "261": {
     "inputs": {
       "filename_prefix": "Talk_V1",
-      "images": ["260", 0]
+      "images": [
+        "260",
+        0
+      ]
     },
     "class_type": "SaveImage",
-    "_meta": { "title": "Save Image" }
+    "_meta": {
+      "title": "Guardar Imagen"
+    }
   },
-
-  "_comment_image_processing": "Image chain: 737 -> 319 (aspect ratio) -> 323 (get size) -> 318/320 (64-align) -> 324 (resize)",
-
+  "295": {
+    "inputs": {
+      "api_key": "sk_f80da7a6b227de5be6bfeb97541da13f4b41479d66ad74a6",
+      "voice_id": [
+        "331",
+        0
+      ],
+      "model_id": "eleven_multilingual_sts_v2",
+      "output_format": "mp3_44100_128",
+      "remove_background_noise": false,
+      "audio": [
+        "330",
+        0
+      ]
+    },
+    "class_type": "ElevenLabsVoiceChanger",
+    "_meta": {
+      "title": "ElevenLabs Voice Changer"
+    }
+  },
+  "318": {
+    "inputs": {
+      "expression": "(a // 64) * 64\n",
+      "a": [
+        "323",
+        0
+      ]
+    },
+    "class_type": "MathExpression|pysssss",
+    "_meta": {
+      "title": "Math Expression 🐍"
+    }
+  },
   "319": {
     "inputs": {
       "aspect_ratio": "original",
@@ -224,54 +362,123 @@
       "scale_to_side": "longest",
       "scale_to_length": 1280,
       "background_color": "#000000",
-      "image": ["737", 0]
+      "image": [
+        "239",
+        0
+      ]
     },
     "class_type": "LayerUtility: ImageScaleByAspectRatio V2",
-    "_meta": { "title": "Scale By Aspect Ratio" }
-  },
-  "323": {
-    "inputs": {
-      "image": ["319", 0]
-    },
-    "class_type": "GetImageSize",
-    "_meta": { "title": "Get Image Size (scaled)" }
-  },
-  "318": {
-    "inputs": {
-      "expression": "(a // 64) * 64\n",
-      "a": ["323", 0]
-    },
-    "class_type": "MathExpression|pysssss",
-    "_meta": { "title": "Align Width to 64px" }
+    "_meta": {
+      "title": "LayerUtility: ImageScaleByAspectRatio V2"
+    }
   },
   "320": {
     "inputs": {
       "expression": "(a // 64) * 64\n",
-      "a": ["323", 1]
+      "a": [
+        "323",
+        1
+      ]
     },
     "class_type": "MathExpression|pysssss",
-    "_meta": { "title": "Align Height to 64px" }
+    "_meta": {
+      "title": "Math Expression 🐍"
+    }
+  },
+  "323": {
+    "inputs": {
+      "image": [
+        "319",
+        0
+      ]
+    },
+    "class_type": "GetImageSize",
+    "_meta": {
+      "title": "Obtener Tamaño de Imagen"
+    }
   },
   "324": {
     "inputs": {
       "measurement": "pixels",
-      "width": ["318", 0],
-      "height": ["320", 0],
+      "width": [
+        "318",
+        0
+      ],
+      "height": [
+        "320",
+        0
+      ],
       "fit": "crop",
       "method": "area",
-      "image": ["737", 0]
+      "image": [
+        "239",
+        0
+      ]
     },
     "class_type": "Image Resize (rgthree)",
-    "_meta": { "title": "Image Resize (64-aligned)" }
+    "_meta": {
+      "title": "Image Resize (rgthree)"
+    }
   },
-
-  "_comment_audio_tts": "TTS node: text -> ElevenlabsTextToSpeech -> audio (used in TTS mode)",
-
+  "328": {
+    "inputs": {
+      "input_id": "positive_prompt",
+      "default_value": "The pink-haired girl speaks calmly and relaxed to the camera.",
+      "display_name": "",
+      "description": ""
+    },
+    "class_type": "ComfyUIDeployExternalText",
+    "_meta": {
+      "title": "External Text (ComfyUI Deploy)"
+    }
+  },
+  "330": {
+    "inputs": {
+      "input_id": "input_audio",
+      "audio_file": "",
+      "display_name": "",
+      "description": ""
+    },
+    "class_type": "ComfyUIDeployExternalAudio",
+    "_meta": {
+      "title": "External Audio (ComfyUI Deploy)"
+    }
+  },
+  "331": {
+    "inputs": {
+      "input_id": "voice_id",
+      "default_value": "",
+      "display_name": "",
+      "description": ""
+    },
+    "class_type": "ComfyUIDeployExternalText",
+    "_meta": {
+      "title": "External Text (ComfyUI Deploy)"
+    }
+  },
+  "332": {
+    "inputs": {
+      "input_id": "input_text",
+      "default_value": "",
+      "display_name": "",
+      "description": ""
+    },
+    "class_type": "ComfyUIDeployExternalText",
+    "_meta": {
+      "title": "External Text (ComfyUI Deploy)"
+    }
+  },
   "333": {
     "inputs": {
-      "text": "",
-      "api_key": "",
-      "voice_id": "gdMFOufuI36UmxNKJhtv",
+      "text": [
+        "332",
+        0
+      ],
+      "api_key": "sk_f80da7a6b227de5be6bfeb97541da13f4b41479d66ad74a6",
+      "voice_id": [
+        "331",
+        0
+      ],
       "model_id": "eleven_multilingual_v2",
       "seed": "",
       "apply_text_normalization": "auto",
@@ -282,40 +489,190 @@
       "voice_settings_speed": 1
     },
     "class_type": "ElevenlabsTextToSpeech",
-    "_meta": { "title": "ElevenLabs TTS" }
+    "_meta": {
+      "title": "ElevenlabsTextToSpeech"
+    }
   },
-
-  "_comment_audio_sts": "STS nodes: LoadAudio -> ElevenLabsVoiceChanger -> audio (used in STS mode)",
-
-  "900": {
+  "334": {
     "inputs": {
-      "audio": ""
+      "model": "seedvr2_ema_7b_fp8_e4m3fn_mixed_block35_fp16.safetensors",
+      "device": "cuda:0",
+      "blocks_to_swap": 0,
+      "swap_io_components": false,
+      "offload_device": "cpu",
+      "cache_model": false,
+      "attention_mode": "sdpa"
     },
-    "class_type": "LoadAudio",
-    "_meta": { "title": "Load Audio (STS input)" }
+    "class_type": "SeedVR2LoadDiTModel",
+    "_meta": {
+      "title": "SeedVR2 (Down)Load DiT Model"
+    }
   },
-  "295": {
+  "335": {
     "inputs": {
-      "api_key": "",
-      "voice_id": "gdMFOufuI36UmxNKJhtv",
-      "model_id": "eleven_multilingual_sts_v2",
-      "output_format": "mp3_44100_128",
-      "remove_background_noise": false,
-      "audio": ["900", 0]
+      "seed": [
+        "343",
+        0
+      ],
+      "resolution": 1440,
+      "max_resolution": 0,
+      "batch_size": 33,
+      "uniform_batch_size": true,
+      "color_correction": "lab",
+      "temporal_overlap": 2,
+      "prepend_frames": 0,
+      "input_noise_scale": 0.005,
+      "latent_noise_scale": 0.005,
+      "offload_device": "cpu",
+      "enable_debug": false,
+      "image": [
+        "342",
+        0
+      ],
+      "dit": [
+        "334",
+        0
+      ],
+      "vae": [
+        "336",
+        0
+      ]
     },
-    "class_type": "ElevenLabsVoiceChanger",
-    "_meta": { "title": "ElevenLabs Voice Changer" }
+    "class_type": "SeedVR2VideoUpscaler",
+    "_meta": {
+      "title": "SeedVR2 Video Upscaler (v2.5.24)"
+    }
   },
-
-  "_comment_input": "Base64 image input (replaces ComfyDeploy ExternalImage)",
-
-  "737": {
+  "336": {
     "inputs": {
-      "base64_data": "",
-      "image_output": "Preview",
-      "save_prefix": "ComfyUI"
+      "model": "ema_vae_fp16.safetensors",
+      "device": "cuda:0",
+      "encode_tiled": true,
+      "encode_tile_size": 1024,
+      "encode_tile_overlap": 128,
+      "decode_tiled": true,
+      "decode_tile_size": 768,
+      "decode_tile_overlap": 128,
+      "tile_debug": "false",
+      "offload_device": "cpu",
+      "cache_model": false
     },
-    "class_type": "easy loadImageBase64",
-    "_meta": { "title": "Load Image (Base64)" }
+    "class_type": "SeedVR2LoadVAEModel",
+    "_meta": {
+      "title": "SeedVR2 (Down)Load VAE Model"
+    }
+  },
+  "338": {
+    "inputs": {
+      "frame_rate": 25,
+      "loop_count": 0,
+      "filename_prefix": "Seed",
+      "format": "video/h264-mp4",
+      "pix_fmt": "yuv420p",
+      "crf": 19,
+      "save_metadata": true,
+      "trim_to_audio": true,
+      "pingpong": false,
+      "save_output": true,
+      "images": [
+        "335",
+        0
+      ],
+      "audio": [
+        "214",
+        1
+      ]
+    },
+    "class_type": "VHS_VideoCombine",
+    "_meta": {
+      "title": "Video Combine 🎥🅥🅗🅢"
+    }
+  },
+  "342": {
+    "inputs": {
+      "upscale_method": "nearest-exact",
+      "scale_by": 0.5,
+      "image": [
+        "237",
+        0
+      ]
+    },
+    "class_type": "ImageScaleBy",
+    "_meta": {
+      "title": "Ampliar Imagen Por"
+    }
+  },
+  "343": {
+    "inputs": {
+      "expression": "a % 4294967296",
+      "a": [
+        "344",
+        0
+      ]
+    },
+    "class_type": "MathExpression|pysssss",
+    "_meta": {
+      "title": "Math Expression 🐍"
+    }
+  },
+  "344": {
+    "inputs": {
+      "seed": -1
+    },
+    "class_type": "Seed (rgthree)",
+    "_meta": {
+      "title": "Seed (rgthree)"
+    }
+  },
+  "355": {
+    "inputs": {
+      "string_a": [
+        "328",
+        0
+      ],
+      "string_b": [
+        "358",
+        0
+      ],
+      "delimiter": ","
+    },
+    "class_type": "StringConcatenate",
+    "_meta": {
+      "title": "Concatenar"
+    }
+  },
+  "358": {
+    "inputs": {
+      "text": "accurate lip sync articulation,\nstable mouth shape,\nprecise jaw movement,\ncontrolled lip deformation,\n\nnatural facial micro-expressions,\nsoft natural blinking,\nmicro eye focus shifts,\nslight eyelid movement,\nsubtle cheek muscle tension,\ngentle breathing motion,\n\nminimal natural head movement,\nsmall organic head tilts,\nrestricted gesture range,\nlow motion amplitude,\nstable relaxed posture,\n\nstatic tripod camera,\nslight natural camera presence,\nno zoom,\nno camera shake,\nno camera drift,\n\nstrong temporal consistency,\nstable facial identity,\nno identity drift,\nsmooth motion,\nconsistent lighting across frames,\nno flicker,\n\nrealistic skin texture,\nnatural skin micro details,\nsubtle skin shading,\nrealistic eye reflections,\nsoft cinematic lighting,\nhigh detail,\nDSLR video realism, shallow depth of field"
+    },
+    "class_type": "LayerUtility: TextBox",
+    "_meta": {
+      "title": "Bloque Fijo"
+    }
+  },
+  "361": {
+    "inputs": {
+      "audio": [
+        "295",
+        0
+      ]
+    },
+    "class_type": "Audio Duration (mtb)",
+    "_meta": {
+      "title": "Audio Duration (mtb)"
+    }
+  },
+  "362": {
+    "inputs": {
+      "expression": "ceil((a * 25) / 1000)",
+      "a": [
+        "361",
+        0
+      ]
+    },
+    "class_type": "MathExpression|pysssss",
+    "_meta": {
+      "title": "Math Expression 🐍"
+    }
   }
 }

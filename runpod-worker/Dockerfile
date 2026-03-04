@@ -48,14 +48,17 @@ RUN cd ${COMFYUI_DIR}/custom_nodes \
     && git clone --depth 1 https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite.git \
     && git clone --depth 1 https://github.com/sysL-padawan/comfyui-elevenlabs-integration.git \
     && git clone --depth 1 https://github.com/theclueless-ai/spech-to-speach-elevenlabs-node.git \
-    && git clone --depth 1 https://github.com/yolain/ComfyUI-Easy-Use.git \
     && git clone --depth 1 https://github.com/chflame163/ComfyUI_LayerStyle.git \
     && git clone --depth 1 https://github.com/pythongosssss/ComfyUI-Custom-Scripts.git \
-    && git clone --depth 1 https://github.com/rgthree/rgthree-comfy.git
+    && git clone --depth 1 https://github.com/rgthree/rgthree-comfy.git \
+    && git clone --depth 1 https://github.com/numz/ComfyUI-SeedVR2_VideoUpscaler.git \
+    && git clone --depth 1 https://github.com/BennyKok/comfyui-deploy.git \
+    && git clone --depth 1 https://github.com/melMass/comfy_mtb.git
 
 # Install requirements for each custom node
 RUN for dir in ComfyUI-WanVideoWrapper ComfyUI-VideoHelperSuite comfyui-elevenlabs-integration \
-    spech-to-speach-elevenlabs-node ComfyUI-Easy-Use ComfyUI_LayerStyle rgthree-comfy; do \
+    spech-to-speach-elevenlabs-node ComfyUI_LayerStyle rgthree-comfy \
+    ComfyUI-SeedVR2_VideoUpscaler comfyui-deploy comfy_mtb; do \
     if [ -f "${COMFYUI_DIR}/custom_nodes/$dir/requirements.txt" ]; then \
         pip install --no-cache-dir -r "${COMFYUI_DIR}/custom_nodes/$dir/requirements.txt" 2>/dev/null || true; \
     fi; \
@@ -69,7 +72,8 @@ RUN pip install --no-cache-dir \
     boto3 \
     requests \
     websocket-client \
-    gguf
+    gguf \
+    pyloudnorm
 
 # ---- Copy handler and workflow files ----
 COPY rp_handler.py ${COMFYUI_DIR}/rp_handler.py
@@ -87,6 +91,7 @@ RUN mkdir -p ${COMFYUI_DIR}/models/diffusion_models \
     ${COMFYUI_DIR}/models/clip_vision \
     ${COMFYUI_DIR}/models/loras/wan2.2 \
     ${COMFYUI_DIR}/models/wav2vec2 \
+    ${COMFYUI_DIR}/models/checkpoints \
     /runpod-volume/models
 
 # ---- Environment variables (set at RunPod endpoint level) ----
