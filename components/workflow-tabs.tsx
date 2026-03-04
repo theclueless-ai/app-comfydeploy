@@ -2,7 +2,7 @@
 
 import { cn } from "@/lib/utils";
 
-export type WorkflowTab = "fashion" | "vellum" | "aiTalk" | "aiTalkT" | "avatar" | "avatarT" | "poses";
+export type WorkflowTab = "fashion" | "vellum" | "aiTalk" | "avatar" | "avatarT" | "poses";
 
 const externalTabs: Record<string, string> = {
   avatar: "http://192.168.1.10:3000/",

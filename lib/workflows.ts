@@ -177,9 +177,5 @@ export function getVellumWorkflow(): WorkflowConfig {
 }
 
 export function getAiTalkWorkflow(): WorkflowConfig {
-  return workflows.find((w) => w.id === "aiTalk")!;
-}
-
-export function getAiTalkTWorkflow(): WorkflowConfig {
-  return workflows.find((w) => w.id === "aiTalkT")!;
+  return workflows.find((w) => w.id === "ai-talk")!;
 }

@@ -395,8 +395,6 @@ export default function Home() {
           ? "/api/run-vellum"
           : activeTab === "aiTalk"
             ? "/api/run-ai-talk"
-            : activeTab === "aiTalkT"
-            ? "/api/run-ai-talk"
             : activeTab === "poses"
               ? "/api/run-poses"
               : "/api/run-avatar";
@@ -461,8 +459,6 @@ export default function Home() {
                   : activeTab === "vellum"
                     ? "Image Upscaling"
                     : activeTab === "aiTalk"
-                      ? "Generate Talking Video"
-                      : activeTab === "aiTalkT"
                       ? "Generate Talking Video"
                       : activeTab === "poses"
                         ? "Upload Portrait"
