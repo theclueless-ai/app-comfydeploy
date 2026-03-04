@@ -13,7 +13,7 @@ export function WorkflowTabs({ activeTab, onTabChange }: WorkflowTabsProps) {
   const tabs: Array<{ id: WorkflowTab; label: string }> = [
     // { id: "fashion", label: "AI Fashion Commerce" },
     // { id: "vellum", label: "Vellum 2.0" },
-    { id: "ai-talk", label: "AI Talk" },
+    // { id: "ai-talk", label: "AI Talk" },
     { id: "avatar", label: "Avatar Generator" },
     { id: "poses", label: "Poses" },
   ];
