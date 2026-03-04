@@ -167,6 +167,23 @@ def prepare_workflow(workflow: dict, inputs: dict) -> dict:
         workflow["295"]["inputs"]["api_key"] = ELEVENLABS_API_KEY
         workflow["333"]["inputs"]["api_key"] = ELEVENLABS_API_KEY
 
+    # --- Voice settings (Node 333 TTS + Node 295 STS) ---
+    vs = inputs.get("voice_settings", {})
+    if vs:
+        print(f"[Workflow] Voice settings: {vs}")
+        for node_id in ["333", "295"]:
+            if "stability" in vs:
+                workflow[node_id]["inputs"]["voice_settings_stability"] = vs["stability"]
+            if "similarity_boost" in vs:
+                workflow[node_id]["inputs"]["voice_settings_similarity_boost"] = vs["similarity_boost"]
+            if "style" in vs:
+                workflow[node_id]["inputs"]["voice_settings_style"] = vs["style"]
+            if "use_speaker_boost" in vs:
+                workflow[node_id]["inputs"]["voice_settings_use_speaker_boost"] = vs["use_speaker_boost"]
+        # Speed only applies to TTS node (333)
+        if "speed" in vs:
+            workflow["333"]["inputs"]["voice_settings_speed"] = vs["speed"]
+
     # --- Audio routing based on mode ---
     if mode == "sts":
         print("[Workflow] STS mode: audio -> VoiceChanger (295) -> wav2vec (214)")

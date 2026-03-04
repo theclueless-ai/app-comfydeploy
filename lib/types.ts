@@ -22,6 +22,8 @@ export interface WorkflowInput {
   min?: number;
   max?: number;
   step?: number;
+  suffix?: string;
+  decimals?: number;
 }
 
 export interface WorkflowConfig {

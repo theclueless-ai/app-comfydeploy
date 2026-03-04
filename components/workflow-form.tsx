@@ -222,6 +222,8 @@ export function WorkflowForm({
                 max={input.max}
                 step={input.step}
                 required={input.required}
+                suffix={input.suffix}
+                decimals={input.decimals}
               />
             );
           }

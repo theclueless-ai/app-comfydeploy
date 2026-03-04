@@ -70,6 +70,20 @@ export async function POST(request: NextRequest) {
       ? voiceId.trim()
       : "gdMFOufuI36UmxNKJhtv"; // Default voice ID
 
+    // Extract voice settings (use defaults if not provided)
+    const parseFloat_ = (val: FormDataEntryValue | null, fallback: number) => {
+      if (!val || typeof val !== "string") return fallback;
+      const n = parseFloat(val);
+      return isNaN(n) ? fallback : n;
+    };
+    const voiceSettings = {
+      stability: parseFloat_(formData.get("voice_settings_stability"), 0.3),
+      similarity_boost: parseFloat_(formData.get("voice_settings_similarity_boost"), 0.85),
+      style: parseFloat_(formData.get("voice_settings_style"), 0.3),
+      speed: parseFloat_(formData.get("voice_settings_speed"), 1),
+      use_speaker_boost: formData.get("voice_settings_use_speaker_boost") !== "Off",
+    };
+
     console.log("=== AI Talk RunPod Request ===");
     console.log("Image:", imageFile.name, imageFile.type, imageFile.size);
     console.log("Mode:", mode);
@@ -77,6 +91,7 @@ export async function POST(request: NextRequest) {
     if (hasText) console.log("Text:", (inputText as string).substring(0, 100) + "...");
     console.log("Positive Prompt:", positivePrompt.substring(0, 100) + "...");
     console.log("Voice ID:", selectedVoiceId);
+    console.log("Voice Settings:", voiceSettings);
 
     // Convert image to base64 data URI
     const imageBase64 = await runpodFileToBase64(imageFile);
@@ -98,6 +113,7 @@ export async function POST(request: NextRequest) {
       voice_id: selectedVoiceId,
       positive_prompt: positivePrompt.trim(),
       mode,
+      voice_settings: voiceSettings,
     });
 
     return NextResponse.json({

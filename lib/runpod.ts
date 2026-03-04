@@ -444,6 +444,14 @@ function isS3Url(url: string): boolean {
  * AI Talk workflow inputs sent to the RunPod handler.
  * The handler injects these into the ComfyUI workflow nodes.
  */
+export interface AiTalkVoiceSettings {
+  stability: number;
+  similarity_boost: number;
+  style: number;
+  speed: number;
+  use_speaker_boost: boolean;
+}
+
 export interface AiTalkWorkflowInput {
   input_image: string;      // Base64 data URI of the face image
   input_audio?: string;     // Base64 data URI of audio (for STS mode)
@@ -451,6 +459,7 @@ export interface AiTalkWorkflowInput {
   voice_id: string;         // ElevenLabs voice ID
   positive_prompt: string;  // Scene/motion description for video generation
   mode?: "tts" | "sts";    // TTS (text-to-speech) or STS (speech-to-speech)
+  voice_settings?: AiTalkVoiceSettings;
 }
 
 /**
@@ -487,6 +496,7 @@ export async function runAiTalkWorkflowAsync(
       voice_id: input.voice_id,
       positive_prompt: input.positive_prompt,
       mode: input.mode || "tts",
+      ...(input.voice_settings && { voice_settings: input.voice_settings }),
     },
   };
 
