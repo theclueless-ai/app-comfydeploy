@@ -106,9 +106,14 @@ export async function POST(request: NextRequest) {
     });
   } catch (error) {
     console.error("AI Talk workflow execution error:", error);
+    const message = error instanceof Error ? error.message : null;
+    const isEndpointNotFound = message?.includes("endpoint not found");
     return NextResponse.json(
-      { error: sanitizeErrorMessage(error instanceof Error ? error.message : null) },
-      { status: 500 }
+      {
+        error: sanitizeErrorMessage(message),
+        code: isEndpointNotFound ? "ENDPOINT_NOT_FOUND" : "EXECUTION_ERROR",
+      },
+      { status: isEndpointNotFound ? 502 : 500 }
     );
   }
 }

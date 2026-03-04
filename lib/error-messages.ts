@@ -52,6 +52,12 @@ const ERROR_PATTERNS: Array<{ pattern: RegExp; message: string }> = [
     pattern: /invalid.*audio|corrupt.*audio/i,
     message: "El archivo de audio no es válido. Usa otro archivo.",
   },
+  // Endpoint not found (RunPod endpoint deleted/deactivated)
+  {
+    pattern: /endpoint not found/i,
+    message:
+      "El servidor de procesamiento no está configurado correctamente. Contacta al administrador.",
+  },
   // Worker / infra errors
   {
     pattern: /worker|serverless|endpoint/i,

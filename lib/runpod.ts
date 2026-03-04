@@ -512,6 +512,23 @@ export async function runAiTalkWorkflowAsync(
   if (!response.ok) {
     const errorText = await response.text();
     console.error("RunPod AI Talk API Error:", errorText);
+    if (response.status === 404) {
+      console.error(
+        `RunPod endpoint '${endpointId}' not found. ` +
+        "Please verify the endpoint exists and is active in your RunPod dashboard, " +
+        "and that RUNPOD_AITALK_ENDPOINT_ID is set correctly."
+      );
+      throw new Error(
+        "RunPod AI Talk endpoint not found. The serverless endpoint may have been " +
+        "deleted or deactivated. Please check your RunPod dashboard and update " +
+        "RUNPOD_AITALK_ENDPOINT_ID if needed."
+      );
+    }
+    if (response.status === 401) {
+      throw new Error(
+        "RunPod API authentication failed. Please verify RUNPOD_API_KEY is correct."
+      );
+    }
     throw new Error(`RunPod AI Talk API error: ${response.status} - ${errorText}`);
   }
 
