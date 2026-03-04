@@ -63,12 +63,15 @@ export async function middleware(request: NextRequest) {
 
   // Check for auth token
   const token = request.cookies.get('auth-token')?.value;
+  const isApiRoute = pathname.startsWith('/api/');
 
   // Determine correct login page based on path
   const loginPath = pathname.startsWith('/stella') ? '/stella' : '/login';
 
   if (!token) {
-    // Redirect to login if no token
+    if (isApiRoute) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    }
     const loginUrl = new URL(loginPath, request.url);
     return NextResponse.redirect(loginUrl);
   }
@@ -78,6 +81,9 @@ export async function middleware(request: NextRequest) {
     await jwtVerify(token, JWT_SECRET);
     return NextResponse.next();
   } catch {
+    if (isApiRoute) {
+      return NextResponse.json({ error: 'Token expired' }, { status: 401 });
+    }
     // Token is invalid, redirect to login
     const loginUrl = new URL(loginPath, request.url);
     const response = NextResponse.redirect(loginUrl);

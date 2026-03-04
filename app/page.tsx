@@ -173,33 +173,58 @@ export default function Home() {
       try {
         // First check webhook endpoint
         const webhookResponse = await fetch(`/api/webhook?runId=${runId}`);
-        const webhookData = await webhookResponse.json();
+        if (webhookResponse.ok) {
+          const contentType = webhookResponse.headers.get("content-type") || "";
+          if (contentType.includes("application/json")) {
+            const webhookData = await webhookResponse.json();
+            console.log("AI Talk webhook data:", webhookData);
 
-        console.log("AI Talk webhook data:", webhookData);
+            if (webhookData.status === "completed") {
+              setStatus("completed");
+              if (webhookData.images && webhookData.images.length > 0) {
+                setResultImages(webhookData.images);
+                console.log(`Received ${webhookData.images.length} results from webhook`);
+              }
+              clearInterval(pollInterval);
+              setIsLoading(false);
+              return;
+            }
 
-        if (webhookData.status === "completed") {
-          setStatus("completed");
-          if (webhookData.images && webhookData.images.length > 0) {
-            setResultImages(webhookData.images);
-            console.log(`Received ${webhookData.images.length} results from webhook`);
+            if (webhookData.status === "failed") {
+              setStatus("failed");
+              setError(webhookData.error);
+              clearInterval(pollInterval);
+              setIsLoading(false);
+              return;
+            }
           }
+        } else if (webhookResponse.status === 401) {
+          console.warn("AI Talk polling: session expired");
           clearInterval(pollInterval);
           setIsLoading(false);
-          return;
-        }
-
-        if (webhookData.status === "failed") {
           setStatus("failed");
-          setError(webhookData.error);
-          clearInterval(pollInterval);
-          setIsLoading(false);
+          setError("Tu sesión ha expirado. Recarga la página e inicia sesión de nuevo.");
           return;
         }
 
         // Fallback to status API
         const response = await fetch(`/api/ai-talk-status?runId=${runId}`);
-        const data = await response.json();
+        if (response.status === 401) {
+          console.warn("AI Talk status polling: session expired");
+          clearInterval(pollInterval);
+          setIsLoading(false);
+          setStatus("failed");
+          setError("Tu sesión ha expirado. Recarga la página e inicia sesión de nuevo.");
+          return;
+        }
 
+        const contentType = response.headers.get("content-type") || "";
+        if (!contentType.includes("application/json")) {
+          console.warn("AI Talk status: unexpected response type", contentType);
+          return;
+        }
+
+        const data = await response.json();
         console.log("AI Talk status data:", data);
 
         if (data.status === "completed") {
