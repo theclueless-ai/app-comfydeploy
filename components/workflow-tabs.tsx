@@ -7,8 +7,6 @@ export type WorkflowTab = "fashion" | "vellum" | "aiTalk" | "aiTalkT" | "avatar"
 const externalTabs: Record<string, string> = {
   avatar: "http://192.168.1.10:3000/",
   avatarT: "http://192.168.193.229:3000/",
-  aiTalk: "http://192.168.1.10:3000/",
-  aiTalkT: "http://192.168.193.229:3000/",
 };
 
 interface WorkflowTabsProps {
@@ -19,9 +17,8 @@ interface WorkflowTabsProps {
 export function WorkflowTabs({ activeTab, onTabChange }: WorkflowTabsProps) {
   const tabs: Array<{ id: WorkflowTab; label: string }> = [
     { id: "fashion", label: "AI Fashion Commerce" },
-    { id: "vellum", label: "Vellum 2.0" },
+//  { id: "vellum", label: "Vellum 2.0" },
     { id: "aiTalk", label: "AI Talk" },
-    { id: "aiTalkT", label: "AI Talk T" },
     { id: "avatar", label: "Avatar Generator" },
     { id: "avatarT", label: "Avatar Generator T" },
   ];
