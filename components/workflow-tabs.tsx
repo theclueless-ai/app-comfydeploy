@@ -17,7 +17,7 @@ interface WorkflowTabsProps {
 export function WorkflowTabs({ activeTab, onTabChange }: WorkflowTabsProps) {
   const tabs: Array<{ id: WorkflowTab; label: string }> = [
     { id: "fashion", label: "AI Fashion Commerce" },
-//  { id: "vellum", label: "Vellum 2.0" },
+  { id: "vellum", label: "Vellum 2.0" },
     { id: "aiTalk", label: "AI Talk" },
     { id: "avatar", label: "Avatar Generator" },
     { id: "avatarT", label: "Avatar Generator T" },
