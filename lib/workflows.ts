@@ -106,7 +106,7 @@ export const workflows: WorkflowConfig[] = [
         defaultValue: 0.5,
         min: 0,
         max: 3,
-        step: 0.05,
+        step: 0.1,
       },
       {
         id: "scale_by",
