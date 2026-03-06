@@ -26,10 +26,22 @@ export function ResultDisplay({ status, images, error }: ResultDisplayProps) {
     return lower.endsWith(".mp4") || lower.endsWith(".webm") || lower.endsWith(".mov") || url.includes("ai-talk-video");
   };
 
+  const getProxiedUrl = (url: string) => {
+    try {
+      const parsed = new URL(url);
+      if (parsed.hostname.includes("s3.") && parsed.hostname.includes("amazonaws.com")) {
+        const key = parsed.pathname.startsWith("/") ? parsed.pathname.slice(1) : parsed.pathname;
+        return `/api/s3-image?key=${encodeURIComponent(key)}`;
+      }
+    } catch {}
+    return url;
+  };
+
   const handleDownload = async (imageUrl: string, filename: string, index: number) => {
     setDownloadingIndex(index);
     try {
-      const response = await fetch(imageUrl);
+      const fetchUrl = getProxiedUrl(imageUrl);
+      const response = await fetch(fetchUrl);
       if (!response.ok) throw new Error("Failed to fetch");
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
