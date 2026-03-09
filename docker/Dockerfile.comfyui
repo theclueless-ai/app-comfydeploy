@@ -1,5 +1,5 @@
-# Custom ComfyUI Dockerfile for RunPod Serverless - Vellum 2.0
-# This Dockerfile contains all custom nodes and models required for the Vellum upscaling workflow
+# Custom ComfyUI Dockerfile for RunPod Serverless - Vellum 2.0 + 2.1
+# This Dockerfile contains all custom nodes and models required for both Vellum workflows
 #
 # Build and push to your container registry:
 #   docker build -f docker/Dockerfile.comfyui -t your-registry/comfyui-vellum:latest .
@@ -58,6 +58,29 @@ RUN git clone https://github.com/Bwebbfx/ComfyUI_FaceParsing.git && \
     cd ComfyUI_FaceParsing && \
     if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; fi
 
+# ============================================================================
+# ADDITIONAL CUSTOM NODES FOR VELLUM 2.0 (Legacy workflow)
+# ============================================================================
+
+# ComfyUI-GGUF - GGUF model loader (UnetLoaderGGUF node)
+# Required for loading flux1-dev-Q8_0.gguf in Vellum 2.0
+RUN git clone --depth 1 https://github.com/city96/ComfyUI-GGUF.git && \
+    cd ComfyUI-GGUF && \
+    if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; fi
+
+# ComfyUI-Easy-Use - Utility nodes (easy loadImageBase64, easy cleanGpuUsed)
+# Required for base64 image input and VRAM cleanup in Vellum 2.0
+RUN git clone --depth 1 https://github.com/yolain/ComfyUI-Easy-Use.git && \
+    cd ComfyUI-Easy-Use && \
+    if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; fi
+
+# ComfyUI-SeedVR2_VideoUpscaler - SeedVR2 upscaling nodes
+# (SeedVR2LoadVAEModel, SeedVR2LoadDiTModel, SeedVR2VideoUpscaler)
+# Required for the SeedVR2-based upscaling pipeline in Vellum 2.0
+RUN git clone --depth 1 https://github.com/numz/ComfyUI-SeedVR2_VideoUpscaler.git && \
+    cd ComfyUI-SeedVR2_VideoUpscaler && \
+    if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; fi
+
 # Return to root
 WORKDIR /
 
@@ -84,10 +107,12 @@ else\n\
     # Create directory structure on network volume\n\
     mkdir -p "$MODELS_DIR/checkpoints"\n\
     mkdir -p "$MODELS_DIR/unet"\n\
+    mkdir -p "$MODELS_DIR/unet/gguf"\n\
     mkdir -p "$MODELS_DIR/loras/Vellum"\n\
     mkdir -p "$MODELS_DIR/upscale_models"\n\
     mkdir -p "$MODELS_DIR/vae"\n\
     mkdir -p "$MODELS_DIR/clip"\n\
+    mkdir -p "$MODELS_DIR/controlnet"\n\
     \n\
     # Create symlink so ComfyUI uses network volume models\n\
     rm -rf /comfyui/models 2>/dev/null || true\n\
@@ -270,7 +295,7 @@ echo "========================================"\n\
 # ============================================================================
 RUN echo '#!/bin/bash\n\
 set -e\n\
-echo "🚀 Starting Vellum 2.0 ComfyUI Worker..."\n\
+echo "🚀 Starting Vellum 2.0/2.1 ComfyUI Worker..."\n\
 \n\
 # Setup models from network volume\n\
 /setup_models.sh\n\
