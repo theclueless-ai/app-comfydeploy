@@ -1,5 +1,6 @@
 import { WorkflowConfig } from "./types";
 import workflow_vellum from "./vellum-upscale.json";
+import workflow_vellum_v20 from "./vellum-upscale-v20.json";
 import workflow_ai_talk from "./ai-talk-workflow.json";
 
 /**
@@ -82,10 +83,10 @@ export const workflows: WorkflowConfig[] = [
   },
   {
     id: "vellum-upscale",
-    name: "Vellum 2.0",
+    name: "Vellum 2.1",
     description: "AI-powered image upscaling with skin texture enhancement.",
     deploymentId: "", // Will use COMFYDEPLOY_VELLUM_DEPLOYMENT_ID from env
-    backend: "runpod", // Changed from "runpod" to use ComfyDeploy temporarily
+    backend: "runpod",
     inputs: [
       {
         id: "input_image",
@@ -116,6 +117,46 @@ export const workflows: WorkflowConfig[] = [
         description: "",
         required: true,
         defaultValue: "2",
+        options: ["2", "4", "8"],
+      },
+    ],
+  },
+  {
+    id: "vellum-upscale-v20",
+    name: "Vellum 2.0",
+    description: "Legacy AI-powered image upscaling with skin texture enhancement (SeedVR2).",
+    deploymentId: "", // Will use COMFYDEPLOY_VELLUM20_DEPLOYMENT_ID from env
+    backend: "runpod",
+    inputs: [
+      {
+        id: "input_image",
+        name: "input_image",
+        type: "image",
+        label: "Input Image",
+        description: "",
+        required: true,
+        accept: "image/*",
+      },
+      {
+        id: "strength_model",
+        name: "strength_model",
+        type: "slider",
+        label: "Strength Model",
+        description: "",
+        required: true,
+        defaultValue: 0.5,
+        min: 0,
+        max: 3,
+        step: 0.1,
+      },
+      {
+        id: "scale_by",
+        name: "scale_by",
+        type: "button-group",
+        label: "Scale Factor",
+        description: "",
+        required: true,
+        defaultValue: "4",
         options: ["2", "4", "8"],
       },
     ],
@@ -240,6 +281,10 @@ export function getDefaultWorkflow(): WorkflowConfig {
 
 export function getVellumWorkflow(): WorkflowConfig {
   return workflows.find((w) => w.id === "vellum-upscale")!;
+}
+
+export function getVellum20Workflow(): WorkflowConfig {
+  return workflows.find((w) => w.id === "vellum-upscale-v20")!;
 }
 
 export function getAiTalkWorkflow(): WorkflowConfig {

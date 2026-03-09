@@ -437,6 +437,123 @@ function isS3Url(url: string): boolean {
 }
 
 // =============================================================================
+// Vellum 2.0 (Legacy) - Uses separate RunPod endpoint
+// =============================================================================
+
+function getRunPodVellum20Config() {
+  const apiKey = process.env.RUNPOD_API_KEY;
+  // Falls back to the same endpoint if no separate one is configured
+  const endpointId = process.env.RUNPOD_VELLUM20_ENDPOINT_ID || process.env.RUNPOD_ENDPOINT_ID;
+  const baseUrl = process.env.BASE_URL_RUNPOD || "https://api.runpod.ai/v2";
+
+  if (!apiKey) {
+    throw new Error("RUNPOD_API_KEY is not set in environment variables");
+  }
+  if (!endpointId) {
+    throw new Error("RUNPOD_VELLUM20_ENDPOINT_ID (or RUNPOD_ENDPOINT_ID) is not set in environment variables");
+  }
+
+  return { apiKey, endpointId, baseUrl };
+}
+
+/**
+ * Vellum 2.0 (Legacy) Workflow Inputs
+ * Uses SeedVR2 for upscaling instead of the newer pipeline
+ */
+export interface Vellum20WorkflowInput {
+  workflow: any;
+  input_image: string;    // Base64 data URI
+  strength_model: number; // 0 to 3 (LoRA strength)
+  scale_by: string;       // "2", "4", or "8"
+}
+
+/**
+ * Build the workflow payload for Vellum 2.0 (legacy)
+ */
+function buildVellum20WorkflowPayload(input: Vellum20WorkflowInput) {
+  let imageBase64 = input.input_image;
+  if (imageBase64.includes(',')) {
+    imageBase64 = imageBase64.split(',')[1];
+  }
+
+  return {
+    input: {
+      image: imageBase64,
+      scaleFactor: parseInt(input.scale_by, 10),
+      skin_texture_intensity: input.strength_model,
+    },
+  };
+}
+
+/**
+ * Run Vellum 2.0 workflow on RunPod (async)
+ */
+export async function runVellum20WorkflowAsync(
+  input: Vellum20WorkflowInput
+): Promise<{ jobId: string }> {
+  const { apiKey, endpointId, baseUrl } = getRunPodVellum20Config();
+  const url = `${baseUrl}/${endpointId}/run`;
+
+  const payload = buildVellum20WorkflowPayload(input);
+
+  console.log("=== RunPod Vellum 2.0 API Call (async) ===");
+  console.log("URL:", url);
+  console.log("Endpoint ID:", endpointId);
+  console.log("Skin Texture Intensity:", input.strength_model);
+  console.log("Scale Factor:", input.scale_by);
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  console.log("Response status:", response.status);
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("RunPod Vellum 2.0 API Error:", errorText);
+    throw new Error(`RunPod API error: ${response.status} - ${errorText}`);
+  }
+
+  const result: RunPodJobResponse = await response.json();
+  console.log("Vellum 2.0 job started with ID:", result.id);
+
+  return { jobId: result.id };
+}
+
+/**
+ * Check the status of a Vellum 2.0 RunPod job
+ */
+export async function getVellum20JobStatus(jobId: string): Promise<RunPodStatusResponse> {
+  const { apiKey, endpointId, baseUrl } = getRunPodVellum20Config();
+  const url = `${baseUrl}/${endpointId}/status/${jobId}`;
+
+  console.log("Checking Vellum 2.0 job status:", jobId);
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+    },
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("RunPod Vellum 2.0 Status API Error:", errorText);
+    throw new Error(`RunPod status error: ${response.status} - ${errorText}`);
+  }
+
+  const result: RunPodStatusResponse = await response.json();
+  console.log("Vellum 2.0 job status:", result.status);
+
+  return result;
+}
+
+// =============================================================================
 // AI Talk - RunPod Serverless (InfiniteTalk/WanVideo workflow)
 // =============================================================================
 
