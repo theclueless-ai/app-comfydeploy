@@ -463,7 +463,7 @@ function getRunPodVellum20Config() {
 export interface Vellum20WorkflowInput {
   workflow: any;
   input_image: string;    // Base64 data URI
-  strength_model: number; // 0 to 3 (LoRA strength)
+  strength_model: number; // 0 to 1 (LoRA strength)
   scale_by: string;       // "2", "4", or "8"
 }
 

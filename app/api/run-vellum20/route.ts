@@ -21,9 +21,9 @@ export async function POST(request: NextRequest) {
     const strengthModel = strengthModelStr ? parseFloat(strengthModelStr as string) : 0.5;
 
     // Validate strength model
-    if (isNaN(strengthModel) || strengthModel < 0 || strengthModel > 3) {
+    if (isNaN(strengthModel) || strengthModel < 0 || strengthModel > 1) {
       return NextResponse.json(
-        { error: "Strength model must be between 0 and 3" },
+        { error: "Strength model must be between 0 and 1" },
         { status: 400 }
       );
     }
