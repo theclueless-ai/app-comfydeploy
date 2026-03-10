@@ -146,7 +146,7 @@ export const workflows: WorkflowConfig[] = [
         required: true,
         defaultValue: 0.5,
         min: 0,
-        max: 3,
+        max: 1,
         step: 0.1,
       },
       {
