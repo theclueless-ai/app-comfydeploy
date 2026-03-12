@@ -35,6 +35,33 @@ export async function uploadImageToS3(
 }
 
 /**
+ * Upload image to S3 for RunPod processing.
+ * Returns the raw S3 key so the RunPod handler can download using its own credentials.
+ */
+export async function uploadImageForRunPod(
+  imageBuffer: Buffer,
+  filename: string,
+  contentType: string = "image/png"
+): Promise<{ s3Key: string; bucket: string; region: string }> {
+  const key = `runpod-input/${Date.now()}-${filename}`;
+
+  await s3Client.send(
+    new PutObjectCommand({
+      Bucket: BUCKET_NAME,
+      Key: key,
+      Body: imageBuffer,
+      ContentType: contentType,
+    })
+  );
+
+  return {
+    s3Key: key,
+    bucket: BUCKET_NAME,
+    region: process.env.AWS_REGION || "us-east-1",
+  };
+}
+
+/**
  * Get an image from S3 by key.
  */
 export async function getImageFromS3(

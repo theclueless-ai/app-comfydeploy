@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { runPosesWorkflowAsync } from "@/lib/runpod";
-import posesWorkflow from "@/lib/poses-workflow.json";
+import { uploadImageForRunPod } from "@/lib/s3";
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,17 +15,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Convert image to base64 for sending to RunPod
+    // Upload image to S3 (avoids Vercel's ~4.5MB payload limit with base64)
     const arrayBuffer = await imageFile.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
-    const imageBase64 = `data:${imageFile.type || "image/png"};base64,${buffer.toString("base64")}`;
+    const { s3Key, bucket, region } = await uploadImageForRunPod(
+      buffer,
+      imageFile.name,
+      imageFile.type || "image/png"
+    );
 
-    // Deep clone the workflow template
-    const workflow = JSON.parse(JSON.stringify(posesWorkflow)) as Record<string, unknown>;
+    console.log("Poses image uploaded to S3:", s3Key);
 
-    // Send workflow + image to RunPod serverless
-    // The handler will upload the image to ComfyUI and inject the filename into Node 99
-    const { jobId } = await runPosesWorkflowAsync(workflow, imageBase64);
+    // Send S3 reference to RunPod (handler downloads image using its own credentials)
+    const { jobId } = await runPosesWorkflowAsync({
+      s3_key: s3Key,
+      s3_bucket: bucket,
+      s3_region: region,
+    });
 
     return NextResponse.json({ jobId });
   } catch (error) {

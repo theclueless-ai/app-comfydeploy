@@ -1,0 +1,586 @@
+{
+  "3": {
+    "inputs": {
+      "seed": 379290774603581,
+      "steps": 8,
+      "cfg": 1,
+      "sampler_name": "euler",
+      "scheduler": "simple",
+      "denoise": 1,
+      "model": [
+        "43",
+        0
+      ],
+      "positive": [
+        "105",
+        0
+      ],
+      "negative": [
+        "104",
+        0
+      ],
+      "latent_image": [
+        "29",
+        0
+      ]
+    },
+    "class_type": "KSampler",
+    "_meta": {
+      "title": "KSampler"
+    }
+  },
+  "8": {
+    "inputs": {
+      "samples": [
+        "3",
+        0
+      ],
+      "vae": [
+        "17",
+        0
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE Decode"
+    }
+  },
+  "16": {
+    "inputs": {
+      "unet_name": "Zit/zImageTurboAIO_zImageTurboFP16AIO.safetensors",
+      "weight_dtype": "default"
+    },
+    "class_type": "UNETLoader",
+    "_meta": {
+      "title": "Load Diffusion Model"
+    }
+  },
+  "17": {
+    "inputs": {
+      "vae_name": "Flux/ae.safetensors"
+    },
+    "class_type": "VAELoader",
+    "_meta": {
+      "title": "Load VAE"
+    }
+  },
+  "18": {
+    "inputs": {
+      "clip_name": "qwen_3_4b.safetensors",
+      "type": "lumina2",
+      "device": "default"
+    },
+    "class_type": "CLIPLoader",
+    "_meta": {
+      "title": "Load CLIP"
+    }
+  },
+  "28": {
+    "inputs": {
+      "megapixel": "2.0",
+      "aspect_ratio": "5:7 (Balanced Portrait)",
+      "divisible_by": "64",
+      "custom_ratio": false,
+      "custom_aspect_ratio": "1:1"
+    },
+    "class_type": "FluxResolutionNode",
+    "_meta": {
+      "title": "Base Resolution"
+    }
+  },
+  "29": {
+    "inputs": {
+      "width": [
+        "28",
+        0
+      ],
+      "height": [
+        "28",
+        1
+      ],
+      "batch_size": 1
+    },
+    "class_type": "EmptyLatentImage",
+    "_meta": {
+      "title": "Latent Image"
+    }
+  },
+  "39": {
+    "inputs": {
+      "anything": [
+        "227:226",
+        0
+      ]
+    },
+    "class_type": "easy cleanGpuUsed",
+    "_meta": {
+      "title": "Clean VRAM"
+    }
+  },
+  "40": {
+    "inputs": {
+      "anything": [
+        "39",
+        0
+      ]
+    },
+    "class_type": "easy clearCacheAll",
+    "_meta": {
+      "title": "Clear Cache"
+    }
+  },
+  "43": {
+    "inputs": {
+      "PowerLoraLoaderHeaderWidget": {
+        "type": "PowerLoraLoaderHeaderWidget"
+      },
+      "lora_1": {
+        "on": false,
+        "lora": "Z-Image/(ZIT)_CinematicShot.safetensors",
+        "strength": 0.55
+      },
+      "lora_2": {
+        "on": false,
+        "lora": "Z-Image/(ZIT)_Smallbreasts_v1.safetensors",
+        "strength": 0.75
+      },
+      "lora_3": {
+        "on": false,
+        "lora": "Z-Image/(ZIT)_AfterDark_v2.safetensors",
+        "strength": 0.75
+      },
+      "➕ Add Lora": "",
+      "model": [
+        "225",
+        0
+      ],
+      "clip": [
+        "18",
+        0
+      ]
+    },
+    "class_type": "Power Lora Loader (rgthree)",
+    "_meta": {
+      "title": "Z-Image Lora Loader"
+    }
+  },
+  "52": {
+    "inputs": {
+      "temperature": 0,
+      "hue": 0,
+      "brightness": 0,
+      "contrast": 0,
+      "saturation": 0,
+      "gamma": 1,
+      "image": [
+        "8",
+        0
+      ]
+    },
+    "class_type": "ColorCorrect",
+    "_meta": {
+      "title": "Color Grading"
+    }
+  },
+  "58": {
+    "inputs": {
+      "preview": "",
+      "previewMode": null,
+      "source": [
+        "28",
+        2
+      ]
+    },
+    "class_type": "PreviewAny",
+    "_meta": {
+      "title": "Calculated Resolution"
+    }
+  },
+  "91": {
+    "inputs": {
+      "upscale_method": "lanczos",
+      "scale_by": 0.5,
+      "image": [
+        "40",
+        0
+      ]
+    },
+    "class_type": "ImageScaleBy",
+    "_meta": {
+      "title": "Downscale 4 better Upscale"
+    }
+  },
+  "92": {
+    "inputs": {
+      "model": "seedvr2_ema_7b-Q4_K_M.gguf",
+      "device": "cuda:0",
+      "blocks_to_swap": 1,
+      "swap_io_components": false,
+      "offload_device": "cpu",
+      "cache_model": false,
+      "attention_mode": "sdpa"
+    },
+    "class_type": "SeedVR2LoadDiTModel",
+    "_meta": {
+      "title": "SeedVR2 Load DiT Model"
+    }
+  },
+  "93": {
+    "inputs": {
+      "model": "ema_vae_fp16.safetensors",
+      "device": "cuda:0",
+      "encode_tiled": true,
+      "encode_tile_size": 1024,
+      "encode_tile_overlap": 128,
+      "decode_tiled": true,
+      "decode_tile_size": 1024,
+      "decode_tile_overlap": 128,
+      "tile_debug": "false",
+      "offload_device": "cpu",
+      "cache_model": false
+    },
+    "class_type": "SeedVR2LoadVAEModel",
+    "_meta": {
+      "title": "SeedVR2 Load VAE Model"
+    }
+  },
+  "94": {
+    "inputs": {
+      "seed": 1589584338,
+      "resolution": 2560,
+      "max_resolution": 4096,
+      "batch_size": 1,
+      "uniform_batch_size": false,
+      "color_correction": "lab",
+      "temporal_overlap": 0,
+      "prepend_frames": 0,
+      "input_noise_scale": 0,
+      "latent_noise_scale": 0,
+      "offload_device": "cpu",
+      "enable_debug": false,
+      "image": [
+        "91",
+        0
+      ],
+      "dit": [
+        "92",
+        0
+      ],
+      "vae": [
+        "93",
+        0
+      ]
+    },
+    "class_type": "SeedVR2VideoUpscaler",
+    "_meta": {
+      "title": "SeedVR2 Upscaler"
+    }
+  },
+  "98": {
+    "inputs": {
+      "anything": [
+        "94",
+        0
+      ]
+    },
+    "class_type": "easy cleanGpuUsed",
+    "_meta": {
+      "title": "Clean VRAM"
+    }
+  },
+  "99": {
+    "inputs": {
+      "anything": [
+        "98",
+        0
+      ]
+    },
+    "class_type": "easy clearCacheAll",
+    "_meta": {
+      "title": "Clear Cache"
+    }
+  },
+  "100": {
+    "inputs": {
+      "filename_prefix": "Avatar-Theclueless",
+      "images": [
+        "94",
+        0
+      ]
+    },
+    "class_type": "SaveImage",
+    "_meta": {
+      "title": "Save Final Image"
+    }
+  },
+  "104": {
+    "inputs": {
+      "text": "blurry image",
+      "clip": [
+        "43",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "Negative Prompt"
+    }
+  },
+  "105": {
+    "inputs": {
+      "randomize_percent": 35,
+      "strength": 20,
+      "noise_insert": "noise on beginning steps",
+      "steps_switchover_percent": 20,
+      "seed": 1085695670690233,
+      "mask_starts_at": "beginning",
+      "mask_percent": 0,
+      "log_to_console": false,
+      "conditioning": [
+        "175",
+        0
+      ]
+    },
+    "class_type": "SeedVarianceEnhancer",
+    "_meta": {
+      "title": "Seed Variance Enhancer"
+    }
+  },
+  "175": {
+    "inputs": {
+      "text": [
+        "251",
+        0
+      ],
+      "clip": [
+        "43",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "Positive Prompt"
+    }
+  },
+  "176": {
+    "inputs": {
+      "ckpt_name": "Sdxl/cyberrealisticXL_v80.safetensors"
+    },
+    "class_type": "CheckpointLoaderSimple",
+    "_meta": {
+      "title": "Load SDXL Model"
+    }
+  },
+  "177": {
+    "inputs": {
+      "text": "child, teen, loli, ugly, bad quality, low quality, anime, hentai, manga, digital art, semirealistic, cartoon, painting, drawing, illustration, glitch, fake, unreal, watermark, censored, poorly drawn hands, missing limb, floating limbs, disconnected limbs, disconnected head, malformed hands, long neck, mutated hands and fingers, bad hands, missing fingers, fused fingers, abnormal eye proportion, cross-eyed, abnormal hands, abnormal legs, abnormal feet, abnormal fingers, mutation, large breasts, large nipples, huge breasts, tanlines, bikini stripes, big clit, big labia",
+      "clip": [
+        "185",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "Negative Prompt"
+    }
+  },
+  "178": {
+    "inputs": {
+      "text": [
+        "251",
+        0
+      ],
+      "clip": [
+        "185",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "Positive Prompt"
+    }
+  },
+  "179": {
+    "inputs": {
+      "anything": [
+        "52",
+        0
+      ]
+    },
+    "class_type": "easy cleanGpuUsed",
+    "_meta": {
+      "title": "Clean VRAM"
+    }
+  },
+  "180": {
+    "inputs": {
+      "anything": [
+        "179",
+        0
+      ]
+    },
+    "class_type": "easy clearCacheAll",
+    "_meta": {
+      "title": "Clear Cache"
+    }
+  },
+  "183": {
+    "inputs": {
+      "stop_at_clip_layer": -2,
+      "clip": [
+        "176",
+        1
+      ]
+    },
+    "class_type": "CLIPSetLastLayer",
+    "_meta": {
+      "title": "CLIP Set Last Layer"
+    }
+  },
+  "185": {
+    "inputs": {
+      "PowerLoraLoaderHeaderWidget": {
+        "type": "PowerLoraLoaderHeaderWidget"
+      },
+      "lora_1": {
+        "on": true,
+        "lora": "sDXL/DetailedEyes_V3.safetensors",
+        "strength": 0.4
+      },
+      "lora_2": {
+        "on": true,
+        "lora": "sDXL/skin_4-000015.safetensors",
+        "strength": 0.5
+      },
+      "lora_3": {
+        "on": false,
+        "lora": "SDXL/(SDXL)_No_More_Sameface-Face_Randomizer.safetensors",
+        "strength": 0.85
+      },
+      "➕ Add Lora": "",
+      "model": [
+        "176",
+        0
+      ],
+      "clip": [
+        "183",
+        0
+      ]
+    },
+    "class_type": "Power Lora Loader (rgthree)",
+    "_meta": {
+      "title": "SDXL Lora Loader"
+    }
+  },
+  "225": {
+    "inputs": {
+      "shift": 3,
+      "model": [
+        "16",
+        0
+      ]
+    },
+    "class_type": "ModelSamplingAuraFlow",
+    "_meta": {
+      "title": "Model Sampling Aura Flow"
+    }
+  },
+  "251": {
+    "inputs": {
+      "text_0": "",
+      "text": [
+        "252",
+        0
+      ]
+    },
+    "class_type": "ShowText|pysssss",
+    "_meta": {
+      "title": "Show Text"
+    }
+  },
+  "252": {
+    "inputs": {
+      "character_type": "HUMAN",
+      "seed": 0,
+      "render_style": "RANDOM",
+      "lighting": "RANDOM",
+      "background": "white studio background",
+      "A_gender": "female",
+      "A_ethnicity": "RANDOM",
+      "A_age_range": "RANDOM",
+      "A_face_aspect": "RANDOM",
+      "A_skin_tone": "RANDOM",
+      "A_face_shape": "RANDOM",
+      "A_hair_color": "RANDOM",
+      "A_hair_style": "RANDOM",
+      "A_eye_color": "RANDOM",
+      "A_eye_shape": "RANDOM",
+      "A_nose": "RANDOM",
+      "A_lips": "RANDOM",
+      "A_freckles": "no freckles",
+      "A_expression": "RANDOM",
+      "A_distinctive_features": "RANDOM",
+      "B_skin_texture": "RANDOM",
+      "B_skin_color": "RANDOM",
+      "B_eyes": "RANDOM",
+      "B_face_structure": "RANDOM",
+      "B_organic_additions": "RANDOM"
+    },
+    "class_type": "CharacterPortraitGenerator",
+    "_meta": {
+      "title": "Character Portrait Generator"
+    }
+  },
+  "227:226": {
+    "inputs": {
+      "seed": 998560666375586,
+      "steps": 20,
+      "cfg": 4,
+      "sampler_name": "dpmpp_2m_sde",
+      "scheduler": "sgm_uniform",
+      "denoise": 0.05,
+      "mode_type": "Linear",
+      "tile_width": [
+        "28",
+        0
+      ],
+      "tile_height": [
+        "28",
+        1
+      ],
+      "mask_blur": 16,
+      "tile_padding": 32,
+      "seam_fix_mode": "None",
+      "seam_fix_denoise": 1,
+      "seam_fix_width": 64,
+      "seam_fix_mask_blur": 8,
+      "seam_fix_padding": 16,
+      "force_uniform_tiles": true,
+      "tiled_decode": false,
+      "upscaled_image": [
+        "180",
+        0
+      ],
+      "model": [
+        "185",
+        0
+      ],
+      "positive": [
+        "178",
+        0
+      ],
+      "negative": [
+        "177",
+        0
+      ],
+      "vae": [
+        "176",
+        2
+      ]
+    },
+    "class_type": "UltimateSDUpscaleNoUpscale",
+    "_meta": {
+      "title": "Ultimate Pre-Definer"
+    }
+  }
+}

@@ -456,25 +456,67 @@ function getRunPodAvatarConfig() {
 }
 
 /**
+ * Avatar workflow parameters sent to RunPod handler.
+ * The handler loads the baked workflow and injects these parameters.
+ */
+export interface AvatarWorkflowParams {
+  character_type: string;
+  seed: number;
+  render_style: string;
+  lighting: string;
+  background: string;
+  // Human features (A_ prefix)
+  A_gender?: string;
+  A_ethnicity?: string;
+  A_age_range?: string;
+  A_face_aspect?: string;
+  A_skin_tone?: string;
+  A_face_shape?: string;
+  A_hair_color?: string;
+  A_hair_style?: string;
+  A_eye_color?: string;
+  A_eye_shape?: string;
+  A_nose?: string;
+  A_lips?: string;
+  A_freckles?: string;
+  A_expression?: string;
+  A_distinctive_features?: string;
+  // Non-human features (B_ prefix)
+  B_skin_texture?: string;
+  B_skin_color?: string;
+  B_eyes?: string;
+  B_face_structure?: string;
+  B_organic_additions?: string;
+  // Color grading
+  temperature?: number;
+  hue?: number;
+  brightness?: number;
+  contrast?: number;
+  saturation?: number;
+  gamma?: number;
+}
+
+/**
  * Run an avatar workflow on RunPod serverless (async).
- * Sends the full ComfyUI workflow JSON to the handler.
+ * Sends only parameters - the handler loads the baked workflow template.
  */
 export async function runAvatarWorkflowAsync(
-  workflow: Record<string, unknown>
+  params: AvatarWorkflowParams
 ): Promise<{ jobId: string }> {
   const { apiKey, endpointId, baseUrl } = getRunPodAvatarConfig();
   const url = `${baseUrl}/${endpointId}/run`;
 
   const payload = {
     input: {
-      workflow,
       type: "avatar",
+      ...params,
     },
   };
 
   console.log("=== RunPod Avatar API Call (async) ===");
   console.log("URL:", url);
   console.log("Endpoint ID:", endpointId);
+  console.log("Character Type:", params.character_type);
 
   const response = await fetch(url, {
     method: "POST",
@@ -500,27 +542,35 @@ export async function runAvatarWorkflowAsync(
 }
 
 /**
+ * S3 reference for poses image uploaded by the API route.
+ */
+export interface PosesImageRef {
+  s3_key: string;
+  s3_bucket: string;
+  s3_region: string;
+}
+
+/**
  * Run a poses workflow on RunPod serverless (async).
- * Sends the full ComfyUI workflow JSON plus the input image as base64.
+ * Image is pre-uploaded to S3; sends only the S3 reference (avoids Vercel payload limits).
  */
 export async function runPosesWorkflowAsync(
-  workflow: Record<string, unknown>,
-  imageBase64: string
+  imageRef: PosesImageRef
 ): Promise<{ jobId: string }> {
   const { apiKey, endpointId, baseUrl } = getRunPodAvatarConfig();
   const url = `${baseUrl}/${endpointId}/run`;
 
   const payload = {
     input: {
-      workflow,
       type: "poses",
-      image: imageBase64,
+      ...imageRef,
     },
   };
 
   console.log("=== RunPod Poses API Call (async) ===");
   console.log("URL:", url);
   console.log("Endpoint ID:", endpointId);
+  console.log("S3 Key:", imageRef.s3_key);
 
   const response = await fetch(url, {
     method: "POST",
