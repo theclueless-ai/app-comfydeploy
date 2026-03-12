@@ -11,7 +11,9 @@
 # Custom nodes:
 #   CharacterPortraitGenerator, SeedVR2, GGUF loader, Easy-Use,
 #   rgthree, post-processing, Custom-Scripts, KJNodes,
-#   UltimateSDUpscale, essentials, Flux2 nodes, QOL nodes
+#   UltimateSDUpscale, essentials
+# Note: Flux2 nodes (Flux2Scheduler, ReferenceLatent, EmptyFlux2LatentImage)
+#   are native ComfyUI core nodes (>= 0.3.71), no custom node needed
 # =============================================================================
 
 # Stage 1: Builder
@@ -94,13 +96,12 @@ RUN git clone --depth 1 https://github.com/city96/ComfyUI-GGUF.git && \
     git clone --depth 1 https://github.com/wildminder/ComfyUI-DyPE && \
     git clone --depth 1 https://github.com/lucafoscili/comfyui-lf.git && \
     git clone --depth 1 https://github.com/jags111/efficiency-nodes-comfyui.git && \
-    git clone --depth 1 https://github.com/cubiq/ComfyUI_essentials.git && \
-    git clone --depth 1 https://github.com/Haoming02/comfyui-fluxmod.git
+    git clone --depth 1 https://github.com/cubiq/ComfyUI_essentials.git
 
 # Install requirements for custom nodes
 RUN for dir in ComfyUI-GGUF ComfyUI-Easy-Use comfyui_controlnet_aux ComfyUI-TiledDiffusion \
     ComfyUI-KJNodes ComfyUI-SeedVR2_VideoUpscaler ComfyUI_FaceParsing comfyui-art-venture \
-    ComfyUI-DyPE comfyui-lf ComfyUI_essentials comfyui-fluxmod; do \
+    ComfyUI-DyPE comfyui-lf ComfyUI_essentials; do \
     if [ -f "/comfyui/custom_nodes/$dir/requirements.txt" ]; then \
         pip install --no-cache-dir -r "/comfyui/custom_nodes/$dir/requirements.txt" 2>/dev/null || true; \
     fi; \
