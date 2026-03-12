@@ -437,6 +437,143 @@ function isS3Url(url: string): boolean {
 }
 
 // =============================================================================
+// Avatar & Poses - RunPod Serverless (shared endpoint)
+// =============================================================================
+
+function getRunPodAvatarConfig() {
+  const apiKey = process.env.RUNPOD_API_KEY;
+  const endpointId = process.env.RUNPOD_AVATAR_ENDPOINT_ID;
+  const baseUrl = process.env.BASE_URL_RUNPOD || "https://api.runpod.ai/v2";
+
+  if (!apiKey) {
+    throw new Error("RUNPOD_API_KEY is not set in environment variables");
+  }
+  if (!endpointId) {
+    throw new Error("RUNPOD_AVATAR_ENDPOINT_ID is not set in environment variables");
+  }
+
+  return { apiKey, endpointId, baseUrl };
+}
+
+/**
+ * Run an avatar workflow on RunPod serverless (async).
+ * Sends the full ComfyUI workflow JSON to the handler.
+ */
+export async function runAvatarWorkflowAsync(
+  workflow: Record<string, unknown>
+): Promise<{ jobId: string }> {
+  const { apiKey, endpointId, baseUrl } = getRunPodAvatarConfig();
+  const url = `${baseUrl}/${endpointId}/run`;
+
+  const payload = {
+    input: {
+      workflow,
+      type: "avatar",
+    },
+  };
+
+  console.log("=== RunPod Avatar API Call (async) ===");
+  console.log("URL:", url);
+  console.log("Endpoint ID:", endpointId);
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  console.log("Response status:", response.status);
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("RunPod Avatar API Error:", errorText);
+    throw new Error(`RunPod Avatar API error: ${response.status} - ${errorText}`);
+  }
+
+  const result: RunPodJobResponse = await response.json();
+  console.log("Avatar job started with ID:", result.id);
+
+  return { jobId: result.id };
+}
+
+/**
+ * Run a poses workflow on RunPod serverless (async).
+ * Sends the full ComfyUI workflow JSON plus the input image as base64.
+ */
+export async function runPosesWorkflowAsync(
+  workflow: Record<string, unknown>,
+  imageBase64: string
+): Promise<{ jobId: string }> {
+  const { apiKey, endpointId, baseUrl } = getRunPodAvatarConfig();
+  const url = `${baseUrl}/${endpointId}/run`;
+
+  const payload = {
+    input: {
+      workflow,
+      type: "poses",
+      image: imageBase64,
+    },
+  };
+
+  console.log("=== RunPod Poses API Call (async) ===");
+  console.log("URL:", url);
+  console.log("Endpoint ID:", endpointId);
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  console.log("Response status:", response.status);
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("RunPod Poses API Error:", errorText);
+    throw new Error(`RunPod Poses API error: ${response.status} - ${errorText}`);
+  }
+
+  const result: RunPodJobResponse = await response.json();
+  console.log("Poses job started with ID:", result.id);
+
+  return { jobId: result.id };
+}
+
+/**
+ * Check the status of an Avatar/Poses RunPod job.
+ */
+export async function getAvatarJobStatus(jobId: string): Promise<RunPodStatusResponse> {
+  const { apiKey, endpointId, baseUrl } = getRunPodAvatarConfig();
+  const url = `${baseUrl}/${endpointId}/status/${jobId}`;
+
+  console.log("Checking Avatar/Poses job status:", jobId);
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+    },
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("RunPod Avatar/Poses Status API Error:", errorText);
+    throw new Error(`RunPod status error: ${response.status} - ${errorText}`);
+  }
+
+  const result: RunPodStatusResponse = await response.json();
+  console.log("Avatar/Poses job status:", result.status);
+
+  return result;
+}
+
+// =============================================================================
 // Vellum 2.0 (Legacy) - Uses separate RunPod endpoint
 // =============================================================================
 

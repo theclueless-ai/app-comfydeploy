@@ -36,8 +36,8 @@ export default function Home() {
   const vellumWorkflow = getVellumWorkflow();
   const vellum20Workflow = getVellum20Workflow();
   const aiTalkWorkflow = getAiTalkWorkflow();
-  const avatarInfo = { name: "Avatar Generator", description: "Generate unique character portraits with customizable features, powered by local ComfyUI." };
-  const posesInfo = { name: "Poses", description: "Generate 9 different head poses from a single portrait, powered by local ComfyUI." };
+  const avatarInfo = { name: "Avatar Generator", description: "Generate unique character portraits with customizable features, powered by RunPod serverless." };
+  const posesInfo = { name: "Poses", description: "Generate 9 different head poses from a single portrait, powered by RunPod serverless." };
   const workflow = activeTab === "fashion"
     ? fashionWorkflow
     : activeTab === "vellum"
@@ -294,7 +294,7 @@ export default function Home() {
     return () => clearInterval(pollInterval);
   }, [runId, status, activeTab]);
 
-  // Poll for local ComfyUI status (Avatar workflow)
+  // Poll for RunPod status (Avatar workflow)
   useEffect(() => {
     if (!runId || status === "completed" || status === "failed" || activeTab !== "avatar") {
       return;
@@ -302,7 +302,7 @@ export default function Home() {
 
     const pollInterval = setInterval(async () => {
       try {
-        const response = await fetch(`/api/avatar-status?promptId=${runId}`);
+        const response = await fetch(`/api/avatar-status?jobId=${runId}`);
         const data = await response.json();
 
         console.log("Avatar status data:", data);
@@ -311,7 +311,7 @@ export default function Home() {
           setStatus("completed");
           if (data.images && data.images.length > 0) {
             setResultImages(data.images);
-            console.log(`Received ${data.images.length} images from local ComfyUI`);
+            console.log(`Received ${data.images.length} images from RunPod (Avatar)`);
           }
           clearInterval(pollInterval);
           setIsLoading(false);
@@ -320,7 +320,7 @@ export default function Home() {
           setError(data.error || "Avatar generation failed");
           clearInterval(pollInterval);
           setIsLoading(false);
-        } else if (data.status === "running") {
+        } else if (data.status === "running" || data.status === "queued") {
           setStatus("running");
         }
       } catch (error) {
@@ -331,7 +331,7 @@ export default function Home() {
     return () => clearInterval(pollInterval);
   }, [runId, status, activeTab]);
 
-  // Poll for local ComfyUI status (Poses workflow)
+  // Poll for RunPod status (Poses workflow)
   useEffect(() => {
     if (!runId || status === "completed" || status === "failed" || activeTab !== "poses") {
       return;
@@ -339,7 +339,7 @@ export default function Home() {
 
     const pollInterval = setInterval(async () => {
       try {
-        const response = await fetch(`/api/poses-status?promptId=${runId}`);
+        const response = await fetch(`/api/poses-status?jobId=${runId}`);
         const data = await response.json();
 
         console.log("Poses status data:", data);
@@ -348,7 +348,7 @@ export default function Home() {
           setStatus("completed");
           if (data.images && data.images.length > 0) {
             setResultImages(data.images);
-            console.log(`Received ${data.images.length} images from local ComfyUI (Poses)`);
+            console.log(`Received ${data.images.length} images from RunPod (Poses)`);
           }
           clearInterval(pollInterval);
           setIsLoading(false);
@@ -357,7 +357,7 @@ export default function Home() {
           setError(data.error || "Poses generation failed");
           clearInterval(pollInterval);
           setIsLoading(false);
-        } else if (data.status === "running") {
+        } else if (data.status === "running" || data.status === "queued") {
           setStatus("running");
         }
       } catch (error) {

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { queuePrompt } from "@/lib/comfyui-local";
+import { runAvatarWorkflowAsync } from "@/lib/runpod";
 import avatarWorkflow from "@/lib/avatar-workflow.json";
 
 export async function POST(request: NextRequest) {
@@ -54,10 +54,10 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Queue the prompt in local ComfyUI
-    const promptId = await queuePrompt(workflow as unknown as Record<string, unknown>);
+    // Send workflow to RunPod serverless
+    const { jobId } = await runAvatarWorkflowAsync(workflow as unknown as Record<string, unknown>);
 
-    return NextResponse.json({ promptId });
+    return NextResponse.json({ jobId });
   } catch (error) {
     console.error("Avatar workflow error:", error);
     return NextResponse.json(
