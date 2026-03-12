@@ -96,7 +96,9 @@ RUN git clone --depth 1 https://github.com/city96/ComfyUI-GGUF.git && \
     git clone --depth 1 https://github.com/wildminder/ComfyUI-DyPE && \
     git clone --depth 1 https://github.com/lucafoscili/comfyui-lf.git && \
     git clone --depth 1 https://github.com/jags111/efficiency-nodes-comfyui.git && \
-    git clone --depth 1 https://github.com/cubiq/ComfyUI_essentials.git
+    git clone --depth 1 https://github.com/cubiq/ComfyUI_essentials.git && \
+    git clone --depth 1 https://github.com/gseth/ControlAltAI-Nodes.git && \
+    git clone --depth 1 https://github.com/ChangeTheConstants/SeedVarianceEnhancer.git
 
 # Install requirements for custom nodes
 RUN for dir in ComfyUI-GGUF ComfyUI-Easy-Use comfyui_controlnet_aux ComfyUI-TiledDiffusion \
@@ -144,6 +146,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY --from=builder /comfyui /comfyui
 COPY --from=builder /usr/local/lib/python3.10/dist-packages /usr/local/lib/python3.10/dist-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
+
+# Copy custom CharacterPortraitGenerator node (not available as public repo)
+COPY custom_nodes/CharacterPortraitGenerator /comfyui/custom_nodes/CharacterPortraitGenerator
 
 # Fix cffi/bindings compatibility
 RUN pip uninstall -y pycares aiodns tokenizers 2>/dev/null || true && \
