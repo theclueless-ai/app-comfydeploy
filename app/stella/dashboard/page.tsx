@@ -781,6 +781,16 @@ export default function StellaDashboard() {
                   src={proxyUrl(img.url)}
                   alt={`Resultado ${i + 1}`}
                   className="w-full object-contain"
+                  onError={(e) => {
+                    const target = e.currentTarget;
+                    const retries = Number(target.dataset.retries || 0);
+                    if (retries < 3) {
+                      target.dataset.retries = String(retries + 1);
+                      setTimeout(() => {
+                        target.src = proxyUrl(img.url) + `&t=${Date.now()}`;
+                      }, 3000);
+                    }
+                  }}
                 />
                 <button
                   onClick={() => handleDownload(img.url, img.filename)}
