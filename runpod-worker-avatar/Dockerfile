@@ -82,7 +82,8 @@ RUN git clone --depth 1 https://github.com/city96/ComfyUI-GGUF.git && \
     git clone --depth 1 https://github.com/yolain/ComfyUI-Easy-Use.git && \
     git clone --depth 1 https://github.com/WASasquatch/was-node-suite-comfyui.git && \
     git clone --depth 1 https://github.com/Fannovel16/comfyui_controlnet_aux.git && \
-    git clone --depth 1 https://github.com/ssitu/ComfyUI_UltimateSDUpscale.git && \
+    git clone https://github.com/ssitu/ComfyUI_UltimateSDUpscale.git && \
+    cd ComfyUI_UltimateSDUpscale && git checkout 48ffea161f && cd .. && \
     git clone --depth 1 https://github.com/shiimizu/ComfyUI-TiledDiffusion.git && \
     git clone --depth 1 https://github.com/BlenderNeko/ComfyUI_TiledKSampler.git && \
     git clone --depth 1 https://github.com/rgthree/rgthree-comfy.git && \
