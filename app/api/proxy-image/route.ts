@@ -6,28 +6,6 @@ const ALLOWED_HOSTS = [
   "www.comfydeploy.com",
 ];
 
-const MAX_RETRIES = 4;
-const RETRY_DELAYS = [2000, 3000, 4000, 5000]; // ms
-
-async function fetchWithRetry(url: string): Promise<Response> {
-  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-    const res = await fetch(url, { cache: "no-store" });
-
-    if (res.ok) return res;
-
-    // If S3 returns 404/403, the image may still be uploading — retry
-    if ((res.status === 404 || res.status === 403) && attempt < MAX_RETRIES) {
-      console.log(`Proxy: image not ready (${res.status}), retry ${attempt + 1}/${MAX_RETRIES} in ${RETRY_DELAYS[attempt]}ms — ${url}`);
-      await new Promise((r) => setTimeout(r, RETRY_DELAYS[attempt]));
-      continue;
-    }
-
-    throw new Error(`Upstream returned ${res.status}`);
-  }
-
-  throw new Error("Max retries exceeded");
-}
-
 export async function GET(request: NextRequest) {
   const url = request.nextUrl.searchParams.get("url");
 
@@ -42,16 +20,29 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Host not allowed" }, { status: 403 });
     }
 
-    const res = await fetchWithRetry(url);
-    const buffer = await res.arrayBuffer();
-    const contentType = res.headers.get("content-type") || "image/png";
+    const res = await fetch(url, { cache: "no-store" });
 
-    return new NextResponse(Buffer.from(buffer), {
-      headers: {
-        "Content-Type": contentType,
-        "Cache-Control": "public, max-age=3600",
-      },
-    });
+    if (!res.ok) {
+      return NextResponse.json(
+        { error: `Upstream returned ${res.status}` },
+        { status: res.status }
+      );
+    }
+
+    const contentType = res.headers.get("content-type") || "image/png";
+    const contentLength = res.headers.get("content-length");
+
+    // Stream the response body directly — avoids Vercel's 4.5MB buffered limit
+    // Streaming limit is 20MB (Hobby) / 60MB (Pro)
+    const headers: Record<string, string> = {
+      "Content-Type": contentType,
+      "Cache-Control": "public, max-age=3600",
+    };
+    if (contentLength) {
+      headers["Content-Length"] = contentLength;
+    }
+
+    return new Response(res.body, { headers });
   } catch (error) {
     console.error("Proxy image error:", error);
     return NextResponse.json({ error: "Failed to fetch image" }, { status: 500 });

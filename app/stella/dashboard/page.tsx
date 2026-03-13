@@ -136,7 +136,7 @@ export default function StellaDashboard() {
   /* ---- Preview: show the most relevant image ---- */
   const previewSrc =
     resultImages.length > 0
-      ? resultImages[0].url
+      ? proxyUrl(resultImages[0].url)
       : productImage?.preview ?? modelImage?.preview ?? null;
 
   /* ---- Summary helpers ---- */
@@ -782,7 +782,7 @@ export default function StellaDashboard() {
                 className="relative rounded-xl overflow-hidden border border-gray-200"
               >
                 <img
-                  src={img.url}
+                  src={proxyUrl(img.url)}
                   alt={`Resultado ${i + 1}`}
                   className="w-full object-contain"
                 />
