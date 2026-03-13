@@ -458,6 +458,7 @@ function getRunPodAvatarConfig() {
 /**
  * Run an avatar workflow on RunPod serverless (async).
  * Sends the full ComfyUI workflow JSON to the handler.
+ * @deprecated Use runAvatarAsync instead - sends flat params for the handler to inject.
  */
 export async function runAvatarWorkflowAsync(
   workflow: Record<string, unknown>
@@ -475,6 +476,49 @@ export async function runAvatarWorkflowAsync(
   console.log("=== RunPod Avatar API Call (async) ===");
   console.log("URL:", url);
   console.log("Endpoint ID:", endpointId);
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  console.log("Response status:", response.status);
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("RunPod Avatar API Error:", errorText);
+    throw new Error(`RunPod Avatar API error: ${response.status} - ${errorText}`);
+  }
+
+  const result: RunPodJobResponse = await response.json();
+  console.log("Avatar job started with ID:", result.id);
+
+  return { jobId: result.id };
+}
+
+/**
+ * Run an avatar generation on RunPod serverless (async).
+ * Sends flat parameters directly in input so the handler can inject them
+ * into its baked workflow (Node 252 and Node 52).
+ */
+export async function runAvatarAsync(
+  params: Record<string, string | number>
+): Promise<{ jobId: string }> {
+  const { apiKey, endpointId, baseUrl } = getRunPodAvatarConfig();
+  const url = `${baseUrl}/${endpointId}/run`;
+
+  const payload = {
+    input: params,
+  };
+
+  console.log("=== RunPod Avatar API Call (async) ===");
+  console.log("URL:", url);
+  console.log("Endpoint ID:", endpointId);
+  console.log("Params:", JSON.stringify(params, null, 2));
 
   const response = await fetch(url, {
     method: "POST",
