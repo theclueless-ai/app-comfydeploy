@@ -34,6 +34,16 @@ interface ResultImage {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Helpers                                                            */
+/* ------------------------------------------------------------------ */
+
+/** Proxy external image URLs through our API to avoid CORS issues */
+function proxyUrl(url: string): string {
+  if (url.startsWith("/")) return url; // already local
+  return `/api/proxy-image?url=${encodeURIComponent(url)}`;
+}
+
+/* ------------------------------------------------------------------ */
 /*  Constants – workflow options                                       */
 /* ------------------------------------------------------------------ */
 
@@ -126,7 +136,7 @@ export default function StellaDashboard() {
   /* ---- Preview: show the most relevant image ---- */
   const previewSrc =
     resultImages.length > 0
-      ? resultImages[0].url
+      ? proxyUrl(resultImages[0].url)
       : productImage?.preview ?? modelImage?.preview ?? null;
 
   /* ---- Summary helpers ---- */
@@ -312,16 +322,22 @@ export default function StellaDashboard() {
 
   /* ---- Download helper ---- */
   const handleDownload = async (url: string, filename: string) => {
-    const res = await fetch(url);
-    const blob = await res.blob();
-    const blobUrl = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = blobUrl;
-    a.download = filename || "stella-result.png";
-    document.body.appendChild(a);
-    a.click();
-    URL.revokeObjectURL(blobUrl);
-    document.body.removeChild(a);
+    try {
+      const proxied = proxyUrl(url);
+      const res = await fetch(proxied);
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = filename || "stella-result.png";
+      document.body.appendChild(a);
+      a.click();
+      URL.revokeObjectURL(blobUrl);
+      document.body.removeChild(a);
+    } catch {
+      // Fallback: open in new tab
+      window.open(url, "_blank");
+    }
   };
 
   /* ---- Logout ---- */
@@ -762,7 +778,7 @@ export default function StellaDashboard() {
                 className="relative rounded-xl overflow-hidden border border-gray-200"
               >
                 <img
-                  src={img.url}
+                  src={proxyUrl(img.url)}
                   alt={`Resultado ${i + 1}`}
                   className="w-full object-contain"
                 />
