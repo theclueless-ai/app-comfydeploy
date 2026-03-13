@@ -82,6 +82,16 @@ export async function POST(request: NextRequest) {
   }
 }
 
+/** HEAD-check that an image URL is actually available on S3 */
+async function isImageReady(url: string): Promise<boolean> {
+  try {
+    const res = await fetch(url, { method: "HEAD", cache: "no-store" });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
+
 export async function GET(request: NextRequest) {
   const runId = request.nextUrl.searchParams.get("runId");
 
@@ -99,6 +109,17 @@ export async function GET(request: NextRequest) {
       { status: "pending", message: "No result yet" },
       { status: 200 }
     );
+  }
+
+  // If completed, verify all images are actually accessible on S3
+  if (result.status === "completed" && result.images?.length) {
+    const checks = await Promise.all(result.images.map((img) => isImageReady(img.url)));
+    const allReady = checks.every(Boolean);
+
+    if (!allReady) {
+      console.log("Webhook: images not all ready yet —", result.images.map((img, i) => `${img.filename}: ${checks[i]}`));
+      return NextResponse.json({ status: "running" });
+    }
   }
 
   return NextResponse.json(result);
