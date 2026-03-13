@@ -37,9 +37,9 @@ interface ResultImage {
 /*  Helpers                                                            */
 /* ------------------------------------------------------------------ */
 
-/** Proxy external image URLs through our API to avoid CORS issues */
+/** Proxy external image URLs through our API (used only for downloads) */
 function proxyUrl(url: string): string {
-  if (url.startsWith("/")) return url; // already local
+  if (url.startsWith("/")) return url;
   return `/api/proxy-image?url=${encodeURIComponent(url)}`;
 }
 
@@ -136,7 +136,7 @@ export default function StellaDashboard() {
   /* ---- Preview: show the most relevant image ---- */
   const previewSrc =
     resultImages.length > 0
-      ? proxyUrl(resultImages[0].url)
+      ? resultImages[0].url
       : productImage?.preview ?? modelImage?.preview ?? null;
 
   /* ---- Summary helpers ---- */
@@ -322,10 +322,14 @@ export default function StellaDashboard() {
 
   /* ---- Download helper ---- */
   const handleDownload = async (url: string, filename: string) => {
+    // Use proxy for download to set Content-Disposition and avoid CORS
+    // Falls back to opening in new tab if proxy fails (e.g. image > 4.5MB)
     try {
       const proxied = proxyUrl(url);
       const res = await fetch(proxied);
+      if (!res.ok) throw new Error("proxy failed");
       const blob = await res.blob();
+      if (blob.size < 1000) throw new Error("empty response"); // Vercel truncated
       const blobUrl = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = blobUrl;
@@ -335,7 +339,7 @@ export default function StellaDashboard() {
       URL.revokeObjectURL(blobUrl);
       document.body.removeChild(a);
     } catch {
-      // Fallback: open in new tab
+      // Fallback: open S3 URL directly in new tab
       window.open(url, "_blank");
     }
   };
@@ -778,19 +782,9 @@ export default function StellaDashboard() {
                 className="relative rounded-xl overflow-hidden border border-gray-200"
               >
                 <img
-                  src={proxyUrl(img.url)}
+                  src={img.url}
                   alt={`Resultado ${i + 1}`}
                   className="w-full object-contain"
-                  onError={(e) => {
-                    const target = e.currentTarget;
-                    const retries = Number(target.dataset.retries || 0);
-                    if (retries < 3) {
-                      target.dataset.retries = String(retries + 1);
-                      setTimeout(() => {
-                        target.src = proxyUrl(img.url) + `&t=${Date.now()}`;
-                      }, 3000);
-                    }
-                  }}
                 />
                 <button
                   onClick={() => handleDownload(img.url, img.filename)}
