@@ -37,10 +37,15 @@ interface ResultImage {
 /*  Helpers                                                            */
 /* ------------------------------------------------------------------ */
 
-/** Proxy external image URLs through our API (used only for downloads) */
+const S3_HOST = "https://comfy-deploy-output.s3.us-east-2.amazonaws.com";
+
+/** Rewrite S3 URLs to local /s3-images/ path (proxied at edge, no size limit) */
 function proxyUrl(url: string): string {
   if (url.startsWith("/")) return url;
-  return `/api/proxy-image?url=${encodeURIComponent(url)}`;
+  if (url.startsWith(S3_HOST)) {
+    return url.replace(S3_HOST, "/s3-images");
+  }
+  return url;
 }
 
 /* ------------------------------------------------------------------ */
@@ -322,14 +327,12 @@ export default function StellaDashboard() {
 
   /* ---- Download helper ---- */
   const handleDownload = async (url: string, filename: string) => {
-    // Use proxy for download to set Content-Disposition and avoid CORS
-    // Falls back to opening in new tab if proxy fails (e.g. image > 4.5MB)
+    // Fetch via /s3-images rewrite (same origin, no CORS, no size limit)
     try {
       const proxied = proxyUrl(url);
       const res = await fetch(proxied);
-      if (!res.ok) throw new Error("proxy failed");
+      if (!res.ok) throw new Error("fetch failed");
       const blob = await res.blob();
-      if (blob.size < 1000) throw new Error("empty response"); // Vercel truncated
       const blobUrl = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = blobUrl;
