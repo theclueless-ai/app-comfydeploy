@@ -185,11 +185,12 @@ export default function StellaDashboard() {
     try {
       const res = await fetch(model.image);
       const blob = await res.blob();
-      const file = new File([blob], `${model.name.toLowerCase()}.jpg`, {
+      const rawFile = new File([blob], `${model.name.toLowerCase()}.jpg`, {
         type: blob.type || "image/jpeg",
       });
+      const compressed = await compressImage(rawFile);
       const preview = model.image;
-      setModelImage({ file, preview });
+      setModelImage({ file: compressed, preview });
     } catch {
       // If fetch fails, just set the preview path
       setSelectedModelName(null);
@@ -235,7 +236,17 @@ export default function StellaDashboard() {
         method: "POST",
         body: formData,
       });
-      const data = await res.json();
+
+      let data;
+      try {
+        data = await res.json();
+      } catch {
+        // Response is not valid JSON (e.g. 413 HTML error page)
+        if (res.status === 413) {
+          throw new Error("Las imágenes son demasiado grandes. Intenta con imágenes más pequeñas (máx. 2MB cada una).");
+        }
+        throw new Error(`Error del servidor (${res.status}). Intenta de nuevo.`);
+      }
 
       if (!res.ok || !data.success) {
         throw new Error(data.error || "Error al iniciar el workflow");
