@@ -28,7 +28,8 @@ export async function POST(request: NextRequest) {
     const humanFields = [
       "A_gender", "A_ethnicity", "A_age_range", "A_face_aspect", "A_skin_tone", "A_face_shape",
       "A_hair_color", "A_hair_style", "A_eye_color", "A_eye_shape",
-      "A_nose", "A_lips", "A_freckles", "A_expression", "A_distinctive_features",
+      "A_eyebrows", "A_eyelashes",
+      "A_nose", "A_lips", "A_ears", "A_freckles", "A_expression", "A_distinctive_features",
     ];
     for (const field of humanFields) {
       const value = formData.get(field) as string;
@@ -39,6 +40,7 @@ export async function POST(request: NextRequest) {
 
     // Non-human features (B_ prefix)
     const nonhumanFields = [
+      "B_hair_color", "B_hair_style",
       "B_skin_texture", "B_skin_color", "B_eyes", "B_face_structure", "B_organic_additions",
     ];
     for (const field of nonhumanFields) {
