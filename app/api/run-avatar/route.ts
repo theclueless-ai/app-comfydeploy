@@ -1,28 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
-import { runAvatarAsync } from "@/lib/runpod";
+import { runAvatarWorkflowAsync } from "@/lib/runpod";
+import avatarWorkflowTemplate from "@/lib/avatar-workflow.json";
 
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
 
-    // Build flat parameter object matching what the RunPod handler expects.
-    // The handler loads its own baked workflow and injects these params into
-    // Node 252 (CharacterPortraitGenerator) and Node 52 (Color Grading).
-    const params: Record<string, string | number> = {
-      type: "avatar",
-    };
-
-    // Global settings
-    params.character_type = (formData.get("character_type") as string) || "HUMAN";
-    params.render_style = (formData.get("render_style") as string) || "RANDOM";
-    params.lighting = (formData.get("lighting") as string) || "RANDOM";
-    params.background = (formData.get("background") as string) || "white studio background";
+    // Deep-clone the workflow template so we can inject params
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const workflow = JSON.parse(JSON.stringify(avatarWorkflowTemplate)) as any;
 
     // Seed: if 0 generate a random seed so ComfyUI doesn't cache the result
     const seedInput = parseInt(formData.get("seed") as string) || 0;
-    params.seed = seedInput === 0
+    const seed = seedInput === 0
       ? Math.floor(Math.random() * 4294967295) + 1
       : seedInput;
+
+    // ── Node 252: CharacterPortraitGenerator ──────────────────────────
+    const node252 = workflow["252"].inputs;
+
+    // Global settings
+    node252.character_type = (formData.get("character_type") as string) || "HUMAN";
+    node252.render_style = (formData.get("render_style") as string) || "RANDOM";
+    node252.lighting = (formData.get("lighting") as string) || "RANDOM";
+    node252.background = (formData.get("background") as string) || "white studio background";
+    node252.seed = seed;
 
     // Human features (A_ prefix)
     const humanFields = [
@@ -34,7 +36,7 @@ export async function POST(request: NextRequest) {
     for (const field of humanFields) {
       const value = formData.get(field) as string;
       if (value) {
-        params[field] = value;
+        node252[field] = value;
       }
     }
 
@@ -46,27 +48,32 @@ export async function POST(request: NextRequest) {
     for (const field of nonhumanFields) {
       const value = formData.get(field) as string;
       if (value) {
-        params[field] = value;
+        node252[field] = value;
       }
     }
 
     // Extra custom details
     const extraDetails = formData.get("extra_details") as string;
     if (extraDetails) {
-      params.extra_details = extraDetails;
+      node252.extra_details = extraDetails;
     }
 
-    // Color grading
+    // ── Node 52: Color Grading ────────────────────────────────────────
+    const node52 = workflow["52"].inputs;
     const colorFields = ["temperature", "hue", "brightness", "contrast", "saturation", "gamma"];
     for (const field of colorFields) {
       const value = formData.get(field);
       if (value !== null && value !== "") {
-        params[field] = parseFloat(value as string);
+        node52[field] = parseFloat(value as string);
       }
     }
 
-    // Send flat params to RunPod serverless
-    const { jobId } = await runAvatarAsync(params);
+    // ── Node 3: KSampler seed ─────────────────────────────────────────
+    workflow["3"].inputs.seed = seed;
+
+    // Send full workflow JSON to RunPod so the handler uses THIS workflow
+    // instead of its baked (outdated) copy.
+    const { jobId } = await runAvatarWorkflowAsync(workflow);
 
     return NextResponse.json({ jobId });
   } catch (error) {
