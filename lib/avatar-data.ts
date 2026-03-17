@@ -30,6 +30,12 @@ export const HUMAN_DATA = {
     "beautiful portrait, symmetrical face, bright eyes",
     "stunning gorgeous model portrait, perfect symmetry, flawless skin, intense gaze",
   ] as const,
+  body_type: [
+    "slim thin build", "average build", "athletic muscular build",
+    "stocky robust build", "heavyset large build", "petite small frame",
+    "tall lanky build", "curvy voluptuous build", "broad-shouldered build",
+    "wiry lean build",
+  ] as const,
   skin_tone: [
     "very fair porcelain skin", "fair skin", "light skin",
     "light-medium skin", "medium skin", "olive skin",

@@ -509,6 +509,7 @@
       "A_ethnicity": "RANDOM",
       "A_age_range": "RANDOM",
       "A_face_aspect": "RANDOM",
+      "A_body_type": "RANDOM",
       "A_skin_tone": "RANDOM",
       "A_face_shape": "RANDOM",
       "A_hair_color": "RANDOM",
@@ -529,7 +530,8 @@
       "B_skin_color": "RANDOM",
       "B_eyes": "RANDOM",
       "B_face_structure": "RANDOM",
-      "B_organic_additions": "RANDOM"
+      "B_organic_additions": "RANDOM",
+      "extra_details": ""
     },
     "class_type": "CharacterPortraitGenerator",
     "_meta": {

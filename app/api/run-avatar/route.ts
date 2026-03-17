@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
 
     // Human features (A_ prefix)
     const humanFields = [
-      "A_gender", "A_ethnicity", "A_age_range", "A_face_aspect", "A_skin_tone", "A_face_shape",
+      "A_gender", "A_ethnicity", "A_age_range", "A_face_aspect", "A_body_type", "A_skin_tone", "A_face_shape",
       "A_hair_color", "A_hair_style", "A_eye_color", "A_eye_shape",
       "A_eyebrows", "A_eyelashes",
       "A_nose", "A_lips", "A_ears", "A_freckles", "A_expression", "A_distinctive_features",
@@ -48,6 +48,12 @@ export async function POST(request: NextRequest) {
       if (value) {
         params[field] = value;
       }
+    }
+
+    // Extra custom details
+    const extraDetails = formData.get("extra_details") as string;
+    if (extraDetails) {
+      params.extra_details = extraDetails;
     }
 
     // Color grading

@@ -563,6 +563,7 @@ export default function Home() {
                   status={status}
                   images={resultImages}
                   error={error}
+                  onGeneratePoses={activeTab === "avatar" ? handleUsePoses : undefined}
                 />
               ) : (
                 <div

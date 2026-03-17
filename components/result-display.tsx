@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Download, Loader2, CheckCircle2, XCircle } from "lucide-react";
+import { Download, Loader2, CheckCircle2, XCircle, RotateCcw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 
@@ -12,9 +12,10 @@ interface ResultDisplayProps {
     filename: string;
   }>;
   error?: string;
+  onGeneratePoses?: (imageUrl: string) => void;
 }
 
-export function ResultDisplay({ status, images, error }: ResultDisplayProps) {
+export function ResultDisplay({ status, images, error, onGeneratePoses }: ResultDisplayProps) {
   const [downloadingIndex, setDownloadingIndex] = useState<number | null>(null);
 
   if (!status) {
@@ -124,24 +125,40 @@ export function ResultDisplay({ status, images, error }: ResultDisplayProps) {
                       />
                     </div>
                   )}
-                  <button
-                    onClick={() => handleDownload(image.url, image.filename, index)}
-                    disabled={downloadingIndex === index}
-                    className={cn(
-                      "w-full py-2 px-3 rounded-lg text-sm font-medium transition-all",
-                      "bg-[rgb(var(--secondary))] hover:bg-[rgb(var(--accent))]",
-                      "border border-[rgb(var(--border))]",
-                      "flex items-center justify-center gap-2",
-                      "disabled:opacity-50 disabled:cursor-not-allowed"
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleDownload(image.url, image.filename, index)}
+                      disabled={downloadingIndex === index}
+                      className={cn(
+                        "flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all",
+                        "bg-[rgb(var(--secondary))] hover:bg-[rgb(var(--accent))]",
+                        "border border-[rgb(var(--border))]",
+                        "flex items-center justify-center gap-2",
+                        "disabled:opacity-50 disabled:cursor-not-allowed"
+                      )}
+                    >
+                      {downloadingIndex === index ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Download className="w-4 h-4" />
+                      )}
+                      Download {images.length > 1 ? `#${index + 1}` : ''}
+                    </button>
+                    {onGeneratePoses && !isVideoFile(image.filename, image.url) && (
+                      <button
+                        onClick={() => onGeneratePoses(image.url)}
+                        className={cn(
+                          "py-2 px-3 rounded-lg text-sm font-medium transition-all",
+                          "bg-brand-pink/20 hover:bg-brand-pink/30 text-brand-pink",
+                          "border border-brand-pink/30",
+                          "flex items-center justify-center gap-2"
+                        )}
+                      >
+                        <RotateCcw className="w-4 h-4" />
+                        Poses
+                      </button>
                     )}
-                  >
-                    {downloadingIndex === index ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Download className="w-4 h-4" />
-                    )}
-                    Download {images.length > 1 ? `#${index + 1}` : ''}
-                  </button>
+                  </div>
                 </div>
               ))}
             </div>

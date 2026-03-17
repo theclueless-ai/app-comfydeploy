@@ -38,6 +38,12 @@ HUMAN_DATA = {
         "beautiful portrait, symmetrical face, bright eyes",
         "stunning gorgeous model portrait, perfect symmetry, flawless skin, intense gaze",
     ],
+    "body_type": [
+        "slim thin build", "average build", "athletic muscular build",
+        "stocky robust build", "heavyset large build", "petite small frame",
+        "tall lanky build", "curvy voluptuous build", "broad-shouldered build",
+        "wiry lean build",
+    ],
     "skin_tone": [
         "very fair porcelain skin", "fair skin", "light skin",
         "light-medium skin", "medium skin", "olive skin",
@@ -372,6 +378,7 @@ class CharacterPortraitGenerator:
             "A_ethnicity":            (with_random(HUMAN_DATA["ethnicity"]),),
             "A_age_range":            (with_random(HUMAN_DATA["age_range"]),),
             "A_face_aspect":          (with_random(HUMAN_DATA["face_aspect"]),),
+            "A_body_type":            (with_random(HUMAN_DATA["body_type"]),),
             "A_skin_tone":            (with_random(HUMAN_DATA["skin_tone"]),),
             "A_face_shape":           (with_random(HUMAN_DATA["face_shape"]),),
             "A_hair_color":           (with_random(HUMAN_DATA["hair_color"]),),
@@ -400,6 +407,13 @@ class CharacterPortraitGenerator:
             "B_eyes":              (with_random(NONHUMAN_DATA["eyes"]),),
             "B_face_structure":    (with_random(NONHUMAN_DATA["face_structure"]),),
             "B_organic_additions": (with_random(NONHUMAN_DATA["organic_additions"]),),
+
+            # ── Campo libre para parámetros adicionales ─────────────────────
+            "extra_details": ("STRING", {
+                "default": "",
+                "multiline": True,
+                "placeholder": "Custom details: 'face tattoo of a dragon', 'glowing eyes', 'cybernetic implant on left cheek'...",
+            }),
         }}
 
     RETURN_TYPES  = ("STRING", "STRING")
@@ -410,12 +424,13 @@ class CharacterPortraitGenerator:
     def generate(
         self,
         character_type, seed, render_style, lighting, background,
-        A_gender, A_ethnicity, A_age_range, A_face_aspect, A_skin_tone, A_face_shape,
+        A_gender, A_ethnicity, A_age_range, A_face_aspect, A_body_type, A_skin_tone, A_face_shape,
         A_hair_color, A_hair_style, A_eye_color, A_eye_shape,
         A_eyebrows, A_eyelashes,
         A_nose, A_lips, A_ears, A_freckles, A_expression, A_distinctive_features,
         B_hair_color, B_hair_style,
         B_skin_texture, B_skin_color, B_eyes, B_face_structure, B_organic_additions,
+        extra_details,
     ):
         if seed == 0:
             seed = random.randint(1, 0xFFFFFFFF)
@@ -442,6 +457,7 @@ class CharacterPortraitGenerator:
                 "eth": pick(HUMAN_DATA["ethnicity"],   A_ethnicity),
                 "age": pick(HUMAN_DATA["age_range"],   A_age_range),
                 "fa":  pick(HUMAN_DATA["face_aspect"], A_face_aspect),
+                "bt":  pick(HUMAN_DATA["body_type"],   A_body_type),
                 "sk":  pick(HUMAN_DATA["skin_tone"],   A_skin_tone),
                 "fs":  pick(HUMAN_DATA["face_shape"],  A_face_shape),
                 "hc":  pick(HUMAN_DATA["hair_color"],  A_hair_color),
@@ -459,7 +475,7 @@ class CharacterPortraitGenerator:
             }
             meta.update({
                 "gender": r["g"], "ethnicity": r["eth"], "age_range": r["age"],
-                "face_aspect": r["fa"],
+                "face_aspect": r["fa"], "body_type": r["bt"],
                 "skin_tone": r["sk"], "face_shape": r["fs"],
                 "hair_color": r["hc"], "hair_style": r["hs"],
                 "eye_color": r["ec"] or "REMOVE", "eye_shape": r["es"] or "REMOVE",
@@ -470,7 +486,7 @@ class CharacterPortraitGenerator:
             })
             parts = [
                 r_render,
-                f"portrait of a {r['age']} {r['eth']} {r['g']}",
+                f"portrait of a {r['age']} {r['eth']} {r['g']}, {r['bt']}",
                 r["fa"],
                 r["sk"], r["fs"],
                 f"{r['hc']}, {r['hs']}",
@@ -545,6 +561,11 @@ class CharacterPortraitGenerator:
                 parts.append("completely bald, no hair")
             if "no additional" not in r_org:
                 parts.append(r_org)
+
+        # Extra custom details (free text field)
+        if extra_details and extra_details.strip():
+            parts.append(extra_details.strip())
+            meta["extra_details"] = extra_details.strip()
 
         parts += [r_light, r_bg, "face portrait only", "no clothing visible", "detailed face", "sharp focus", "high quality", "masterpiece"]
         parts  = [p.strip() for p in parts if p and p.strip()]

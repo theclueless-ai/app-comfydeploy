@@ -117,6 +117,7 @@ export function AvatarForm({ onSubmit, isLoading, reusedParameters, onParameters
   const [ethnicity, setEthnicity] = useState("RANDOM");
   const [ageRange, setAgeRange] = useState("RANDOM");
   const [faceAspect, setFaceAspect] = useState("RANDOM");
+  const [bodyType, setBodyType] = useState("RANDOM");
   const [skinTone, setSkinTone] = useState("RANDOM");
   const [faceShape, setFaceShape] = useState("RANDOM");
   const [hairColor, setHairColor] = useState("RANDOM");
@@ -140,6 +141,9 @@ export function AvatarForm({ onSubmit, isLoading, reusedParameters, onParameters
   const [eyes, setEyes] = useState("RANDOM");
   const [faceStructure, setFaceStructure] = useState("RANDOM");
   const [organicAdditions, setOrganicAdditions] = useState("RANDOM");
+
+  // Extra custom details
+  const [extraDetails, setExtraDetails] = useState("");
 
   // Color grading
   const [showColorGrading, setShowColorGrading] = useState(false);
@@ -173,6 +177,7 @@ export function AvatarForm({ onSubmit, isLoading, reusedParameters, onParameters
     if (p.A_ethnicity) setEthnicity(String(p.A_ethnicity));
     if (p.A_age_range) setAgeRange(String(p.A_age_range));
     if (p.A_face_aspect) setFaceAspect(String(p.A_face_aspect));
+    if (p.A_body_type) setBodyType(String(p.A_body_type));
     if (p.A_skin_tone) setSkinTone(String(p.A_skin_tone));
     if (p.A_face_shape) setFaceShape(String(p.A_face_shape));
     if (p.A_hair_color) setHairColor(String(p.A_hair_color));
@@ -199,6 +204,9 @@ export function AvatarForm({ onSubmit, isLoading, reusedParameters, onParameters
     if (p.B_eyes) setEyes(String(p.B_eyes));
     if (p.B_face_structure) setFaceStructure(String(p.B_face_structure));
     if (p.B_organic_additions) setOrganicAdditions(String(p.B_organic_additions));
+
+    // Extra details
+    if (p.extra_details) setExtraDetails(String(p.extra_details));
 
     // Color grading
     const cg: Partial<ColorGradingValues> = {};
@@ -231,6 +239,7 @@ export function AvatarForm({ onSubmit, isLoading, reusedParameters, onParameters
       A_ethnicity: ethnicity,
       A_age_range: ageRange,
       A_face_aspect: faceAspect,
+      A_body_type: bodyType,
       A_skin_tone: skinTone,
       A_face_shape: faceShape,
       A_hair_color: hairColor,
@@ -254,6 +263,9 @@ export function AvatarForm({ onSubmit, isLoading, reusedParameters, onParameters
       B_eyes: eyes,
       B_face_structure: faceStructure,
       B_organic_additions: organicAdditions,
+
+      // Extra custom details
+      extra_details: extraDetails,
 
       // Color grading
       temperature: colorGrading.temperature,
@@ -364,6 +376,12 @@ export function AvatarForm({ onSubmit, isLoading, reusedParameters, onParameters
             value={faceAspect}
             onChange={setFaceAspect}
             options={withRandom([...HUMAN_DATA.face_aspect])}
+          />
+          <SelectInput
+            label="Body Type"
+            value={bodyType}
+            onChange={setBodyType}
+            options={withRandom([...HUMAN_DATA.body_type])}
           />
           <SelectInput
             label="Skin Tone"
@@ -500,6 +518,29 @@ export function AvatarForm({ onSubmit, isLoading, reusedParameters, onParameters
           />
         </>
       )}
+
+      {/* Extra Custom Details */}
+      <SectionHeader title="Custom Details" />
+      <div className="space-y-1">
+        <label className="block text-xs font-medium text-[rgb(var(--muted-foreground))]">
+          Extra Details
+        </label>
+        <textarea
+          value={extraDetails}
+          onChange={(e) => setExtraDetails(e.target.value)}
+          placeholder="Add any custom details not covered by the options above: 'face tattoo of a dragon', 'glowing eyes', 'cybernetic implant'..."
+          rows={3}
+          className={cn(
+            "w-full px-3 py-2",
+            "bg-[rgb(var(--input))] border border-[rgb(var(--border-input))] rounded-md",
+            "text-[rgb(var(--muted-foreground))] text-xs",
+            "focus:outline-none focus:ring-1 focus:ring-brand-pink focus:border-transparent",
+            "transition-all duration-200",
+            "hover:border-brand-pink/50",
+            "resize-none"
+          )}
+        />
+      </div>
 
       {/* Color Grading (collapsible) */}
       <div className="pt-1">
