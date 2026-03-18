@@ -361,21 +361,19 @@ export default function StellaDashboard() {
         <div className="flex bg-gray-100 rounded-lg p-0.5">
           <button
             onClick={() => { setModelTab("upload"); setSelectedModelName(null); }}
-            className={`px-3 py-1.5 text-xs rounded-md transition-all ${
-              modelTab === "upload"
+            className={`px-3 py-1.5 text-xs rounded-md transition-all ${modelTab === "upload"
                 ? "bg-white text-gray-900 shadow-sm"
                 : "text-gray-500 hover:text-gray-700"
-            }`}
+              }`}
           >
             Subir
           </button>
           <button
             onClick={() => setModelTab("catalog")}
-            className={`px-3 py-1.5 text-xs rounded-md transition-all ${
-              modelTab === "catalog"
+            className={`px-3 py-1.5 text-xs rounded-md transition-all ${modelTab === "catalog"
                 ? "bg-white text-gray-900 shadow-sm"
                 : "text-gray-500 hover:text-gray-700"
-            }`}
+              }`}
           >
             Catálogo
           </button>
@@ -436,11 +434,10 @@ export default function StellaDashboard() {
               <button
                 key={model.name}
                 onClick={() => handleSelectCatalogModel(model)}
-                className={`relative rounded-lg overflow-hidden aspect-[3/4] group transition-all duration-200 ${
-                  isSelected
+                className={`relative rounded-lg overflow-hidden aspect-[3/4] group transition-all duration-200 ${isSelected
                     ? "ring-2 ring-gray-900 ring-offset-1"
                     : "hover:ring-1 hover:ring-gray-300 hover:ring-offset-1"
-                }`}
+                  }`}
               >
                 <img
                   src={model.image}
@@ -864,9 +861,11 @@ export default function StellaDashboard() {
         <header className="px-8 pt-8 pb-4 shrink-0">
           <div className="flex items-center justify-between mb-5">
             <div>
-              <h1 className="text-lg font-light tracking-widest text-gray-900">
-                stella<sup className="text-[8px] align-super">®</sup>
-              </h1>
+              <img
+                src="/Stella_logo.png"
+                alt="Stella"
+                className="h-16 w-auto"
+              />
               <p className="text-xs text-gray-400 mt-1">
                 Generate professional fashion images with AI
               </p>
