@@ -1,11 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getRunStatus } from "@/lib/comfydeploy";
 
-/** HEAD-check that an image URL is actually available on S3 */
+/**
+ * Verify an image URL is actually available AND contains real data on S3.
+ * ComfyDeploy can mark a run as "success" while S3 still has empty/placeholder
+ * files. A real upscaled image (2048×2048) is at least ~50 KB; blank/corrupt
+ * placeholders are typically < 1 KB.
+ */
+const MIN_IMAGE_BYTES = 10_000; // 10 KB – any real image is larger than this
+
 async function isImageReady(url: string): Promise<boolean> {
   try {
     const res = await fetch(url, { method: "HEAD", cache: "no-store" });
-    return res.ok;
+    if (!res.ok) return false;
+
+    const cl = res.headers.get("content-length");
+    if (cl && parseInt(cl, 10) < MIN_IMAGE_BYTES) {
+      console.log(`Image not ready — content-length ${cl} bytes (< ${MIN_IMAGE_BYTES}): ${url}`);
+      return false;
+    }
+    return true;
   } catch {
     return false;
   }
@@ -44,20 +58,15 @@ export async function GET(
 
     if (rawStatus?.status === "success") {
       // ComfyDeploy says "success" but images may still be uploading to S3.
-      // Check live_status and verify images are actually accessible.
-      const stillSaving =
-        typeof rawStatus.live_status === "string" &&
-        rawStatus.live_status.toLowerCase().includes("save");
-
-      if (stillSaving && allImages.length > 0) {
-        // Verify every image is reachable before marking completed
+      // ALWAYS verify every image is reachable AND has real content before
+      // marking completed — don't rely on live_status which is unreliable.
+      if (allImages.length > 0) {
         const checks = await Promise.all(allImages.map((img) => isImageReady(img.url)));
         const allReady = checks.every(Boolean);
 
         console.log("Image readiness:", allImages.map((img, i) => `${img.filename}: ${checks[i]}`));
 
         if (!allReady) {
-          // Tell the frontend to keep polling
           console.log("Images not all ready yet — reporting as running");
           resolvedStatus = "running";
         } else {

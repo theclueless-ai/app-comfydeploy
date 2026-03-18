@@ -44,7 +44,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Construct webhook URL
-    const webhookUrl = `${process.env.WEBHOOK_BASE_URL || request.nextUrl.origin}/api/webhook`;
+    const baseUrl = (process.env.WEBHOOK_BASE_URL || request.nextUrl.origin).replace(/\/+$/, '');
+    const webhookUrl = `${baseUrl}/api/webhook`;
 
     // Calculate approximate payload size for debugging
     const payloadSize = JSON.stringify({ deployment_id: deploymentId, inputs, webhook: webhookUrl }).length;

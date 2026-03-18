@@ -7,7 +7,7 @@ const JWT_SECRET = new TextEncoder().encode(
 );
 
 // Routes that don't require authentication (startsWith match)
-const publicPrefixRoutes = ['/login', '/api/auth/login', '/api/auth/logout'];
+const publicPrefixRoutes = ['/login', '/api/auth/login', '/api/auth/logout', '/api/webhook'];
 // Routes that don't require authentication (exact match only)
 const publicExactRoutes = ['/stella'];
 
