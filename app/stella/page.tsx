@@ -71,12 +71,7 @@ export default function StellaLoginPage() {
             stella<sup className="text-xs align-super">®</sup>
           </span>
           <div className="flex-1" />
-          <a
-            href="#"
-            className="text-white/70 text-sm tracking-wide hover:text-white transition-colors"
-          >
-            Crear cuenta
-          </a>
+
         </div>
 
         {/* Form centered */}
