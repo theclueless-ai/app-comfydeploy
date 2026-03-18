@@ -54,8 +54,8 @@ export const workflows: WorkflowConfig[] = [
         ],
       },
       {
-        id: "pose_selection",
-        name: "pose_selection",
+        id: "Seleccion de pose",
+        name: "Seleccion de pose",
         type: "select",
         label: "Pose Selection",
         description: "",
@@ -67,8 +67,8 @@ export const workflows: WorkflowConfig[] = [
         ],
       },
       {
-        id: "background_selection",
-        name: "background_selection",
+        id: "Seleccion de Fondo",
+        name: "Seleccion de Fondo",
         type: "select",
         label: "Background Selection",
         description: "",
