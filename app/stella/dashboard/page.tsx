@@ -37,11 +37,6 @@ interface ResultImage {
 /*  Helpers                                                            */
 /* ------------------------------------------------------------------ */
 
-/** Route S3 URLs through our server-side proxy to avoid browser access issues */
-function proxyUrl(url: string): string {
-  if (!url || url.startsWith("/") || url.startsWith("blob:")) return url;
-  return `/api/image-proxy?url=${encodeURIComponent(url)}`;
-}
 
 /* ------------------------------------------------------------------ */
 /*  Constants – workflow options                                       */
@@ -320,10 +315,10 @@ export default function StellaDashboard() {
     };
   }, [runId, status]);
 
-  /* ---- Download helper – fetch via our server-side proxy ---- */
+  /* ---- Download helper ---- */
   const handleDownload = async (url: string, filename: string) => {
     try {
-      const res = await fetch(proxyUrl(url));
+      const res = await fetch(url);
       if (!res.ok) throw new Error("fetch failed");
       const blob = await res.blob();
       const blobUrl = URL.createObjectURL(blob);
@@ -778,7 +773,7 @@ export default function StellaDashboard() {
                 className="relative rounded-xl overflow-hidden border border-gray-200 aspect-square"
               >
                 <img
-                  src={proxyUrl(img.url)}
+                  src={img.url}
                   alt={`Resultado ${i + 1}`}
                   className="w-full h-full object-contain"
                 />
@@ -922,7 +917,7 @@ export default function StellaDashboard() {
                     </div>
                   ) : previewSrc ? (
                     <img
-                      src={proxyUrl(previewSrc)}
+                      src={previewSrc}
                       alt="Vista previa"
                       className="absolute inset-0 w-full h-full object-contain p-2"
                     />
