@@ -319,7 +319,9 @@ export default function StellaDashboard() {
   /* ---- Download helper ---- */
   const handleDownload = async (url: string, filename: string) => {
     try {
-      const res = await fetch(url);
+      // Use Next.js image proxy to avoid CORS issues with S3
+      const proxyUrl = `/_next/image?url=${encodeURIComponent(url)}&w=3840&q=100`;
+      const res = await fetch(proxyUrl);
       if (!res.ok) throw new Error("fetch failed");
       const blob = await res.blob();
       const blobUrl = URL.createObjectURL(blob);
@@ -777,7 +779,7 @@ export default function StellaDashboard() {
                   src={img.url}
                   alt={`Resultado ${i + 1}`}
                   fill
-                  unoptimized
+                  sizes="(max-width: 768px) 100vw, 50vw"
                   className="object-contain"
                 />
                 <button
@@ -923,7 +925,8 @@ export default function StellaDashboard() {
                       src={previewSrc}
                       alt="Vista previa"
                       fill
-                      unoptimized
+                      sizes="(max-width: 768px) 100vw, 50vw"
+                      unoptimized={previewSrc.startsWith("blob:")}
                       className="object-contain p-2"
                     />
                   ) : (
