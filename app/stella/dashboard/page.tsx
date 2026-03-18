@@ -233,8 +233,8 @@ export default function StellaDashboard() {
     formData.append("model_image", modelImage.file);
     formData.append("product_image", productImage.file);
     formData.append("size_preset", sizePreset);
-    formData.append("pose_selection", poseSelection);
-    formData.append("background_selection", backgroundSelection);
+    formData.append("Seleccion de pose", poseSelection);
+    formData.append("Seleccion de Fondo", backgroundSelection);
 
     try {
       const res = await fetch("/api/run-workflow", {
