@@ -7,7 +7,6 @@ import StellaSidebar from "@/components/stella/sidebar";
 import StellaStepper from "@/components/stella/stepper";
 import { compressImage, formatBytes } from "@/lib/utils";
 import { sanitizeErrorMessage } from "@/lib/error-messages";
-import Image from "next/image";
 import {
   Upload,
   X,
@@ -38,6 +37,11 @@ interface ResultImage {
 /*  Helpers                                                            */
 /* ------------------------------------------------------------------ */
 
+/** Route S3 URLs through our server-side proxy to avoid browser access issues */
+function proxyUrl(url: string): string {
+  if (!url || url.startsWith("/") || url.startsWith("blob:")) return url;
+  return `/api/image-proxy?url=${encodeURIComponent(url)}`;
+}
 
 /* ------------------------------------------------------------------ */
 /*  Constants – workflow options                                       */
@@ -316,10 +320,10 @@ export default function StellaDashboard() {
     };
   }, [runId, status]);
 
-  /* ---- Download helper (same approach as Fashion Commerce) ---- */
+  /* ---- Download helper – fetch via our server-side proxy ---- */
   const handleDownload = async (url: string, filename: string) => {
     try {
-      const res = await fetch(url);
+      const res = await fetch(proxyUrl(url));
       if (!res.ok) throw new Error("fetch failed");
       const blob = await res.blob();
       const blobUrl = URL.createObjectURL(blob);
@@ -773,12 +777,10 @@ export default function StellaDashboard() {
                 key={i}
                 className="relative rounded-xl overflow-hidden border border-gray-200 aspect-square"
               >
-                <Image
-                  src={img.url}
+                <img
+                  src={proxyUrl(img.url)}
                   alt={`Resultado ${i + 1}`}
-                  fill
-                  unoptimized
-                  className="object-contain"
+                  className="w-full h-full object-contain"
                 />
                 <button
                   onClick={() => handleDownload(img.url, img.filename)}
@@ -919,12 +921,10 @@ export default function StellaDashboard() {
                       </p>
                     </div>
                   ) : previewSrc ? (
-                    <Image
-                      src={previewSrc}
+                    <img
+                      src={proxyUrl(previewSrc)}
                       alt="Vista previa"
-                      fill
-                      unoptimized
-                      className="object-contain p-2"
+                      className="absolute inset-0 w-full h-full object-contain p-2"
                     />
                   ) : (
                     <div className="flex flex-col items-center gap-3">
