@@ -39,7 +39,7 @@ export const workflows: WorkflowConfig[] = [
         label: "Size Preset",
         description: "",
         required: false,
-        defaultValue: "2048x2048 (1:1)",
+        defaultValue: "1728x2304 (3:4)",
         options: [
           "2048x2048 (1:1)",
           "2304x1728 (4:3)",

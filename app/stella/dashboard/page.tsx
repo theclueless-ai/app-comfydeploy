@@ -43,9 +43,9 @@ interface ResultImage {
 /* ------------------------------------------------------------------ */
 
 const SIZE_OPTIONS = [
+  { label: "1728×2304 — Vertical 3:4", value: "1728x2304 (3:4)" },
   { label: "2048×2048 — Cuadrado", value: "2048x2048 (1:1)" },
   { label: "2304×1728 — Horizontal 4:3", value: "2304x1728 (4:3)" },
-  { label: "1728×2304 — Vertical 3:4", value: "1728x2304 (3:4)" },
   { label: "2560×1440 — Panorámico 16:9", value: "2560x1440 (16:9)" },
   { label: "1440×2560 — Vertical 9:16", value: "1440x2560 (9:16)" },
   { label: "2496×1664 — Horizontal 3:2", value: "2496x1664 (3:2)" },
