@@ -82,30 +82,6 @@ export async function POST(request: NextRequest) {
   }
 }
 
-/**
- * Verify an image URL is actually available AND contains real data on S3.
- * ComfyDeploy can mark a run as "success" while S3 still has empty/placeholder
- * files. A real upscaled image (2048×2048) is at least ~50 KB; blank/corrupt
- * placeholders are typically < 1 KB.
- */
-const MIN_IMAGE_BYTES = 10_000; // 10 KB – any real image is larger than this
-
-async function isImageReady(url: string): Promise<boolean> {
-  try {
-    const res = await fetch(url, { method: "HEAD", cache: "no-store" });
-    if (!res.ok) return false;
-
-    const cl = res.headers.get("content-length");
-    if (cl && parseInt(cl, 10) < MIN_IMAGE_BYTES) {
-      console.log(`Image not ready — content-length ${cl} bytes (< ${MIN_IMAGE_BYTES}): ${url}`);
-      return false;
-    }
-    return true;
-  } catch {
-    return false;
-  }
-}
-
 export async function GET(request: NextRequest) {
   const runId = request.nextUrl.searchParams.get("runId");
 
@@ -123,17 +99,6 @@ export async function GET(request: NextRequest) {
       { status: "pending", message: "No result yet" },
       { status: 200 }
     );
-  }
-
-  // If completed, verify all images are actually accessible on S3
-  if (result.status === "completed" && result.images?.length) {
-    const checks = await Promise.all(result.images.map((img) => isImageReady(img.url)));
-    const allReady = checks.every(Boolean);
-
-    if (!allReady) {
-      console.log("Webhook: images not all ready yet —", result.images.map((img, i) => `${img.filename}: ${checks[i]}`));
-      return NextResponse.json({ status: "running" });
-    }
   }
 
   return NextResponse.json(result);
