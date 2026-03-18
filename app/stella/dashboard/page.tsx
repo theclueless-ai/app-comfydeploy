@@ -7,7 +7,6 @@ import StellaSidebar from "@/components/stella/sidebar";
 import StellaStepper from "@/components/stella/stepper";
 import { compressImage, formatBytes } from "@/lib/utils";
 import { sanitizeErrorMessage } from "@/lib/error-messages";
-import Image from "next/image";
 import {
   Upload,
   X,
@@ -316,7 +315,7 @@ export default function StellaDashboard() {
     };
   }, [runId, status]);
 
-  /* ---- Download helper (same approach as Fashion Commerce) ---- */
+  /* ---- Download helper ---- */
   const handleDownload = async (url: string, filename: string) => {
     try {
       const res = await fetch(url);
@@ -770,12 +769,10 @@ export default function StellaDashboard() {
                 key={i}
                 className="relative rounded-xl overflow-hidden border border-gray-200 aspect-square"
               >
-                <Image
+                <img
                   src={img.url}
                   alt={`Resultado ${i + 1}`}
-                  fill
-                  unoptimized
-                  className="object-contain"
+                  className="w-full h-full object-contain"
                 />
                 <button
                   onClick={() => handleDownload(img.url, img.filename)}
@@ -918,12 +915,10 @@ export default function StellaDashboard() {
                       </p>
                     </div>
                   ) : previewSrc ? (
-                    <Image
+                    <img
                       src={previewSrc}
                       alt="Vista previa"
-                      fill
-                      unoptimized
-                      className="object-contain p-2"
+                      className="absolute inset-0 w-full h-full object-contain p-2"
                     />
                   ) : (
                     <div className="flex flex-col items-center gap-3">
