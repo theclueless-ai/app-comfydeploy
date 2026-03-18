@@ -316,12 +316,10 @@ export default function StellaDashboard() {
     };
   }, [runId, status]);
 
-  /* ---- Download helper ---- */
+  /* ---- Download helper (same approach as Fashion Commerce) ---- */
   const handleDownload = async (url: string, filename: string) => {
     try {
-      // Use Next.js image proxy to avoid CORS issues with S3
-      const proxyUrl = `/_next/image?url=${encodeURIComponent(url)}&w=3840&q=100`;
-      const res = await fetch(proxyUrl);
+      const res = await fetch(url);
       if (!res.ok) throw new Error("fetch failed");
       const blob = await res.blob();
       const blobUrl = URL.createObjectURL(blob);
@@ -779,7 +777,7 @@ export default function StellaDashboard() {
                   src={img.url}
                   alt={`Resultado ${i + 1}`}
                   fill
-                  sizes="(max-width: 768px) 100vw, 50vw"
+                  unoptimized
                   className="object-contain"
                 />
                 <button
@@ -925,8 +923,7 @@ export default function StellaDashboard() {
                       src={previewSrc}
                       alt="Vista previa"
                       fill
-                      sizes="(max-width: 768px) 100vw, 50vw"
-                      unoptimized={previewSrc.startsWith("blob:")}
+                      unoptimized
                       className="object-contain p-2"
                     />
                   ) : (
