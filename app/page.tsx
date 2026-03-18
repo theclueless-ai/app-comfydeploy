@@ -64,7 +64,7 @@ export default function Home() {
     }
   };
 
-  // Poll for webhook results (ComfyDeploy - both workflows now use ComfyDeploy)
+  // Poll for results via ComfyDeploy status API (fashion workflow)
   useEffect(() => {
     if (!runId || status === "completed" || status === "failed" || activeTab !== "fashion") {
       return;
@@ -72,54 +72,26 @@ export default function Home() {
 
     const pollInterval = setInterval(async () => {
       try {
-        // First check webhook endpoint
-        const webhookResponse = await fetch(`/api/webhook?runId=${runId}`);
-        const webhookData = await webhookResponse.json();
+        const res = await fetch(`/api/status/${runId}`);
+        if (!res.ok) return; // transient error, retry next tick
 
-        console.log("Webhook data:", webhookData);
+        const data = await res.json();
 
-        if (webhookData.status === "completed") {
+        if (data.status === "completed") {
           setStatus("completed");
-          if (webhookData.images && webhookData.images.length > 0) {
-            setResultImages(webhookData.images);
-            console.log(`Received ${webhookData.images.length} images from webhook`);
+          if (data.images && data.images.length > 0) {
+            setResultImages(data.images);
+            console.log(`Received ${data.images.length} images from status API`);
           }
           clearInterval(pollInterval);
           setIsLoading(false);
-          return;
-        }
-
-        if (webhookData.status === "failed") {
+        } else if (data.status === "failed") {
           setStatus("failed");
-          setError(webhookData.error);
+          setError(data.error);
           clearInterval(pollInterval);
           setIsLoading(false);
-          return;
-        }
-
-        // Fallback to status API
-        const statusResponse = await fetch(`/api/status/${runId}`);
-        if (statusResponse.ok) {
-          const statusData = await statusResponse.json();
-
-          console.log("Status data:", statusData);
-
-          if (statusData.status === "completed") {
-            setStatus("completed");
-            if (statusData.images && statusData.images.length > 0) {
-              setResultImages(statusData.images);
-              console.log(`Received ${statusData.images.length} images from status API`);
-            }
-            clearInterval(pollInterval);
-            setIsLoading(false);
-          } else if (statusData.status === "failed") {
-            setStatus("failed");
-            setError(statusData.error);
-            clearInterval(pollInterval);
-            setIsLoading(false);
-          } else if (statusData.status === "running") {
-            setStatus("running");
-          }
+        } else if (data.status === "running") {
+          setStatus("running");
         }
       } catch (error) {
         console.error("Polling error:", error);
@@ -203,7 +175,7 @@ export default function Home() {
     return () => clearInterval(pollInterval);
   }, [runId, status, activeTab]);
 
-  // Poll for RunPod status (AI Talk workflow)
+  // Poll for AI Talk status
   useEffect(() => {
     if (!runId || status === "completed" || status === "failed" || activeTab !== "aiTalk") {
       return;
@@ -211,43 +183,6 @@ export default function Home() {
 
     const pollInterval = setInterval(async () => {
       try {
-        // First check webhook endpoint
-        const webhookResponse = await fetch(`/api/webhook?runId=${runId}`);
-        if (webhookResponse.ok) {
-          const contentType = webhookResponse.headers.get("content-type") || "";
-          if (contentType.includes("application/json")) {
-            const webhookData = await webhookResponse.json();
-            console.log("AI Talk webhook data:", webhookData);
-
-            if (webhookData.status === "completed") {
-              setStatus("completed");
-              if (webhookData.images && webhookData.images.length > 0) {
-                setResultImages(webhookData.images);
-                console.log(`Received ${webhookData.images.length} results from webhook`);
-              }
-              clearInterval(pollInterval);
-              setIsLoading(false);
-              return;
-            }
-
-            if (webhookData.status === "failed") {
-              setStatus("failed");
-              setError(webhookData.error);
-              clearInterval(pollInterval);
-              setIsLoading(false);
-              return;
-            }
-          }
-        } else if (webhookResponse.status === 401) {
-          console.warn("AI Talk polling: session expired");
-          clearInterval(pollInterval);
-          setIsLoading(false);
-          setStatus("failed");
-          setError("Tu sesión ha expirado. Recarga la página e inicia sesión de nuevo.");
-          return;
-        }
-
-        // Fallback to status API
         const response = await fetch(`/api/ai-talk-status?runId=${runId}`);
         if (response.status === 401) {
           console.warn("AI Talk status polling: session expired");
