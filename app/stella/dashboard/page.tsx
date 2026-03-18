@@ -266,41 +266,24 @@ export default function StellaDashboard() {
     }
   };
 
-  /* ---- Poll for results ---- */
+  /* ---- Poll for results via ComfyDeploy status API ---- */
   useEffect(() => {
     if (!runId || status === "completed" || status === "failed") return;
 
     pollRef.current = setInterval(async () => {
       try {
-        const webhookRes = await fetch(`/api/webhook?runId=${runId}`);
-        const webhookData = await webhookRes.json();
+        const res = await fetch(`/api/status/${runId}`);
+        if (!res.ok) return; // transient error, retry next tick
 
-        if (webhookData.status === "completed" && webhookData.images?.length) {
-          setResultImages(webhookData.images);
+        const data = await res.json();
+
+        if (data.status === "completed" && data.images?.length) {
+          setResultImages(data.images);
           setStatus("completed");
           setIsGenerating(false);
           clearInterval(pollRef.current!);
-          return;
-        }
-
-        if (webhookData.status === "failed") {
-          setError(webhookData.error || "El proceso falló");
-          setStatus("failed");
-          setIsGenerating(false);
-          clearInterval(pollRef.current!);
-          return;
-        }
-
-        const statusRes = await fetch(`/api/status/${runId}`);
-        const statusData = await statusRes.json();
-
-        if (statusData.status === "completed" && statusData.images?.length) {
-          setResultImages(statusData.images);
-          setStatus("completed");
-          setIsGenerating(false);
-          clearInterval(pollRef.current!);
-        } else if (statusData.status === "failed") {
-          setError(statusData.error || "El proceso falló");
+        } else if (data.status === "failed") {
+          setError(data.error || "El proceso falló");
           setStatus("failed");
           setIsGenerating(false);
           clearInterval(pollRef.current!);
