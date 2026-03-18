@@ -859,7 +859,7 @@ export default function StellaDashboard() {
           <div className="flex items-center justify-between mb-5">
             <div>
               <img
-                src="/Stella_logo.png"
+                src="/Stella_logo_black.png"
                 alt="Stella"
                 className="h-16 w-auto"
               />
