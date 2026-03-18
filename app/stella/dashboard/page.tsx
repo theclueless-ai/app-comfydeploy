@@ -7,6 +7,7 @@ import StellaSidebar from "@/components/stella/sidebar";
 import StellaStepper from "@/components/stella/stepper";
 import { compressImage, formatBytes } from "@/lib/utils";
 import { sanitizeErrorMessage } from "@/lib/error-messages";
+import Image from "next/image";
 import {
   Upload,
   X,
@@ -37,16 +38,6 @@ interface ResultImage {
 /*  Helpers                                                            */
 /* ------------------------------------------------------------------ */
 
-const S3_HOST = "https://comfy-deploy-output.s3.us-east-2.amazonaws.com";
-
-/** Rewrite S3 URLs to local /s3-images/ path (proxied at edge, no size limit) */
-function proxyUrl(url: string): string {
-  if (url.startsWith("/")) return url;
-  if (url.startsWith(S3_HOST)) {
-    return url.replace(S3_HOST, "/s3-images");
-  }
-  return url;
-}
 
 /* ------------------------------------------------------------------ */
 /*  Constants – workflow options                                       */
@@ -141,7 +132,7 @@ export default function StellaDashboard() {
   /* ---- Preview: show the most relevant image ---- */
   const previewSrc =
     resultImages.length > 0
-      ? proxyUrl(resultImages[0].url)
+      ? resultImages[0].url
       : productImage?.preview ?? modelImage?.preview ?? null;
 
   /* ---- Summary helpers ---- */
@@ -327,10 +318,8 @@ export default function StellaDashboard() {
 
   /* ---- Download helper ---- */
   const handleDownload = async (url: string, filename: string) => {
-    // Fetch via /s3-images rewrite (same origin, no CORS, no size limit)
     try {
-      const proxied = proxyUrl(url);
-      const res = await fetch(proxied);
+      const res = await fetch(url);
       if (!res.ok) throw new Error("fetch failed");
       const blob = await res.blob();
       const blobUrl = URL.createObjectURL(blob);
@@ -342,7 +331,7 @@ export default function StellaDashboard() {
       URL.revokeObjectURL(blobUrl);
       document.body.removeChild(a);
     } catch {
-      // Fallback: open S3 URL directly in new tab
+      // Fallback: open URL directly in new tab
       window.open(url, "_blank");
     }
   };
@@ -782,12 +771,14 @@ export default function StellaDashboard() {
             {resultImages.map((img, i) => (
               <div
                 key={i}
-                className="relative rounded-xl overflow-hidden border border-gray-200"
+                className="relative rounded-xl overflow-hidden border border-gray-200 aspect-square"
               >
-                <img
-                  src={proxyUrl(img.url)}
+                <Image
+                  src={img.url}
                   alt={`Resultado ${i + 1}`}
-                  className="w-full object-contain"
+                  fill
+                  unoptimized
+                  className="object-contain"
                 />
                 <button
                   onClick={() => handleDownload(img.url, img.filename)}
@@ -928,10 +919,12 @@ export default function StellaDashboard() {
                       </p>
                     </div>
                   ) : previewSrc ? (
-                    <img
+                    <Image
                       src={previewSrc}
                       alt="Vista previa"
-                      className="absolute inset-0 w-full h-full object-contain p-2"
+                      fill
+                      unoptimized
+                      className="object-contain p-2"
                     />
                   ) : (
                     <div className="flex flex-col items-center gap-3">
