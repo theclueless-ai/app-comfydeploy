@@ -741,9 +741,6 @@ export default function StellaDashboard() {
           <p className="text-sm text-gray-700 font-medium mt-5">
             Procesando tu solicitud...
           </p>
-          <p className="text-xs text-gray-400 mt-1">
-            Esto usualmente toma 10-15 segundos
-          </p>
         </div>
       )}
 
