@@ -416,8 +416,8 @@ class CharacterPortraitGenerator:
             }),
         }}
 
-    RETURN_TYPES  = ("STRING", "STRING")
-    RETURN_NAMES  = ("PORTRAIT_PROMPT", "JSON_METADATA")
+    RETURN_TYPES  = ("STRING", "STRING", "STRING")
+    RETURN_NAMES  = ("PORTRAIT_PROMPT", "JSON_METADATA", "NEGATIVE_PROMPT")
     FUNCTION      = "generate"
     CATEGORY      = "🎭 Character Generator"
 
@@ -571,7 +571,27 @@ class CharacterPortraitGenerator:
         parts  = [p.strip() for p in parts if p and p.strip()]
         prompt = ", ".join(parts)
 
-        return (prompt, json.dumps(meta, indent=2, ensure_ascii=False))
+        # ── Build dynamic NEGATIVE PROMPT ──────────────────────────────
+        neg_parts = ["blurry image, low quality, bad quality, watermark"]
+
+        if character_type == "HUMAN":
+            # Reinforce REMOVE selections in negative prompt
+            if r["ec"] is None and r["es"] is None:
+                neg_parts.append("open eyes, visible eyeballs, visible iris, visible pupils, staring eyes")
+            if r["no"] is None:
+                neg_parts.append("prominent nose, visible nose bridge, large nostrils, defined nose")
+            if r["li"] is None:
+                neg_parts.append("open mouth, visible teeth, visible tongue, parted lips, prominent lips")
+            if r["ea"] == "REMOVE":
+                neg_parts.append("visible ears, exposed ears, protruding ears")
+        else:
+            # NON-HUMAN: reinforce removed hair in negative
+            if r_hcol is None and r_hsty is None:
+                neg_parts.append("hair, flowing hair, visible hair strands")
+
+        negative_prompt = ", ".join(neg_parts)
+
+        return (prompt, json.dumps(meta, indent=2, ensure_ascii=False), negative_prompt)
 
 
 # ══════════════════════════════════════════════════════════════════════════════
