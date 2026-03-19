@@ -416,8 +416,8 @@ class CharacterPortraitGenerator:
             }),
         }}
 
-    RETURN_TYPES  = ("STRING", "STRING")
-    RETURN_NAMES  = ("PORTRAIT_PROMPT", "JSON_METADATA")
+    RETURN_TYPES  = ("STRING", "STRING", "STRING")
+    RETURN_NAMES  = ("PORTRAIT_PROMPT", "JSON_METADATA", "NEGATIVE_PROMPT")
     FUNCTION      = "generate"
     CATEGORY      = "🎭 Character Generator"
 
@@ -492,9 +492,9 @@ class CharacterPortraitGenerator:
                 f"{r['hc']}, {r['hs']}",
             ]
 
-            # Eyes: REMOVE → eyes tightly shut (realistic for HUMAN)
+            # Eyes: REMOVE → skin fused over where eyes would be
             if r["ec"] is None and r["es"] is None:
-                parts.append("eyes tightly shut closed, eyelids firmly closed, no visible eyeballs or iris")
+                parts.append("no eyes, smooth flat skin where eyes would be, eyelids fused shut with skin grown over them, no eye sockets visible")
             else:
                 if r["ec"]:
                     parts.append(r["ec"])
@@ -505,21 +505,21 @@ class CharacterPortraitGenerator:
             parts.append(r["eb"])
             parts.append(r["el"])
 
-            # Nose: REMOVE → extremely minimal nose (realistic for HUMAN)
+            # Nose: REMOVE → smooth skin where nose would be
             if r["no"] is None:
-                parts.append("extremely flat barely visible nose, almost no nose bridge, minimal tiny nostrils")
+                parts.append("no nose, completely smooth flat skin where nose would be, no nostrils, no nose bridge")
             else:
                 parts.append(r["no"])
 
-            # Lips/mouth: REMOVE → mouth tightly closed (realistic for HUMAN)
+            # Lips/mouth: REMOVE → skin fused over where mouth would be
             if r["li"] is None:
-                parts.append("mouth tightly sealed shut, lips pressed together forming a thin line, no teeth visible")
+                parts.append("no mouth, smooth unbroken skin where mouth would be, no lips, no opening")
             else:
                 parts.append(r["li"])
 
-            # Ears: REMOVE → ears fully hidden (realistic for HUMAN)
+            # Ears: REMOVE → smooth skin on sides of head
             if r["ea"] == "REMOVE":
-                parts.append("ears completely hidden behind hair, no visible ears")
+                parts.append("no ears, smooth flat skin on sides of head, no ear openings")
             elif r["ea"] != "normal ears":
                 parts.append(r["ea"])
 
@@ -571,7 +571,27 @@ class CharacterPortraitGenerator:
         parts  = [p.strip() for p in parts if p and p.strip()]
         prompt = ", ".join(parts)
 
-        return (prompt, json.dumps(meta, indent=2, ensure_ascii=False))
+        # ── Build dynamic NEGATIVE PROMPT ──────────────────────────────
+        neg_parts = ["blurry image, low quality, bad quality, watermark"]
+
+        if character_type == "HUMAN":
+            # Reinforce REMOVE selections in negative prompt
+            if r["ec"] is None and r["es"] is None:
+                neg_parts.append("eyes, open eyes, visible eyeballs, visible iris, visible pupils, eyelids, eye sockets, staring eyes, closed eyes")
+            if r["no"] is None:
+                neg_parts.append("nose, visible nose, nostrils, nose bridge, nose tip, prominent nose")
+            if r["li"] is None:
+                neg_parts.append("mouth, lips, open mouth, visible teeth, visible tongue, lip color, smile, parted lips")
+            if r["ea"] == "REMOVE":
+                neg_parts.append("ears, visible ears, ear lobes, ear openings, protruding ears")
+        else:
+            # NON-HUMAN: reinforce removed hair in negative
+            if r_hcol is None and r_hsty is None:
+                neg_parts.append("hair, flowing hair, visible hair strands, hair on head")
+
+        negative_prompt = ", ".join(neg_parts)
+
+        return (prompt, json.dumps(meta, indent=2, ensure_ascii=False), negative_prompt)
 
 
 # ══════════════════════════════════════════════════════════════════════════════

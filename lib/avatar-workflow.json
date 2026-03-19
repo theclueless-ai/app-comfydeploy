@@ -315,7 +315,10 @@
   },
   "104": {
     "inputs": {
-      "text": "blurry image",
+      "text": [
+        "252",
+        2
+      ],
       "clip": [
         "43",
         1
