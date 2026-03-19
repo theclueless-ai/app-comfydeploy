@@ -174,6 +174,7 @@ export const NONHUMAN_DATA = {
     "mottled pale skin with irregular darker patches",
   ] as const,
   eyes: [
+    "REMOVE",
     "completely black eyes, no whites, no iris visible",
     "solid white blind eyes with no pupil",
     "milky clouded cataract eyes",
