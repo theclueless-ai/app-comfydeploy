@@ -492,9 +492,9 @@ class CharacterPortraitGenerator:
                 f"{r['hc']}, {r['hs']}",
             ]
 
-            # Eyes: color and shape are independent — only add if not removed
+            # Eyes: REMOVE → eyes tightly shut (realistic for HUMAN)
             if r["ec"] is None and r["es"] is None:
-                parts.append("no eyes, smooth skin where eyes would be")
+                parts.append("eyes tightly shut closed, eyelids firmly closed, no visible eyeballs or iris")
             else:
                 if r["ec"]:
                     parts.append(r["ec"])
@@ -505,21 +505,21 @@ class CharacterPortraitGenerator:
             parts.append(r["eb"])
             parts.append(r["el"])
 
-            # Nose
+            # Nose: REMOVE → extremely minimal nose (realistic for HUMAN)
             if r["no"] is None:
-                parts.append("no nose, smooth flat skin where nose would be")
+                parts.append("extremely flat barely visible nose, almost no nose bridge, minimal tiny nostrils")
             else:
                 parts.append(r["no"])
 
-            # Lips/mouth
+            # Lips/mouth: REMOVE → mouth tightly closed (realistic for HUMAN)
             if r["li"] is None:
-                parts.append("no mouth, smooth skin where mouth would be")
+                parts.append("mouth tightly sealed shut, lips pressed together forming a thin line, no teeth visible")
             else:
                 parts.append(r["li"])
 
-            # Ears
+            # Ears: REMOVE → ears fully hidden (realistic for HUMAN)
             if r["ea"] == "REMOVE":
-                parts.append("no ears, smooth skin on sides of head")
+                parts.append("ears completely hidden behind hair, no visible ears")
             elif r["ea"] != "normal ears":
                 parts.append(r["ea"])
 
