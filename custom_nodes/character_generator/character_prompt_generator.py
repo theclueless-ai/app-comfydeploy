@@ -190,6 +190,7 @@ NONHUMAN_DATA = {
 
     # ── OJOS ──────────────────────────────────────────────────────────────────
     "eyes": [
+        "REMOVE",
         "completely black eyes, no whites, no iris visible",
         "solid white blind eyes with no pupil",
         "milky clouded cataract eyes",
@@ -489,13 +490,30 @@ class CharacterPortraitGenerator:
                 f"portrait of a {r['age']} {r['eth']} {r['g']}, {r['bt']}",
                 r["fa"],
                 r["sk"], r["fs"],
-                f"{r['hc']}, {r['hs']}",
             ]
 
-            # Eyes: REMOVE → skin fused over where eyes would be
-            if r["ec"] is None and r["es"] is None:
-                parts.append("no eyes, smooth flat skin where eyes would be, eyelids fused shut with skin grown over them, no eye sockets visible")
-            else:
+            # ── REMOVE features go FIRST for maximum weight ──────────────
+            # Collect removal descriptions early so they appear near the
+            # beginning of the prompt where diffusion models pay more attention.
+            eyes_removed  = r["ec"] is None and r["es"] is None
+            nose_removed  = r["no"] is None
+            lips_removed  = r["li"] is None
+            ears_removed  = r["ea"] == "REMOVE"
+
+            if eyes_removed:
+                parts.append("eyeless face, smooth continuous skin covering the eye area, flat featureless surface where eyes would be, mannequin-like blank eye area")
+            if nose_removed:
+                parts.append("noseless face, completely flat smooth skin between eyes and mouth, no nasal features at all")
+            if lips_removed:
+                parts.append("mouthless face, smooth unbroken skin below the nose, no mouth opening, no lip line")
+            if ears_removed:
+                parts.append("earless head, smooth rounded sides of skull with no ear features")
+
+            # ── Hair ─────────────────────────────────────────────────────
+            parts.append(f"{r['hc']}, {r['hs']}")
+
+            # ── Eyes (only if not removed) ───────────────────────────────
+            if not eyes_removed:
                 if r["ec"]:
                     parts.append(r["ec"])
                 if r["es"]:
@@ -505,54 +523,66 @@ class CharacterPortraitGenerator:
             parts.append(r["eb"])
             parts.append(r["el"])
 
-            # Nose: REMOVE → smooth skin where nose would be
-            if r["no"] is None:
-                parts.append("no nose, completely smooth flat skin where nose would be, no nostrils, no nose bridge")
-            else:
+            # ── Nose (only if not removed) ───────────────────────────────
+            if not nose_removed:
                 parts.append(r["no"])
 
-            # Lips/mouth: REMOVE → skin fused over where mouth would be
-            if r["li"] is None:
-                parts.append("no mouth, smooth unbroken skin where mouth would be, no lips, no opening")
-            else:
+            # ── Lips/mouth (only if not removed) ─────────────────────────
+            if not lips_removed:
                 parts.append(r["li"])
 
-            # Ears: REMOVE → smooth skin on sides of head
-            if r["ea"] == "REMOVE":
-                parts.append("no ears, smooth flat skin on sides of head, no ear openings")
-            elif r["ea"] != "normal ears":
-                parts.append(r["ea"])
+            # ── Ears (only if not removed) ───────────────────────────────
+            if not ears_removed:
+                if r["ea"] != "normal ears":
+                    parts.append(r["ea"])
 
             parts.append(r["fr"])
-            parts.append(r["ex"])
+
+            # If eyes are removed, force a compatible expression
+            if eyes_removed:
+                parts.append("neutral calm expression")
+            else:
+                parts.append(r["ex"])
 
             # Distinctive features (multi-select, comma-separated string)
             if r["df"] and r["df"].strip() and r["df"] != "no distinctive features":
                 parts.append(r["df"])
 
         else:
-            # Non-human — now with optional hair
+            # Non-human — now with optional hair and removable eyes
             r_hcol = resolve("hair_color", B_hair_color, NONHUMAN_DATA)
             r_hsty = resolve("hair_style", B_hair_style, NONHUMAN_DATA)
             r_stex = pick(NONHUMAN_DATA["skin_texture"],      B_skin_texture)
             r_scol = pick(NONHUMAN_DATA["skin_color"],        B_skin_color)
-            r_eyes = pick(NONHUMAN_DATA["eyes"],              B_eyes)
+            r_eyes = resolve("eyes",                           B_eyes, NONHUMAN_DATA)
             r_face = pick(NONHUMAN_DATA["face_structure"],    B_face_structure)
             r_org  = pick(NONHUMAN_DATA["organic_additions"], B_organic_additions)
+
+            nh_eyes_removed = r_eyes is None
 
             meta.update({
                 "hair_color": r_hcol or "REMOVE", "hair_style": r_hsty or "REMOVE",
                 "skin_texture": r_stex, "skin_color": r_scol,
-                "eyes": r_eyes, "face_structure": r_face,
+                "eyes": r_eyes or "REMOVE", "face_structure": r_face,
                 "organic_additions": r_org,
             })
 
             parts = [
                 r_render,
                 "portrait of a surreal non-human being",
-                r_scol, r_stex, r_eyes, r_face,
             ]
-            # Add hair if not removed
+
+            # REMOVE descriptions go first for maximum weight
+            if nh_eyes_removed:
+                parts.append("eyeless creature, smooth flat skin where eyes would be, no eye sockets, no eye openings, featureless eye area")
+
+            parts += [r_scol, r_stex, r_face]
+
+            # Eyes (only if not removed)
+            if not nh_eyes_removed:
+                parts.append(r_eyes)
+
+            # Hair
             if r_hcol:
                 parts.append(r_hcol)
             if r_hsty:
@@ -567,7 +597,16 @@ class CharacterPortraitGenerator:
             parts.append(extra_details.strip())
             meta["extra_details"] = extra_details.strip()
 
-        parts += [r_light, r_bg, "face portrait only", "no clothing visible", "detailed face", "sharp focus", "high quality", "masterpiece"]
+        # Use "detailed skin texture" instead of "detailed face" when features
+        # are removed — "detailed face" encourages the model to add all features.
+        has_removals = False
+        if character_type == "HUMAN":
+            has_removals = eyes_removed or nose_removed or lips_removed or ears_removed
+        else:
+            has_removals = (r_hcol is None and r_hsty is None) or nh_eyes_removed
+
+        detail_tag = "detailed skin texture" if has_removals else "detailed face"
+        parts += [r_light, r_bg, "face portrait only", "no clothing visible", detail_tag, "sharp focus", "high quality", "masterpiece"]
         parts  = [p.strip() for p in parts if p and p.strip()]
         prompt = ", ".join(parts)
 
@@ -575,19 +614,22 @@ class CharacterPortraitGenerator:
         neg_parts = ["blurry image, low quality, bad quality, watermark"]
 
         if character_type == "HUMAN":
-            # Reinforce REMOVE selections in negative prompt
+            # Aggressively negate removed features
             if r["ec"] is None and r["es"] is None:
-                neg_parts.append("eyes, open eyes, visible eyeballs, visible iris, visible pupils, eyelids, eye sockets, staring eyes, closed eyes")
+                neg_parts.append("(eyes:1.5), eyeballs, iris, pupils, eye sockets, eye reflections, eye highlights, gaze, staring")
             if r["no"] is None:
-                neg_parts.append("nose, visible nose, nostrils, nose bridge, nose tip, prominent nose")
+                neg_parts.append("(nose:1.5), nostrils, nose bridge, nose tip, nose shadow, nasal")
             if r["li"] is None:
-                neg_parts.append("mouth, lips, open mouth, visible teeth, visible tongue, lip color, smile, parted lips")
+                neg_parts.append("(mouth:1.5), (lips:1.5), teeth, tongue, smile, grin, lip color, lip gloss, open mouth")
             if r["ea"] == "REMOVE":
-                neg_parts.append("ears, visible ears, ear lobes, ear openings, protruding ears")
+                neg_parts.append("(ears:1.5), ear lobes, ear canal, ear piercings")
         else:
-            # NON-HUMAN: reinforce removed hair in negative
+            # NON-HUMAN: negate human-like features + removed features
+            neg_parts.append("realistic human face, normal human skin, natural human eyes, photograph of a real person")
+            if nh_eyes_removed:
+                neg_parts.append("(eyes:1.5), eyeballs, iris, pupils, eye sockets, eye reflections, eye highlights, gaze, staring")
             if r_hcol is None and r_hsty is None:
-                neg_parts.append("hair, flowing hair, visible hair strands, hair on head")
+                neg_parts.append("(hair:1.5), flowing hair, hair strands, hair on head")
 
         negative_prompt = ", ".join(neg_parts)
 
