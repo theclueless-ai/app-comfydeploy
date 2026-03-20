@@ -1,5 +1,5 @@
 # =============================================================================
-# RunPod Serverless Worker - AI Talk (ComfyUI + InfiniteTalk/WanVideo)
+# RunPod Serverless Worker - AI Talk (ComfyUI + LTX-2.3)
 # GPU: NVIDIA A100 80GB
 # Models: Stored on RunPod Network Volume (/runpod-volume)
 # =============================================================================
@@ -13,7 +13,7 @@ ENV COMFYUI_DIR=/comfyui
 ENV CUDA_MODULE_LOADING=LAZY
 ENV PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:512,expandable_segments:True,garbage_collection_threshold:0.8
 
-# ---- System dependencies (including dos2unix to fix CRLF) ----
+# ---- System dependencies ----
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3.10 python3.10-venv python3-pip python3.10-dev \
     git git-lfs wget curl \
@@ -27,11 +27,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # ---- Python base dependencies ----
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel
 
-# ---- Install PyTorch nightly (CUDA 12.6) ----
-# WanVideoWrapper requires torch >= 2.7.0 nightly for allow_fp16_accumulation
-RUN pip install --no-cache-dir --pre \
+# ---- Install PyTorch (CUDA 12.6) ----
+RUN pip install --no-cache-dir \
     torch torchvision torchaudio \
-    --index-url https://download.pytorch.org/whl/nightly/cu126
+    --index-url https://download.pytorch.org/whl/cu126
 
 # ---- Clone ComfyUI ----
 RUN git clone https://github.com/comfyanonymous/ComfyUI.git ${COMFYUI_DIR} \
@@ -41,24 +40,28 @@ RUN git clone https://github.com/comfyanonymous/ComfyUI.git ${COMFYUI_DIR} \
 WORKDIR ${COMFYUI_DIR}
 
 # =============================================================================
-# Custom Nodes (all cloned in one layer for efficiency)
+# Custom Nodes
+#   - pythongosssss/ComfyUI-Custom-Scripts  (PrimitiveStringMultiline, MathExpression)
+#   - kijai/ComfyUI-KJNodes                 (ImageResizeKJv2, VAELoaderKJ, SimpleCalculatorKJ, etc.)
+#   - yolain/ComfyUI-Easy-Use               (easy showAnything, ResizeImagesByShorterEdge)
+#   - Kosinkadink/ComfyUI-VideoHelperSuite  (VHS_VideoCombine, LoadAudio, TrimAudioDuration)
+#   - melMass/comfy_mtb                     (Audio Duration, SolidMask)
+#   - kijai/ComfyUI-MelBandRoFormer         (MelBandRoFormerModelLoader/Sampler)
+#   - theclueless-ai/spech-to-speach-elevenlabs-node  (ElevenLabsVoiceChanger)
 # =============================================================================
 RUN cd ${COMFYUI_DIR}/custom_nodes \
-    && git clone --depth 1 https://github.com/kijai/ComfyUI-WanVideoWrapper.git \
-    && git clone --depth 1 https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite.git \
-    && git clone --depth 1 https://github.com/sysL-padawan/comfyui-elevenlabs-integration.git \
-    && git clone --depth 1 https://github.com/theclueless-ai/spech-to-speach-elevenlabs-node.git \
-    && git clone --depth 1 https://github.com/chflame163/ComfyUI_LayerStyle.git \
     && git clone --depth 1 https://github.com/pythongosssss/ComfyUI-Custom-Scripts.git \
-    && git clone --depth 1 https://github.com/rgthree/rgthree-comfy.git \
-    && git clone --depth 1 https://github.com/numz/ComfyUI-SeedVR2_VideoUpscaler.git \
-    && git clone --depth 1 https://github.com/BennyKok/comfyui-deploy.git \
-    && git clone --depth 1 https://github.com/melMass/comfy_mtb.git
+    && git clone --depth 1 https://github.com/kijai/ComfyUI-KJNodes.git \
+    && git clone --depth 1 https://github.com/yolain/ComfyUI-Easy-Use.git \
+    && git clone --depth 1 https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite.git \
+    && git clone --depth 1 https://github.com/melMass/comfy_mtb.git \
+    && git clone --depth 1 https://github.com/kijai/ComfyUI-MelBandRoFormer.git \
+    && git clone --depth 1 https://github.com/theclueless-ai/spech-to-speach-elevenlabs-node.git
 
 # Install requirements for each custom node
-RUN for dir in ComfyUI-WanVideoWrapper ComfyUI-VideoHelperSuite comfyui-elevenlabs-integration \
-    spech-to-speach-elevenlabs-node ComfyUI_LayerStyle rgthree-comfy \
-    ComfyUI-SeedVR2_VideoUpscaler comfyui-deploy comfy_mtb; do \
+RUN for dir in ComfyUI-Custom-Scripts ComfyUI-KJNodes ComfyUI-Easy-Use \
+    ComfyUI-VideoHelperSuite comfy_mtb ComfyUI-MelBandRoFormer \
+    spech-to-speach-elevenlabs-node; do \
     if [ -f "${COMFYUI_DIR}/custom_nodes/$dir/requirements.txt" ]; then \
         pip install --no-cache-dir -r "${COMFYUI_DIR}/custom_nodes/$dir/requirements.txt" 2>/dev/null || true; \
     fi; \
@@ -72,7 +75,6 @@ RUN pip install --no-cache-dir \
     boto3 \
     requests \
     websocket-client \
-    gguf \
     pyloudnorm
 
 # ---- Copy handler and workflow files ----
@@ -84,18 +86,17 @@ COPY start.sh /start.sh
 RUN dos2unix /start.sh ${COMFYUI_DIR}/rp_handler.py \
     && chmod +x /start.sh
 
-# Create model directories
-RUN mkdir -p ${COMFYUI_DIR}/models/diffusion_models \
-    ${COMFYUI_DIR}/models/text_encoders \
+# Create model directories for LTX-2.3
+RUN mkdir -p ${COMFYUI_DIR}/models/checkpoints \
     ${COMFYUI_DIR}/models/vae \
-    ${COMFYUI_DIR}/models/clip_vision \
-    ${COMFYUI_DIR}/models/loras/wan2.2 \
-    ${COMFYUI_DIR}/models/wav2vec2 \
-    ${COMFYUI_DIR}/models/checkpoints \
+    ${COMFYUI_DIR}/models/loras \
+    ${COMFYUI_DIR}/models/upscale_models \
+    ${COMFYUI_DIR}/models/clip \
+    ${COMFYUI_DIR}/models/MelBandRoFormer_comfy \
     /runpod-volume/models
 
 # ---- Environment variables (set at RunPod endpoint level) ----
-# ELEVENLABS_API_KEY   - ElevenLabs API key for TTS/STS nodes
+# ELEVENLABS_API_KEY   - ElevenLabs API key for Voice Changer node
 # AWS_ACCESS_KEY_ID    - S3 credentials
 # AWS_SECRET_ACCESS_KEY
 # AWS_S3_BUCKET        - S3 bucket name

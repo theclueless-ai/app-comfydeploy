@@ -3,6 +3,7 @@ set -e
 
 echo "=========================================="
 echo "  AI Talk RunPod Worker - Starting..."
+echo "  Workflow: LTX-2.3"
 echo "=========================================="
 
 COMFYUI_DIR="/comfyui"
@@ -10,127 +11,70 @@ VOLUME_DIR="/runpod-volume"
 MODELS_DIR="${VOLUME_DIR}/models"
 
 # =============================================================================
-# 1. Verify and symlink models from Network Volume to ComfyUI
+# 1. Link models from Network Volume to ComfyUI
+#
+# Expected volume structure (under /runpod-volume/models/):
+#
+#   checkpoints/
+#     Ltx2-3/ltx-2.3-22b-dev.safetensors
+#
+#   vae/
+#     ltx2-3/kj/LTX23_video_vae_bf16.safetensors
+#     ltx2-3/kj/LTX23_audio_vae_bf16.safetensors
+#     ltx2-3/taeltx2_3.safetensors
+#
+#   loras/
+#     Ltx-2.3/ltx-2-19b-lora-camera-control-static.safetensors
+#     Ltx-2.3/ltx-2-19b-ic-lora-detailer.safetensors
+#     Ltx-2.3/ltx-2.3-22b-distilled-lora-384.safetensors
+#
+#   upscale_models/
+#     ltx-2.3-spatial-upscaler-x2-1.0.safetensors
+#
+#   clip/
+#     ltx-2.3/ltx-2/split_files/text_encoders/gemma_3_12B_it_fp8_scaled.safetensors
+#     ltx-2.3/ltx-2.3-22b-dev_embeddings_connectors.safetensors
+#
+#   MelBandRoFormer_comfy/
+#     MelBandRoformer_fp32.safetensors
+#
 # =============================================================================
 echo "[1/4] Setting up model symlinks from Network Volume..."
+
+# Helper: link every file/subdir in a volume model category into ComfyUI's dir
+link_model_category() {
+    local category="$1"
+    local vol_cat="${MODELS_DIR}/${category}"
+    local comfy_cat="${COMFYUI_DIR}/models/${category}"
+
+    mkdir -p "${comfy_cat}"
+
+    if [ ! -d "${vol_cat}" ]; then
+        echo "  WARNING: ${vol_cat} not found on volume — skipping ${category}"
+        return
+    fi
+
+    # Link each entry (file or subdir) from the volume category into ComfyUI
+    for item in "${vol_cat}"/*; do
+        [ -e "${item}" ] || continue
+        name=$(basename "${item}")
+        ln -sfn "${item}" "${comfy_cat}/${name}"
+        echo "  Linked: ${category}/${name}"
+    done
+}
 
 if [ -d "${VOLUME_DIR}" ]; then
     echo "  Network Volume found at ${VOLUME_DIR}"
 
-    # Create ComfyUI model directories if they don't exist
-    mkdir -p ${COMFYUI_DIR}/models/diffusion_models
-    mkdir -p ${COMFYUI_DIR}/models/text_encoders
-    mkdir -p ${COMFYUI_DIR}/models/vae
-    mkdir -p ${COMFYUI_DIR}/models/clip_vision
-    mkdir -p ${COMFYUI_DIR}/models/loras/wan2.2
-    mkdir -p ${COMFYUI_DIR}/models/wav2vec2
-    mkdir -p ${COMFYUI_DIR}/models/checkpoints
-
-    MISSING=0
-
-    # --- Diffusion models ---
-    if [ -f "${MODELS_DIR}/diffusion_models/wan2.1-i2v-14b-720p-Q8_0.gguf" ]; then
-        ln -sf "${MODELS_DIR}/diffusion_models/wan2.1-i2v-14b-720p-Q8_0.gguf" \
-            "${COMFYUI_DIR}/models/diffusion_models/wan2.1-i2v-14b-720p-Q8_0.gguf"
-        echo "  OK  Linked: wan2.1-i2v-14b-720p-Q8_0.gguf"
-    else
-        echo "  MISSING: diffusion_models/wan2.1-i2v-14b-720p-Q8_0.gguf"
-        MISSING=$((MISSING + 1))
-    fi
-
-    # --- InfiniteTalk model ---
-    # MultiTalkModelLoader scans: models/diffusion_models/ + models/unet_gguf/
-    if [ -f "${MODELS_DIR}/infinitetalk/Wan2_1-InfiniTetalk-Single_fp16.safetensors" ]; then
-        ln -sf "${MODELS_DIR}/infinitetalk/Wan2_1-InfiniTetalk-Single_fp16.safetensors" \
-            "${COMFYUI_DIR}/models/diffusion_models/Wan2_1-InfiniTetalk-Single_fp16.safetensors"
-        echo "  OK  Linked: Wan2_1-InfiniTetalk-Single_fp16.safetensors -> models/diffusion_models/"
-    else
-        echo "  MISSING: infinitetalk/Wan2_1-InfiniTetalk-Single_fp16.safetensors"
-        echo "         NOTE: If you have 'infinitetalk_single.safetensors' that is the WRONG file."
-        echo "         Re-run download_models.sh to get the correct fp16 version."
-        MISSING=$((MISSING + 1))
-    fi
-
-    # --- Text encoder ---
-    if [ -f "${MODELS_DIR}/text_encoders/umt5-xxl-enc-bf16.safetensors" ]; then
-        ln -sf "${MODELS_DIR}/text_encoders/umt5-xxl-enc-bf16.safetensors" \
-            "${COMFYUI_DIR}/models/text_encoders/umt5-xxl-enc-bf16.safetensors"
-        echo "  OK  Linked: umt5-xxl-enc-bf16.safetensors"
-    else
-        echo "  MISSING: text_encoders/umt5-xxl-enc-bf16.safetensors"
-        MISSING=$((MISSING + 1))
-    fi
-
-    # --- VAE ---
-    if [ -f "${MODELS_DIR}/vae/Wan2_1_VAE_bf16.safetensors" ]; then
-        ln -sf "${MODELS_DIR}/vae/Wan2_1_VAE_bf16.safetensors" \
-            "${COMFYUI_DIR}/models/vae/Wan2_1_VAE_bf16.safetensors"
-        echo "  OK  Linked: Wan2_1_VAE_bf16.safetensors"
-    else
-        echo "  MISSING: vae/Wan2_1_VAE_bf16.safetensors"
-        MISSING=$((MISSING + 1))
-    fi
-
-    # --- CLIP Vision ---
-    if [ -f "${MODELS_DIR}/clip_vision/clip_vision_h.safetensors" ]; then
-        ln -sf "${MODELS_DIR}/clip_vision/clip_vision_h.safetensors" \
-            "${COMFYUI_DIR}/models/clip_vision/clip_vision_h.safetensors"
-        echo "  OK  Linked: clip_vision_h.safetensors"
-    else
-        echo "  MISSING: clip_vision/clip_vision_h.safetensors"
-        MISSING=$((MISSING + 1))
-    fi
-
-    # --- Wav2Vec2 ---
-    # Wav2VecModelLoader scans: models/wav2vec2/ (note: wav2vec2 with "2" at the end)
-    if [ -f "${MODELS_DIR}/wav2vec/wav2vec2-chinese-base_fp16.safetensors" ]; then
-        ln -sf "${MODELS_DIR}/wav2vec/wav2vec2-chinese-base_fp16.safetensors" \
-            "${COMFYUI_DIR}/models/wav2vec2/wav2vec2-chinese-base_fp16.safetensors"
-        echo "  OK  Linked: wav2vec2-chinese-base_fp16.safetensors -> models/wav2vec2/"
-    else
-        echo "  MISSING: wav2vec/wav2vec2-chinese-base_fp16.safetensors"
-        MISSING=$((MISSING + 1))
-    fi
-
-    # --- LoRA ---
-    if [ -f "${MODELS_DIR}/loras/wan2.2/lightx2v_I2V_14B_480p_cfg_step_distill_rank128_bf16.safetensors" ]; then
-        ln -sf "${MODELS_DIR}/loras/wan2.2/lightx2v_I2V_14B_480p_cfg_step_distill_rank128_bf16.safetensors" \
-            "${COMFYUI_DIR}/models/loras/wan2.2/lightx2v_I2V_14B_480p_cfg_step_distill_rank128_bf16.safetensors"
-        echo "  OK  Linked: lightx2v LoRA"
-    else
-        echo "  MISSING: loras/wan2.2/lightx2v_I2V_14B_480p_cfg_step_distill_rank128_bf16.safetensors"
-        echo "         NOTE: Check if file is inside a 'Lightx2v/' subfolder and move it up."
-        MISSING=$((MISSING + 1))
-    fi
-
-    # --- SeedVR2 DiT Model ---
-    if [ -f "${MODELS_DIR}/checkpoints/seedvr2_ema_7b_fp8_e4m3fn_mixed_block35_fp16.safetensors" ]; then
-        ln -sf "${MODELS_DIR}/checkpoints/seedvr2_ema_7b_fp8_e4m3fn_mixed_block35_fp16.safetensors" \
-            "${COMFYUI_DIR}/models/checkpoints/seedvr2_ema_7b_fp8_e4m3fn_mixed_block35_fp16.safetensors"
-        echo "  OK  Linked: seedvr2_ema_7b_fp8_e4m3fn_mixed_block35_fp16.safetensors"
-    else
-        echo "  MISSING: checkpoints/seedvr2_ema_7b_fp8_e4m3fn_mixed_block35_fp16.safetensors"
-        MISSING=$((MISSING + 1))
-    fi
-
-    # --- SeedVR2 VAE ---
-    if [ -f "${MODELS_DIR}/checkpoints/ema_vae_fp16.safetensors" ]; then
-        ln -sf "${MODELS_DIR}/checkpoints/ema_vae_fp16.safetensors" \
-            "${COMFYUI_DIR}/models/checkpoints/ema_vae_fp16.safetensors"
-        echo "  OK  Linked: ema_vae_fp16.safetensors (SeedVR2 VAE)"
-    else
-        echo "  MISSING: checkpoints/ema_vae_fp16.safetensors"
-        MISSING=$((MISSING + 1))
-    fi
+    link_model_category checkpoints
+    link_model_category vae
+    link_model_category loras
+    link_model_category upscale_models
+    link_model_category clip
+    link_model_category MelBandRoFormer_comfy
 
     echo ""
-    if [ $MISSING -gt 0 ]; then
-        echo "  WARNING: ${MISSING} model(s) missing! The workflow may fail."
-        echo "  Run download_models.sh on a Pod with this Network Volume to fix."
-        echo ""
-    else
-        echo "  All 9 models linked successfully!"
-    fi
+    echo "  Model linking complete."
 else
     echo "  WARNING: Network Volume not found at ${VOLUME_DIR}"
     echo "  Models must be available locally in ${COMFYUI_DIR}/models/"
@@ -157,7 +101,7 @@ echo "  ComfyUI PID: ${COMFYUI_PID}"
 # =============================================================================
 echo "[3/4] Waiting for ComfyUI to be ready..."
 
-MAX_RETRIES=120  # 2 minutes max (models take time to initialize)
+MAX_RETRIES=120  # 2 minutes max
 RETRY_COUNT=0
 
 while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
