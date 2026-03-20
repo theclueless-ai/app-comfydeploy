@@ -46,7 +46,8 @@ WORKDIR ${COMFYUI_DIR}
 #   - yolain/ComfyUI-Easy-Use               (easy showAnything, ResizeImagesByShorterEdge)
 #   - Kosinkadink/ComfyUI-VideoHelperSuite  (VHS_VideoCombine, LoadAudio, TrimAudioDuration)
 #   - melMass/comfy_mtb                     (Audio Duration, SolidMask)
-#   - kijai/ComfyUI-MelBandRoFormer         (MelBandRoFormerModelLoader/Sampler)
+#   - kijai/ComfyUI-MelBandRoFormer         (MelBandRoFormerModelLoader → models/diffusion_models/)
+#   - ClownsharkBatwing/RES4LYF             (res_2s / res_3s custom samplers)
 #   - theclueless-ai/spech-to-speach-elevenlabs-node  (ElevenLabsVoiceChanger)
 # =============================================================================
 RUN cd ${COMFYUI_DIR}/custom_nodes \
@@ -56,11 +57,12 @@ RUN cd ${COMFYUI_DIR}/custom_nodes \
     && git clone --depth 1 https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite.git \
     && git clone --depth 1 https://github.com/melMass/comfy_mtb.git \
     && git clone --depth 1 https://github.com/kijai/ComfyUI-MelBandRoFormer.git \
+    && git clone --depth 1 https://github.com/ClownsharkBatwing/RES4LYF.git \
     && git clone --depth 1 https://github.com/theclueless-ai/spech-to-speach-elevenlabs-node.git
 
 # Install requirements for each custom node
 RUN for dir in ComfyUI-Custom-Scripts ComfyUI-KJNodes ComfyUI-Easy-Use \
-    ComfyUI-VideoHelperSuite comfy_mtb ComfyUI-MelBandRoFormer \
+    ComfyUI-VideoHelperSuite comfy_mtb ComfyUI-MelBandRoFormer RES4LYF \
     spech-to-speach-elevenlabs-node; do \
     if [ -f "${COMFYUI_DIR}/custom_nodes/$dir/requirements.txt" ]; then \
         pip install --no-cache-dir -r "${COMFYUI_DIR}/custom_nodes/$dir/requirements.txt" 2>/dev/null || true; \
@@ -87,12 +89,14 @@ RUN dos2unix /start.sh ${COMFYUI_DIR}/rp_handler.py \
     && chmod +x /start.sh
 
 # Create model directories for LTX-2.3
+# NOTE: latent_upscale_models (not upscale_models) — used by LatentUpscaleModelLoader
+#       diffusion_models — used by MelBandRoFormerModelLoader
 RUN mkdir -p ${COMFYUI_DIR}/models/checkpoints \
     ${COMFYUI_DIR}/models/vae \
     ${COMFYUI_DIR}/models/loras \
-    ${COMFYUI_DIR}/models/upscale_models \
+    ${COMFYUI_DIR}/models/latent_upscale_models \
+    ${COMFYUI_DIR}/models/diffusion_models \
     ${COMFYUI_DIR}/models/clip \
-    ${COMFYUI_DIR}/models/MelBandRoFormer_comfy \
     /runpod-volume/models
 
 # ---- Environment variables (set at RunPod endpoint level) ----

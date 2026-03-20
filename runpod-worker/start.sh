@@ -21,22 +21,22 @@ MODELS_DIR="${VOLUME_DIR}/models"
 #   vae/
 #     ltx2-3/kj/LTX23_video_vae_bf16.safetensors
 #     ltx2-3/kj/LTX23_audio_vae_bf16.safetensors
-#     ltx2-3/taeltx2_3.safetensors
+#     ltx2-3/taeltx2_3.safetensors              ← root of vae/, no subdir
 #
 #   loras/
 #     Ltx-2.3/ltx-2-19b-lora-camera-control-static.safetensors
 #     Ltx-2.3/ltx-2-19b-ic-lora-detailer.safetensors
 #     Ltx-2.3/ltx-2.3-22b-distilled-lora-384.safetensors
 #
-#   upscale_models/
+#   latent_upscale_models/                      ← NOT upscale_models/
 #     ltx-2.3-spatial-upscaler-x2-1.0.safetensors
 #
 #   clip/
 #     ltx-2.3/ltx-2/split_files/text_encoders/gemma_3_12B_it_fp8_scaled.safetensors
 #     ltx-2.3/ltx-2.3-22b-dev_embeddings_connectors.safetensors
 #
-#   MelBandRoFormer_comfy/
-#     MelBandRoformer_fp32.safetensors
+#   diffusion_models/                           ← MelBandRoFormer goes HERE
+#     MelBandRoFormer_comfy/MelBandRoformer_fp32.safetensors
 #
 # =============================================================================
 echo "[1/4] Setting up model symlinks from Network Volume..."
@@ -69,9 +69,9 @@ if [ -d "${VOLUME_DIR}" ]; then
     link_model_category checkpoints
     link_model_category vae
     link_model_category loras
-    link_model_category upscale_models
+    link_model_category latent_upscale_models   # LatentUpscaleModelLoader (spatial upscaler)
     link_model_category clip
-    link_model_category MelBandRoFormer_comfy
+    link_model_category diffusion_models        # MelBandRoFormerModelLoader
 
     echo ""
     echo "  Model linking complete."
