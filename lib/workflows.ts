@@ -195,6 +195,7 @@ export const workflows: WorkflowConfig[] = [
         label: "Select Voice",
         description: "ElevenLabs voice to use when Voice Changer is enabled",
         required: false,
+        showWhen: { field: "use_elevenlabs_vc", value: "Yes" },
       },
       {
         id: "positive_prompt",
