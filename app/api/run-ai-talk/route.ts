@@ -27,30 +27,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get mode from frontend (explicit choice)
-    const modeParam = formData.get("mode");
-    const mode = modeParam === "sts" ? "sts" : "tts";
-
-    // Get the audio file (required for STS mode)
+    // Get the audio file (always required in new workflow)
     const audioFile = formData.get("input_audio");
-
-    // Get the text input (required for TTS mode)
-    const inputText = formData.get("input_text");
-
-    // Validate mode-specific inputs
-    const hasAudio = audioFile && audioFile instanceof File && audioFile.size > 0;
-    const hasText = inputText && typeof inputText === "string" && inputText.trim() !== "";
-
-    if (mode === "sts" && !hasAudio) {
+    if (!audioFile || !(audioFile instanceof File) || audioFile.size === 0) {
       return NextResponse.json(
-        { error: "Audio file is required for Voice Changer mode" },
-        { status: 400 }
-      );
-    }
-
-    if (mode === "tts" && !hasText) {
-      return NextResponse.json(
-        { error: "Text is required for Text-to-Speech mode" },
+        { error: "Audio file is required" },
         { status: 400 }
       );
     }
@@ -68,52 +49,32 @@ export async function POST(request: NextRequest) {
     const voiceId = formData.get("voice_id");
     const selectedVoiceId = voiceId && typeof voiceId === "string" && voiceId.trim() !== ""
       ? voiceId.trim()
-      : "gdMFOufuI36UmxNKJhtv"; // Default voice ID
+      : "JBFqnCBsd6RMkjVDRZzb"; // Default voice ID
 
-    // Extract voice settings (use defaults if not provided)
-    const parseFloat_ = (val: FormDataEntryValue | null, fallback: number) => {
-      if (!val || typeof val !== "string") return fallback;
-      const n = parseFloat(val);
-      return isNaN(n) ? fallback : n;
-    };
-    const voiceSettings = {
-      stability: parseFloat_(formData.get("voice_settings_stability"), 0.3),
-      similarity_boost: parseFloat_(formData.get("voice_settings_similarity_boost"), 0.85),
-      style: parseFloat_(formData.get("voice_settings_style"), 0.3),
-      speed: parseFloat_(formData.get("voice_settings_speed"), 1),
-      use_speaker_boost: formData.get("voice_settings_use_speaker_boost") !== "Off",
-    };
+    // Whether to run audio through ElevenLabs Voice Changer
+    // "No" = bypass (pre-generated ElevenLabs audio); anything else = use Voice Changer
+    const useElevenLabsVC = formData.get("use_elevenlabs_vc") !== "No";
 
     console.log("=== AI Talk RunPod Request ===");
     console.log("Image:", imageFile.name, imageFile.type, imageFile.size);
-    console.log("Mode:", mode);
-    if (hasAudio) console.log("Audio:", (audioFile as File).name, (audioFile as File).type, (audioFile as File).size);
-    if (hasText) console.log("Text:", (inputText as string).substring(0, 100) + "...");
+    console.log("Audio:", audioFile.name, audioFile.type, audioFile.size);
     console.log("Positive Prompt:", positivePrompt.substring(0, 100) + "...");
     console.log("Voice ID:", selectedVoiceId);
-    console.log("Voice Settings:", voiceSettings);
+    console.log("Use ElevenLabs VC:", useElevenLabsVC);
 
-    // Convert image to base64 data URI
+    // Convert files to base64
     const imageBase64 = await runpodFileToBase64(imageFile);
-
-    // Convert audio to base64 if provided
-    let audioBase64 = "";
-    if (hasAudio) {
-      audioBase64 = await runpodFileToBase64(audioFile as File);
-    }
+    const audioBase64 = await runpodFileToBase64(audioFile);
 
     console.log("Running AI Talk workflow via RunPod:");
     console.log("- Endpoint ID:", endpointId);
-    console.log("- Mode:", mode);
 
     const result = await runAiTalkWorkflowAsync({
       input_image: imageBase64,
-      input_audio: audioBase64 || undefined,
-      input_text: hasText ? (inputText as string).trim() : undefined,
-      voice_id: selectedVoiceId,
+      input_audio: audioBase64,
       positive_prompt: positivePrompt.trim(),
-      mode,
-      voice_settings: voiceSettings,
+      voice_id: selectedVoiceId,
+      use_elevenlabs_vc: useElevenLabsVC,
     });
 
     return NextResponse.json({

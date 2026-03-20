@@ -739,25 +739,16 @@ export async function getVellum20JobStatus(jobId: string): Promise<RunPodStatusR
 // =============================================================================
 
 /**
- * AI Talk workflow inputs sent to the RunPod handler.
+ * AI Talk workflow inputs sent to the RunPod handler (LTX-2.3 workflow).
  * The handler injects these into the ComfyUI workflow nodes.
  */
-export interface AiTalkVoiceSettings {
-  stability: number;
-  similarity_boost: number;
-  style: number;
-  speed: number;
-  use_speaker_boost: boolean;
-}
-
 export interface AiTalkWorkflowInput {
-  input_image: string;      // Base64 data URI of the face image
-  input_audio?: string;     // Base64 data URI of audio (for STS mode)
-  input_text?: string;      // Text for TTS mode
-  voice_id: string;         // ElevenLabs voice ID
-  positive_prompt: string;  // Scene/motion description for video generation
-  mode?: "tts" | "sts";    // TTS (text-to-speech) or STS (speech-to-speech)
-  voice_settings?: AiTalkVoiceSettings;
+  input_image: string;          // Base64 data URI of the character image (node 167)
+  input_audio: string;          // Base64 data URI of the audio (node 372) — always required
+  positive_prompt: string;      // Scene/motion description (node 352)
+  voice_id?: string;            // ElevenLabs voice ID for node 408 (Voice Changer)
+  use_elevenlabs_vc?: boolean;  // true (default) = audio through ElevenLabs Voice Changer
+                                // false = audio bypasses Voice Changer (pre-generated audio)
 }
 
 /**
@@ -789,12 +780,10 @@ export async function runAiTalkWorkflowAsync(
   const payload = {
     input: {
       input_image: input.input_image,
-      input_audio: input.input_audio || "",
-      input_text: input.input_text || "",
-      voice_id: input.voice_id,
+      input_audio: input.input_audio,
       positive_prompt: input.positive_prompt,
-      mode: input.mode || "tts",
-      ...(input.voice_settings && { voice_settings: input.voice_settings }),
+      voice_id: input.voice_id || "JBFqnCBsd6RMkjVDRZzb",
+      use_elevenlabs_vc: input.use_elevenlabs_vc !== false, // default true
     },
   };
 
@@ -802,7 +791,7 @@ export async function runAiTalkWorkflowAsync(
   console.log("URL:", url);
   console.log("Endpoint ID:", endpointId);
   console.log("Voice ID:", input.voice_id);
-  console.log("Mode:", input.mode || "tts");
+  console.log("Use ElevenLabs VC:", input.use_elevenlabs_vc !== false);
   console.log("Has image:", !!input.input_image);
   console.log("Has audio:", !!input.input_audio);
 
