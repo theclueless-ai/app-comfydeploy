@@ -41,7 +41,7 @@ S3_SECRET_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY", "")
 
 ELEVENLABS_API_KEY = os.environ.get("ELEVENLABS_API_KEY", "")
 
-MAX_EXECUTION_TIME = 1800  # 30 minutes
+MAX_EXECUTION_TIME = int(os.environ.get("MAX_EXECUTION_TIME", 2800))
 
 
 # ---------------------------------------------------------------------------
