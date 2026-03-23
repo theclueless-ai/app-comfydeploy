@@ -36,7 +36,7 @@ RUN pip install --no-cache-dir \
     --index-url https://download.pytorch.org/whl/cu128
 
 # ---- Flash Attention 2 (crítico para velocidad en A100) ----
-RUN pip install --no-cache-dir packaging ninja \
+RUN pip install --no-cache-dir packaging ninja psutil \
     && pip install flash-attn --no-build-isolation
 
 # ---- xFormers ----
