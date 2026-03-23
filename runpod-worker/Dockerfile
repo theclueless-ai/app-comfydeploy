@@ -11,7 +11,10 @@ ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV COMFYUI_DIR=/comfyui
 ENV CUDA_MODULE_LOADING=LAZY
-ENV PYTORCH_CUDA_ALLOC_CONF=max_split_size_mb:512,expandable_segments:True,garbage_collection_threshold:0.8
+ENV CUDA_VISIBLE_DEVICES=0
+ENV TORCH_CUDNN_V8_API_ENABLED=1
+# Eliminado max_split_size_mb — fragmenta el allocator innecesariamente en 80GB
+ENV PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True,garbage_collection_threshold:0.8
 
 # ---- System dependencies ----
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -27,10 +30,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # ---- Python base dependencies ----
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel
 
-# ---- Install PyTorch (CUDA 12.6) ----
+# ---- PyTorch cu128 ----
+# NO pineamos versión exacta — cu128 no tiene torch==2.7.0 disponible
+# torchaudio incluido — necesario para nodos de audio (MMAudio, ACE)
 RUN pip install --no-cache-dir \
     torch torchvision torchaudio \
-    --index-url https://download.pytorch.org/whl/cu126
+    --index-url https://download.pytorch.org/whl/cu128
+
+# ---- xFormers (compatible con cu128) ----
+# flash-attn eliminado — ABI incompatible con PyTorch 2.x en cu128,
+# y SDPA nativo de PyTorch 2.x reemplaza su función en A100
+RUN pip install --no-cache-dir xformers \
+    --index-url https://download.pytorch.org/whl/cu128
 
 # ---- Clone ComfyUI ----
 RUN git clone https://github.com/comfyanonymous/ComfyUI.git ${COMFYUI_DIR} \
@@ -42,11 +53,11 @@ WORKDIR ${COMFYUI_DIR}
 # =============================================================================
 # Custom Nodes
 #   - pythongosssss/ComfyUI-Custom-Scripts  (PrimitiveStringMultiline, MathExpression)
-#   - kijai/ComfyUI-KJNodes                 (ImageResizeKJv2, VAELoaderKJ, SimpleCalculatorKJ, etc.)
+#   - kijai/ComfyUI-KJNodes                 (ImageResizeKJv2, VAELoaderKJ, SimpleCalculatorKJ)
 #   - yolain/ComfyUI-Easy-Use               (easy showAnything, ResizeImagesByShorterEdge)
 #   - Kosinkadink/ComfyUI-VideoHelperSuite  (VHS_VideoCombine, LoadAudio, TrimAudioDuration)
 #   - melMass/comfy_mtb                     (Audio Duration, SolidMask)
-#   - kijai/ComfyUI-MelBandRoFormer         (MelBandRoFormerModelLoader → models/diffusion_models/)
+#   - kijai/ComfyUI-MelBandRoFormer         (MelBandRoFormerModelLoader)
 #   - ClownsharkBatwing/RES4LYF             (res_2s / res_3s custom samplers)
 #   - theclueless-ai/spech-to-speach-elevenlabs-node  (ElevenLabsVoiceChanger)
 # =============================================================================
@@ -60,7 +71,6 @@ RUN cd ${COMFYUI_DIR}/custom_nodes \
     && git clone --depth 1 https://github.com/ClownsharkBatwing/RES4LYF.git \
     && git clone --depth 1 https://github.com/theclueless-ai/spech-to-speach-elevenlabs-node.git
 
-# Install requirements for each custom node
 RUN for dir in ComfyUI-Custom-Scripts ComfyUI-KJNodes ComfyUI-Easy-Use \
     ComfyUI-VideoHelperSuite comfy_mtb ComfyUI-MelBandRoFormer RES4LYF \
     spech-to-speach-elevenlabs-node; do \
@@ -84,13 +94,10 @@ COPY rp_handler.py ${COMFYUI_DIR}/rp_handler.py
 COPY workflow_api.json ${COMFYUI_DIR}/workflow_api.json
 COPY start.sh /start.sh
 
-# Convert scripts to Unix line endings and make executable
 RUN dos2unix /start.sh ${COMFYUI_DIR}/rp_handler.py \
     && chmod +x /start.sh
 
-# Create model directories for LTX-2.3
-# NOTE: latent_upscale_models (not upscale_models) — used by LatentUpscaleModelLoader
-#       diffusion_models — used by MelBandRoFormerModelLoader
+# ---- Model directories ----
 RUN mkdir -p ${COMFYUI_DIR}/models/checkpoints \
     ${COMFYUI_DIR}/models/vae \
     ${COMFYUI_DIR}/models/loras \
@@ -100,11 +107,11 @@ RUN mkdir -p ${COMFYUI_DIR}/models/checkpoints \
     /runpod-volume/models
 
 # ---- Environment variables (set at RunPod endpoint level) ----
-# ELEVENLABS_API_KEY   - ElevenLabs API key for Voice Changer node
-# AWS_ACCESS_KEY_ID    - S3 credentials
+# ELEVENLABS_API_KEY
+# AWS_ACCESS_KEY_ID
 # AWS_SECRET_ACCESS_KEY
-# AWS_S3_BUCKET        - S3 bucket name
-# AWS_S3_REGION        - S3 region (e.g., us-east-1)
-# AWS_S3_ENDPOINT_URL  - (optional) Custom endpoint for R2/MinIO
+# AWS_S3_BUCKET
+# AWS_S3_REGION
+# AWS_S3_ENDPOINT_URL
 
 CMD ["/start.sh"]
