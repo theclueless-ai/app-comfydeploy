@@ -1,5 +1,6 @@
 import { WorkflowConfig } from "./types";
 import workflow_vellum from "./vellum-upscale.json";
+import workflow_vellum_v20 from "./vellum-upscale-v20.json";
 import workflow_ai_talk from "./ai-talk-workflow.json";
 
 /**
@@ -38,23 +39,16 @@ export const workflows: WorkflowConfig[] = [
         label: "Size Preset",
         description: "",
         required: false,
-        defaultValue: "2048x2048 (1:1)",
+        defaultValue: "1728x2304 (3:4)",
         options: [
-          "2048x2048 (1:1)",
-          "2304x1728 (4:3)",
           "1728x2304 (3:4)",
-          "2560x1440 (16:9)",
-          "1440x2560 (9:16)",
-          "2496x1664 (3:2)",
           "1664x2496 (2:3)",
-          "3024x1296 (21:9)",
-          "4096x4096 (1:1)",
-          "Custom",
+          "1440x2560 (9:16)",
         ],
       },
       {
-        id: "pose_selection",
-        name: "pose_selection",
+        id: "Seleccion de pose",
+        name: "Seleccion de pose",
         type: "select",
         label: "Pose Selection",
         description: "",
@@ -66,8 +60,8 @@ export const workflows: WorkflowConfig[] = [
         ],
       },
       {
-        id: "background_selection",
-        name: "background_selection",
+        id: "Seleccion de Fondo",
+        name: "Seleccion de Fondo",
         type: "select",
         label: "Background Selection",
         description: "",
@@ -82,10 +76,50 @@ export const workflows: WorkflowConfig[] = [
   },
   {
     id: "vellum-upscale",
-    name: "Vellum 2.0",
+    name: "Vellum 2.1",
     description: "AI-powered image upscaling with skin texture enhancement.",
     deploymentId: "", // Will use COMFYDEPLOY_VELLUM_DEPLOYMENT_ID from env
-    backend: "runpod", // Changed from "runpod" to use ComfyDeploy temporarily
+    backend: "runpod",
+    inputs: [
+      {
+        id: "input_image",
+        name: "input_image",
+        type: "image",
+        label: "Input Image",
+        description: "",
+        required: true,
+        accept: "image/*",
+      },
+      {
+        id: "strength_model",
+        name: "strength_model",
+        type: "slider",
+        label: "Strength Model",
+        description: "",
+        required: true,
+        defaultValue: 0.5,
+        min: 0,
+        max: 3,
+        step: 0.1,
+      },
+      {
+        id: "scale_by",
+        name: "scale_by",
+        type: "button-group",
+        label: "Scale Factor",
+        description: "",
+        required: true,
+        defaultValue: "2",
+        options: ["2", "4", "8"],
+      },
+    ],
+  },
+  {
+    id: "vellum-upscale-v20",
+    name: "Vellum 2.0",
+    description: "Legacy AI-powered image upscaling with skin texture enhancement (SeedVR2).",
+    deploymentId: "", // Will use COMFYDEPLOY_VELLUM20_DEPLOYMENT_ID from env
+    backend: "runpod",
     inputs: [
       {
         id: "input_image",
@@ -106,7 +140,7 @@ export const workflows: WorkflowConfig[] = [
         defaultValue: 0.5,
         min: 0,
         max: 1,
-        step: 0.05,
+        step: 0.1,
       },
       {
         id: "scale_by",
@@ -115,7 +149,7 @@ export const workflows: WorkflowConfig[] = [
         label: "Scale Factor",
         description: "",
         required: true,
-        defaultValue: "2",
+        defaultValue: "4",
         options: ["2", "4", "8"],
       },
     ],
@@ -136,20 +170,32 @@ export const workflows: WorkflowConfig[] = [
         accept: "image/*",
       },
       {
-        id: "audio_mode",
-        name: "audio_mode",
-        type: "audio-mode",
-        label: "Audio Source",
-        description: "Choose to write text (TTS) or upload audio (Voice Changer)",
+        id: "input_audio",
+        name: "input_audio",
+        type: "audio",
+        label: "Audio",
+        description: "Upload the audio that will drive the video",
         required: true,
+        accept: "audio/*",
+      },
+      {
+        id: "use_elevenlabs_vc",
+        name: "use_elevenlabs_vc",
+        type: "button-group",
+        label: "ElevenLabs Voice Changer",
+        description: "Yes: audio will be processed through ElevenLabs Voice Changer. No: use audio as-is (e.g. already generated with ElevenLabs)",
+        required: false,
+        defaultValue: "Yes",
+        options: ["Yes", "No"],
       },
       {
         id: "voice_id",
         name: "voice_id",
         type: "voice-select",
         label: "Select Voice",
-        description: "ElevenLabs voice for voice changing",
-        required: true,
+        description: "ElevenLabs voice to use when Voice Changer is enabled",
+        required: false,
+        showWhen: { field: "use_elevenlabs_vc", value: "Yes" },
       },
       {
         id: "positive_prompt",
@@ -158,7 +204,7 @@ export const workflows: WorkflowConfig[] = [
         label: "Positive Prompt",
         description: "Describe the scene, motion and expressions for the talking video",
         required: true,
-        placeholder: "The girl with pink hair smoothly turns her head from the side to face the camera directly...",
+        placeholder: "woman speak to the camera, static camera,",
       },
     ],
   },
@@ -174,6 +220,10 @@ export function getDefaultWorkflow(): WorkflowConfig {
 
 export function getVellumWorkflow(): WorkflowConfig {
   return workflows.find((w) => w.id === "vellum-upscale")!;
+}
+
+export function getVellum20Workflow(): WorkflowConfig {
+  return workflows.find((w) => w.id === "vellum-upscale-v20")!;
 }
 
 export function getAiTalkWorkflow(): WorkflowConfig {

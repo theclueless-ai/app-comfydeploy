@@ -38,6 +38,12 @@ HUMAN_DATA = {
         "beautiful portrait, symmetrical face, bright eyes",
         "stunning gorgeous model portrait, perfect symmetry, flawless skin, intense gaze",
     ],
+    "body_type": [
+        "slim thin build", "average build", "athletic muscular build",
+        "stocky robust build", "heavyset large build", "petite small frame",
+        "tall lanky build", "curvy voluptuous build", "broad-shouldered build",
+        "wiry lean build",
+    ],
     "skin_tone": [
         "very fair porcelain skin", "fair skin", "light skin",
         "light-medium skin", "medium skin", "olive skin",
@@ -64,6 +70,7 @@ HUMAN_DATA = {
         "wild windswept hair", "side-swept bangs", "mohawk",
     ],
     "eye_color": [
+        "REMOVE",
         "dark brown eyes", "warm brown eyes", "light brown eyes",
         "hazel eyes", "amber eyes", "green eyes", "blue-green eyes",
         "sky blue eyes", "steel gray eyes", "silver eyes",
@@ -71,19 +78,39 @@ HUMAN_DATA = {
         "heterochromia one green one brown eye",
     ],
     "eye_shape": [
+        "REMOVE",
         "almond-shaped eyes", "large round eyes", "hooded eyes",
         "monolid eyes", "upturned cat eyes", "downturned eyes",
         "wide-set eyes", "deep-set eyes",
     ],
+    "eyebrows": [
+        "natural eyebrows", "thick bushy eyebrows", "thin arched eyebrows",
+        "straight flat eyebrows", "high arched eyebrows", "rounded soft eyebrows",
+        "angular sharp eyebrows", "unibrow", "very sparse light eyebrows",
+        "feathered natural eyebrows", "dark bold eyebrows",
+    ],
+    "eyelashes": [
+        "natural eyelashes", "long thick eyelashes", "short sparse eyelashes",
+        "very long dramatic eyelashes", "curled upward eyelashes",
+        "straight downward eyelashes", "wispy delicate eyelashes",
+        "bold dark eyelashes", "barely visible light eyelashes",
+    ],
     "nose": [
+        "REMOVE",
         "small button nose", "straight refined nose", "roman nose",
         "snub upturned nose", "wide flat nose", "narrow aquiline nose",
         "slightly upturned nose", "strong prominent nose",
     ],
     "lips": [
+        "REMOVE",
         "full plump lips", "thin lips", "heart-shaped lips",
         "wide lips", "cupid's bow lips", "pouty lips",
         "asymmetrical lips", "naturally pale lips",
+    ],
+    "ears": [
+        "normal ears", "REMOVE", "small ears", "large prominent ears",
+        "pointed elf-like ears", "low-set ears", "protruding ears",
+        "ears with attached lobes", "ears with detached lobes",
     ],
     "freckles": [
         "no freckles", "very light freckles",
@@ -107,6 +134,23 @@ HUMAN_DATA = {
 }
 
 NONHUMAN_DATA = {
+
+    # ── PELO (nuevo para Non-Human) ──────────────────────────────────────────
+    "hair_color": [
+        "REMOVE", "jet black hair", "dark brown hair", "pure white hair",
+        "silver gray hair", "blood red hair", "deep purple hair",
+        "toxic green hair", "electric blue hair", "pale translucent hair",
+        "dark iridescent hair", "bone white hair", "ash gray hair",
+        "midnight blue hair", "rust orange hair",
+    ],
+    "hair_style": [
+        "REMOVE", "long straight hair", "long wild tangled hair",
+        "slicked back hair", "floating weightless hair",
+        "matted clumped hair", "wire-like rigid strands",
+        "tentacle-like hair strands", "spiky upright hair",
+        "hair fused to skull surface", "very short cropped hair",
+        "asymmetric long on one side only", "braided tight to skull",
+    ],
 
     # ── TEXTURA DE PIEL ───────────────────────────────────────────────────────
     "skin_texture": [
@@ -146,6 +190,7 @@ NONHUMAN_DATA = {
 
     # ── OJOS ──────────────────────────────────────────────────────────────────
     "eyes": [
+        "REMOVE",
         "completely black eyes, no whites, no iris visible",
         "solid white blind eyes with no pupil",
         "milky clouded cataract eyes",
@@ -334,38 +379,59 @@ class CharacterPortraitGenerator:
             "A_ethnicity":            (with_random(HUMAN_DATA["ethnicity"]),),
             "A_age_range":            (with_random(HUMAN_DATA["age_range"]),),
             "A_face_aspect":          (with_random(HUMAN_DATA["face_aspect"]),),
+            "A_body_type":            (with_random(HUMAN_DATA["body_type"]),),
             "A_skin_tone":            (with_random(HUMAN_DATA["skin_tone"]),),
             "A_face_shape":           (with_random(HUMAN_DATA["face_shape"]),),
             "A_hair_color":           (with_random(HUMAN_DATA["hair_color"]),),
             "A_hair_style":           (with_random(HUMAN_DATA["hair_style"]),),
             "A_eye_color":            (with_random(HUMAN_DATA["eye_color"]),),
             "A_eye_shape":            (with_random(HUMAN_DATA["eye_shape"]),),
+            "A_eyebrows":             (with_random(HUMAN_DATA["eyebrows"]),),
+            "A_eyelashes":            (with_random(HUMAN_DATA["eyelashes"]),),
             "A_nose":                 (with_random(HUMAN_DATA["nose"]),),
             "A_lips":                 (with_random(HUMAN_DATA["lips"]),),
+            "A_ears":                 (HUMAN_DATA["ears"],),
             "A_freckles":             (HUMAN_DATA["freckles"],),
             "A_expression":           (with_random(HUMAN_DATA["expression"]),),
-            "A_distinctive_features": (with_random(HUMAN_DATA["distinctive_features"]),),
+            # distinctive_features es STRING libre para permitir multi-selección
+            "A_distinctive_features": ("STRING", {
+                "default": "no distinctive features",
+                "multiline": False,
+                "placeholder": "comma-separated: thin facial scar on cheek, subtle dimples",
+            }),
 
             # ── Sección B: No-Humanos ───────────────────────────────────────
+            "B_hair_color":        (with_random(NONHUMAN_DATA["hair_color"]),),
+            "B_hair_style":        (with_random(NONHUMAN_DATA["hair_style"]),),
             "B_skin_texture":      (with_random(NONHUMAN_DATA["skin_texture"]),),
             "B_skin_color":        (with_random(NONHUMAN_DATA["skin_color"]),),
             "B_eyes":              (with_random(NONHUMAN_DATA["eyes"]),),
             "B_face_structure":    (with_random(NONHUMAN_DATA["face_structure"]),),
             "B_organic_additions": (with_random(NONHUMAN_DATA["organic_additions"]),),
+
+            # ── Campo libre para parámetros adicionales ─────────────────────
+            "extra_details": ("STRING", {
+                "default": "",
+                "multiline": True,
+                "placeholder": "Custom details: 'face tattoo of a dragon', 'glowing eyes', 'cybernetic implant on left cheek'...",
+            }),
         }}
 
-    RETURN_TYPES  = ("STRING", "STRING")
-    RETURN_NAMES  = ("PORTRAIT_PROMPT", "JSON_METADATA")
+    RETURN_TYPES  = ("STRING", "STRING", "STRING")
+    RETURN_NAMES  = ("PORTRAIT_PROMPT", "JSON_METADATA", "NEGATIVE_PROMPT")
     FUNCTION      = "generate"
     CATEGORY      = "🎭 Character Generator"
 
     def generate(
         self,
         character_type, seed, render_style, lighting, background,
-        A_gender, A_ethnicity, A_age_range, A_face_aspect, A_skin_tone, A_face_shape,
+        A_gender, A_ethnicity, A_age_range, A_face_aspect, A_body_type, A_skin_tone, A_face_shape,
         A_hair_color, A_hair_style, A_eye_color, A_eye_shape,
-        A_nose, A_lips, A_freckles, A_expression, A_distinctive_features,
+        A_eyebrows, A_eyelashes,
+        A_nose, A_lips, A_ears, A_freckles, A_expression, A_distinctive_features,
+        B_hair_color, B_hair_style,
         B_skin_texture, B_skin_color, B_eyes, B_face_structure, B_organic_additions,
+        extra_details,
     ):
         if seed == 0:
             seed = random.randint(1, 0xFFFFFFFF)
@@ -379,71 +445,195 @@ class CharacterPortraitGenerator:
                  "render_style": r_render, "lighting": r_light, "background": r_bg}
         parts = []
 
+        # Helper: REMOVE means the feature is absent from the prompt
+        def resolve(data_key, value, data_dict=HUMAN_DATA):
+            """Resolve a value: REMOVE → None, RANDOM → pick, else identity."""
+            if value == "REMOVE":
+                return None
+            return pick(data_dict[data_key], value)
+
         if character_type == "HUMAN":
             r = {
                 "g":   A_gender,
-                "eth": pick(HUMAN_DATA["ethnicity"],            A_ethnicity),
-                "age": pick(HUMAN_DATA["age_range"],            A_age_range),
-                "fa":  pick(HUMAN_DATA["face_aspect"],          A_face_aspect),
-                "sk":  pick(HUMAN_DATA["skin_tone"],            A_skin_tone),
-                "fs":  pick(HUMAN_DATA["face_shape"],           A_face_shape),
-                "hc":  pick(HUMAN_DATA["hair_color"],           A_hair_color),
-                "hs":  pick(HUMAN_DATA["hair_style"],           A_hair_style),
-                "ec":  pick(HUMAN_DATA["eye_color"],            A_eye_color),
-                "es":  pick(HUMAN_DATA["eye_shape"],            A_eye_shape),
-                "no":  pick(HUMAN_DATA["nose"],                 A_nose),
-                "li":  pick(HUMAN_DATA["lips"],                 A_lips),
+                "eth": pick(HUMAN_DATA["ethnicity"],   A_ethnicity),
+                "age": pick(HUMAN_DATA["age_range"],   A_age_range),
+                "fa":  pick(HUMAN_DATA["face_aspect"], A_face_aspect),
+                "bt":  pick(HUMAN_DATA["body_type"],   A_body_type),
+                "sk":  pick(HUMAN_DATA["skin_tone"],   A_skin_tone),
+                "fs":  pick(HUMAN_DATA["face_shape"],  A_face_shape),
+                "hc":  pick(HUMAN_DATA["hair_color"],  A_hair_color),
+                "hs":  pick(HUMAN_DATA["hair_style"],  A_hair_style),
+                "ec":  resolve("eye_color",  A_eye_color),
+                "es":  resolve("eye_shape",  A_eye_shape),
+                "eb":  pick(HUMAN_DATA["eyebrows"],    A_eyebrows),
+                "el":  pick(HUMAN_DATA["eyelashes"],   A_eyelashes),
+                "no":  resolve("nose",       A_nose),
+                "li":  resolve("lips",       A_lips),
+                "ea":  A_ears,
                 "fr":  A_freckles,
-                "ex":  pick(HUMAN_DATA["expression"],           A_expression),
-                "df":  pick(HUMAN_DATA["distinctive_features"], A_distinctive_features),
+                "ex":  pick(HUMAN_DATA["expression"],  A_expression),
+                "df":  A_distinctive_features,  # now a free-form STRING
             }
             meta.update({
                 "gender": r["g"], "ethnicity": r["eth"], "age_range": r["age"],
-                "face_aspect": r["fa"],
+                "face_aspect": r["fa"], "body_type": r["bt"],
                 "skin_tone": r["sk"], "face_shape": r["fs"],
                 "hair_color": r["hc"], "hair_style": r["hs"],
-                "eye_color": r["ec"], "eye_shape": r["es"],
-                "nose": r["no"], "lips": r["li"], "freckles": r["fr"],
+                "eye_color": r["ec"] or "REMOVE", "eye_shape": r["es"] or "REMOVE",
+                "eyebrows": r["eb"], "eyelashes": r["el"],
+                "nose": r["no"] or "REMOVE", "lips": r["li"] or "REMOVE",
+                "ears": r["ea"], "freckles": r["fr"],
                 "expression": r["ex"], "distinctive_features": r["df"],
             })
             parts = [
                 r_render,
-                f"portrait of a {r['age']} {r['eth']} {r['g']}",
+                f"portrait of a {r['age']} {r['eth']} {r['g']}, {r['bt']}",
                 r["fa"],
                 r["sk"], r["fs"],
-                f"{r['hc']}, {r['hs']}",
-                f"{r['ec']}, {r['es']}",
-                r["no"], r["li"], r["fr"], r["ex"],
             ]
-            if r["df"] != "no distinctive features":
+
+            # ── REMOVE features go FIRST for maximum weight ──────────────
+            # Collect removal descriptions early so they appear near the
+            # beginning of the prompt where diffusion models pay more attention.
+            eyes_removed  = r["ec"] is None and r["es"] is None
+            nose_removed  = r["no"] is None
+            lips_removed  = r["li"] is None
+            ears_removed  = r["ea"] == "REMOVE"
+
+            if eyes_removed:
+                parts.append("eyeless face, smooth continuous skin covering the eye area, flat featureless surface where eyes would be, mannequin-like blank eye area")
+            if nose_removed:
+                parts.append("noseless face, completely flat smooth skin between eyes and mouth, no nasal features at all")
+            if lips_removed:
+                parts.append("mouthless face, smooth unbroken skin below the nose, no mouth opening, no lip line")
+            if ears_removed:
+                parts.append("earless head, smooth rounded sides of skull with no ear features")
+
+            # ── Hair ─────────────────────────────────────────────────────
+            parts.append(f"{r['hc']}, {r['hs']}")
+
+            # ── Eyes (only if not removed) ───────────────────────────────
+            if not eyes_removed:
+                if r["ec"]:
+                    parts.append(r["ec"])
+                if r["es"]:
+                    parts.append(r["es"])
+
+            # Eyebrows and eyelashes
+            parts.append(r["eb"])
+            parts.append(r["el"])
+
+            # ── Nose (only if not removed) ───────────────────────────────
+            if not nose_removed:
+                parts.append(r["no"])
+
+            # ── Lips/mouth (only if not removed) ─────────────────────────
+            if not lips_removed:
+                parts.append(r["li"])
+
+            # ── Ears (only if not removed) ───────────────────────────────
+            if not ears_removed:
+                if r["ea"] != "normal ears":
+                    parts.append(r["ea"])
+
+            parts.append(r["fr"])
+
+            # If eyes are removed, force a compatible expression
+            if eyes_removed:
+                parts.append("neutral calm expression")
+            else:
+                parts.append(r["ex"])
+
+            # Distinctive features (multi-select, comma-separated string)
+            if r["df"] and r["df"].strip() and r["df"] != "no distinctive features":
                 parts.append(r["df"])
 
         else:
+            # Non-human — now with optional hair and removable eyes
+            r_hcol = resolve("hair_color", B_hair_color, NONHUMAN_DATA)
+            r_hsty = resolve("hair_style", B_hair_style, NONHUMAN_DATA)
             r_stex = pick(NONHUMAN_DATA["skin_texture"],      B_skin_texture)
             r_scol = pick(NONHUMAN_DATA["skin_color"],        B_skin_color)
-            r_eyes = pick(NONHUMAN_DATA["eyes"],              B_eyes)
+            r_eyes = resolve("eyes",                           B_eyes, NONHUMAN_DATA)
             r_face = pick(NONHUMAN_DATA["face_structure"],    B_face_structure)
             r_org  = pick(NONHUMAN_DATA["organic_additions"], B_organic_additions)
 
+            nh_eyes_removed = r_eyes is None
+
             meta.update({
+                "hair_color": r_hcol or "REMOVE", "hair_style": r_hsty or "REMOVE",
                 "skin_texture": r_stex, "skin_color": r_scol,
-                "eyes": r_eyes, "face_structure": r_face,
+                "eyes": r_eyes or "REMOVE", "face_structure": r_face,
                 "organic_additions": r_org,
             })
 
             parts = [
                 r_render,
                 "portrait of a surreal non-human being",
-                r_scol, r_stex, r_eyes, r_face,
             ]
+
+            # REMOVE descriptions go first for maximum weight
+            if nh_eyes_removed:
+                parts.append("eyeless creature, smooth flat skin where eyes would be, no eye sockets, no eye openings, featureless eye area")
+
+            parts += [r_scol, r_stex, r_face]
+
+            # Eyes (only if not removed)
+            if not nh_eyes_removed:
+                parts.append(r_eyes)
+
+            # Hair
+            if r_hcol:
+                parts.append(r_hcol)
+            if r_hsty:
+                parts.append(r_hsty)
+            if r_hcol is None and r_hsty is None:
+                parts.append("completely bald, no hair")
             if "no additional" not in r_org:
                 parts.append(r_org)
 
-        parts += [r_light, r_bg, "face portrait only", "no clothing visible", "detailed face", "sharp focus", "high quality", "masterpiece"]
+        # Extra custom details (free text field)
+        if extra_details and extra_details.strip():
+            parts.append(extra_details.strip())
+            meta["extra_details"] = extra_details.strip()
+
+        # Use "detailed skin texture" instead of "detailed face" when features
+        # are removed — "detailed face" encourages the model to add all features.
+        has_removals = False
+        if character_type == "HUMAN":
+            has_removals = eyes_removed or nose_removed or lips_removed or ears_removed
+        else:
+            has_removals = (r_hcol is None and r_hsty is None) or nh_eyes_removed
+
+        detail_tag = "detailed skin texture" if has_removals else "detailed face"
+        parts += [r_light, r_bg, "face portrait only", "no clothing visible", detail_tag, "sharp focus", "high quality", "masterpiece"]
         parts  = [p.strip() for p in parts if p and p.strip()]
         prompt = ", ".join(parts)
 
-        return (prompt, json.dumps(meta, indent=2, ensure_ascii=False))
+        # ── Build dynamic NEGATIVE PROMPT ──────────────────────────────
+        neg_parts = ["blurry image, low quality, bad quality, watermark"]
+
+        if character_type == "HUMAN":
+            # Aggressively negate removed features
+            if r["ec"] is None and r["es"] is None:
+                neg_parts.append("(eyes:1.5), eyeballs, iris, pupils, eye sockets, eye reflections, eye highlights, gaze, staring")
+            if r["no"] is None:
+                neg_parts.append("(nose:1.5), nostrils, nose bridge, nose tip, nose shadow, nasal")
+            if r["li"] is None:
+                neg_parts.append("(mouth:1.5), (lips:1.5), teeth, tongue, smile, grin, lip color, lip gloss, open mouth")
+            if r["ea"] == "REMOVE":
+                neg_parts.append("(ears:1.5), ear lobes, ear canal, ear piercings")
+        else:
+            # NON-HUMAN: negate human-like features + removed features
+            neg_parts.append("realistic human face, normal human skin, natural human eyes, photograph of a real person")
+            if nh_eyes_removed:
+                neg_parts.append("(eyes:1.5), eyeballs, iris, pupils, eye sockets, eye reflections, eye highlights, gaze, staring")
+            if r_hcol is None and r_hsty is None:
+                neg_parts.append("(hair:1.5), flowing hair, hair strands, hair on head")
+
+        negative_prompt = ", ".join(neg_parts)
+
+        return (prompt, json.dumps(meta, indent=2, ensure_ascii=False), negative_prompt)
 
 
 # ══════════════════════════════════════════════════════════════════════════════

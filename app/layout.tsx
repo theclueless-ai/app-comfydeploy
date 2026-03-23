@@ -6,7 +6,7 @@ import { AuthProvider } from "@/components/auth-provider";
 
 const gtFlexaMono = localFont({
   src: [{
-    path: "../public/GT-Flexa-Mono-Medium.ttf",
+    path: "../public/WorkSans-Regular.ttf",
     weight: "500",
     style: "normal",
   }],

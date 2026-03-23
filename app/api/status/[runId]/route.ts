@@ -29,15 +29,24 @@ export async function GET(
       }
     }
 
-    // Normalize status response
+    // Map ComfyDeploy status to frontend status
+    let resolvedStatus: string;
+
+    if (rawStatus?.status === "success") {
+      resolvedStatus = "completed";
+    } else if (rawStatus?.status === "failed") {
+      resolvedStatus = "failed";
+    } else {
+      resolvedStatus = rawStatus?.status || "pending";
+    }
+
     const normalizedStatus = {
       runId,
-      status: rawStatus?.status === "success" ? "completed" : rawStatus?.status === "failed" ? "failed" : rawStatus?.status || "pending",
-      images: allImages.length > 0 ? allImages : undefined,
+      status: resolvedStatus,
+      images: resolvedStatus === "completed" && allImages.length > 0 ? allImages : undefined,
     };
 
     console.log("Normalized status:", normalizedStatus);
-    console.log(`Found ${allImages.length} images in status`);
 
     return NextResponse.json(normalizedStatus);
   } catch (error) {

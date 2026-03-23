@@ -30,6 +30,12 @@ export const HUMAN_DATA = {
     "beautiful portrait, symmetrical face, bright eyes",
     "stunning gorgeous model portrait, perfect symmetry, flawless skin, intense gaze",
   ] as const,
+  body_type: [
+    "slim thin build", "average build", "athletic muscular build",
+    "stocky robust build", "heavyset large build", "petite small frame",
+    "tall lanky build", "curvy voluptuous build", "broad-shouldered build",
+    "wiry lean build",
+  ] as const,
   skin_tone: [
     "very fair porcelain skin", "fair skin", "light skin",
     "light-medium skin", "medium skin", "olive skin",
@@ -56,26 +62,43 @@ export const HUMAN_DATA = {
     "wild windswept hair", "side-swept bangs", "mohawk",
   ] as const,
   eye_color: [
-    "dark brown eyes", "warm brown eyes", "light brown eyes",
+    "REMOVE", "dark brown eyes", "warm brown eyes", "light brown eyes",
     "hazel eyes", "amber eyes", "green eyes", "blue-green eyes",
     "sky blue eyes", "steel gray eyes", "silver eyes",
     "heterochromia one blue one brown eye",
     "heterochromia one green one brown eye",
   ] as const,
   eye_shape: [
-    "almond-shaped eyes", "large round eyes", "hooded eyes",
+    "REMOVE", "almond-shaped eyes", "large round eyes", "hooded eyes",
     "monolid eyes", "upturned cat eyes", "downturned eyes",
     "wide-set eyes", "deep-set eyes",
   ] as const,
+  eyebrows: [
+    "natural eyebrows", "thick bushy eyebrows", "thin arched eyebrows",
+    "straight flat eyebrows", "high arched eyebrows", "rounded soft eyebrows",
+    "angular sharp eyebrows", "unibrow", "very sparse light eyebrows",
+    "feathered natural eyebrows", "dark bold eyebrows",
+  ] as const,
+  eyelashes: [
+    "natural eyelashes", "long thick eyelashes", "short sparse eyelashes",
+    "very long dramatic eyelashes", "curled upward eyelashes",
+    "straight downward eyelashes", "wispy delicate eyelashes",
+    "bold dark eyelashes", "barely visible light eyelashes",
+  ] as const,
   nose: [
-    "small button nose", "straight refined nose", "roman nose",
+    "REMOVE", "small button nose", "straight refined nose", "roman nose",
     "snub upturned nose", "wide flat nose", "narrow aquiline nose",
     "slightly upturned nose", "strong prominent nose",
   ] as const,
   lips: [
-    "full plump lips", "thin lips", "heart-shaped lips",
+    "REMOVE", "full plump lips", "thin lips", "heart-shaped lips",
     "wide lips", "cupid's bow lips", "pouty lips",
     "asymmetrical lips", "naturally pale lips",
+  ] as const,
+  ears: [
+    "normal ears", "REMOVE", "small ears", "large prominent ears",
+    "pointed elf-like ears", "low-set ears", "protruding ears",
+    "ears with attached lobes", "ears with detached lobes",
   ] as const,
   freckles: [
     "no freckles", "very light freckles",
@@ -103,6 +126,21 @@ export const HUMAN_DATA = {
 // ══════════════════════════════════════════════════════════════════════════════
 
 export const NONHUMAN_DATA = {
+  hair_color: [
+    "REMOVE", "jet black hair", "dark brown hair", "pure white hair",
+    "silver gray hair", "blood red hair", "deep purple hair",
+    "toxic green hair", "electric blue hair", "pale translucent hair",
+    "dark iridescent hair", "bone white hair", "ash gray hair",
+    "midnight blue hair", "rust orange hair",
+  ] as const,
+  hair_style: [
+    "REMOVE", "long straight hair", "long wild tangled hair",
+    "slicked back hair", "floating weightless hair",
+    "matted clumped hair", "wire-like rigid strands",
+    "tentacle-like hair strands", "spiky upright hair",
+    "hair fused to skull surface", "very short cropped hair",
+    "asymmetric long on one side only", "braided tight to skull",
+  ] as const,
   skin_texture: [
     "smooth matte latex-like skin",
     "high-gloss wet rubber skin",
@@ -136,6 +174,7 @@ export const NONHUMAN_DATA = {
     "mottled pale skin with irregular darker patches",
   ] as const,
   eyes: [
+    "REMOVE",
     "completely black eyes, no whites, no iris visible",
     "solid white blind eyes with no pupil",
     "milky clouded cataract eyes",

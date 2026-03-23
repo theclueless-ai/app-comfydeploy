@@ -1,0 +1,64 @@
+import { NextRequest, NextResponse } from "next/server";
+import {
+  getVellum20JobStatus,
+  mapRunPodStatus,
+  extractImagesFromOutput,
+} from "@/lib/runpod";
+import { sanitizeErrorMessage } from "@/lib/error-messages";
+
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const jobId = searchParams.get("jobId");
+
+    if (!jobId) {
+      return NextResponse.json(
+        { error: "Job ID is required" },
+        { status: 400 }
+      );
+    }
+
+    console.log("Checking Vellum 2.0 job status:", jobId);
+
+    // Get status from RunPod
+    const runpodStatus = await getVellum20JobStatus(jobId);
+
+    // Log the full output for debugging
+    console.log("RunPod full response:", JSON.stringify(runpodStatus, null, 2));
+    console.log("RunPod output:", JSON.stringify(runpodStatus.output, null, 2));
+
+    // Map status to our app format
+    const status = mapRunPodStatus(runpodStatus.status);
+
+    // Extract images if completed
+    const images = extractImagesFromOutput(runpodStatus.output);
+    console.log("Extracted images:", images.length, images);
+
+    const response: {
+      jobId: string;
+      status: string;
+      images?: Array<{ url: string; filename: string }>;
+      error?: string;
+    } = {
+      jobId,
+      status,
+    };
+
+    if (images.length > 0) {
+      response.images = images;
+    }
+
+    if (runpodStatus.error) {
+      console.error("Vellum 2.0 job failed. Raw error:", runpodStatus.error);
+      response.error = sanitizeErrorMessage(runpodStatus.error);
+    }
+
+    return NextResponse.json(response);
+  } catch (error) {
+    console.error("Vellum 2.0 status check error:", error);
+    return NextResponse.json(
+      { error: sanitizeErrorMessage(error instanceof Error ? error.message : null) },
+      { status: 500 }
+    );
+  }
+}

@@ -34,19 +34,18 @@ interface ResultImage {
 }
 
 /* ------------------------------------------------------------------ */
+/*  Helpers                                                            */
+/* ------------------------------------------------------------------ */
+
+
+/* ------------------------------------------------------------------ */
 /*  Constants – workflow options                                       */
 /* ------------------------------------------------------------------ */
 
 const SIZE_OPTIONS = [
-  { label: "2048×2048 — Cuadrado", value: "2048x2048 (1:1)" },
-  { label: "2304×1728 — Horizontal 4:3", value: "2304x1728 (4:3)" },
   { label: "1728×2304 — Vertical 3:4", value: "1728x2304 (3:4)" },
-  { label: "2560×1440 — Panorámico 16:9", value: "2560x1440 (16:9)" },
-  { label: "1440×2560 — Vertical 9:16", value: "1440x2560 (9:16)" },
-  { label: "2496×1664 — Horizontal 3:2", value: "2496x1664 (3:2)" },
   { label: "1664×2496 — Vertical 2:3", value: "1664x2496 (2:3)" },
-  { label: "3024×1296 — Ultra panorámico", value: "3024x1296 (21:9)" },
-  { label: "4096×4096 — Cuadrado grande", value: "4096x4096 (1:1)" },
+  { label: "1440×2560 — Vertical 9:16", value: "1440x2560 (9:16)" },
 ];
 
 const POSE_OPTIONS = [
@@ -185,11 +184,12 @@ export default function StellaDashboard() {
     try {
       const res = await fetch(model.image);
       const blob = await res.blob();
-      const file = new File([blob], `${model.name.toLowerCase()}.jpg`, {
+      const rawFile = new File([blob], `${model.name.toLowerCase()}.jpg`, {
         type: blob.type || "image/jpeg",
       });
+      const compressed = await compressImage(rawFile);
       const preview = model.image;
-      setModelImage({ file, preview });
+      setModelImage({ file: compressed, preview });
     } catch {
       // If fetch fails, just set the preview path
       setSelectedModelName(null);
@@ -227,15 +227,25 @@ export default function StellaDashboard() {
     formData.append("model_image", modelImage.file);
     formData.append("product_image", productImage.file);
     formData.append("size_preset", sizePreset);
-    formData.append("pose_selection", poseSelection);
-    formData.append("background_selection", backgroundSelection);
+    formData.append("Seleccion de pose", poseSelection);
+    formData.append("Seleccion de Fondo", backgroundSelection);
 
     try {
       const res = await fetch("/api/run-workflow", {
         method: "POST",
         body: formData,
       });
-      const data = await res.json();
+
+      let data;
+      try {
+        data = await res.json();
+      } catch {
+        // Response is not valid JSON (e.g. 413 HTML error page)
+        if (res.status === 413) {
+          throw new Error("Las imágenes son demasiado grandes. Intenta con imágenes más pequeñas (máx. 2MB cada una).");
+        }
+        throw new Error(`Error del servidor (${res.status}). Intenta de nuevo.`);
+      }
 
       if (!res.ok || !data.success) {
         throw new Error(data.error || "Error al iniciar el workflow");
@@ -250,41 +260,24 @@ export default function StellaDashboard() {
     }
   };
 
-  /* ---- Poll for results ---- */
+  /* ---- Poll for results via ComfyDeploy status API ---- */
   useEffect(() => {
     if (!runId || status === "completed" || status === "failed") return;
 
     pollRef.current = setInterval(async () => {
       try {
-        const webhookRes = await fetch(`/api/webhook?runId=${runId}`);
-        const webhookData = await webhookRes.json();
+        const res = await fetch(`/api/status/${runId}`);
+        if (!res.ok) return; // transient error, retry next tick
 
-        if (webhookData.status === "completed" && webhookData.images?.length) {
-          setResultImages(webhookData.images);
+        const data = await res.json();
+
+        if (data.status === "completed" && data.images?.length) {
+          setResultImages(data.images);
           setStatus("completed");
           setIsGenerating(false);
           clearInterval(pollRef.current!);
-          return;
-        }
-
-        if (webhookData.status === "failed") {
-          setError(webhookData.error || "El proceso falló");
-          setStatus("failed");
-          setIsGenerating(false);
-          clearInterval(pollRef.current!);
-          return;
-        }
-
-        const statusRes = await fetch(`/api/status/${runId}`);
-        const statusData = await statusRes.json();
-
-        if (statusData.status === "completed" && statusData.images?.length) {
-          setResultImages(statusData.images);
-          setStatus("completed");
-          setIsGenerating(false);
-          clearInterval(pollRef.current!);
-        } else if (statusData.status === "failed") {
-          setError(statusData.error || "El proceso falló");
+        } else if (data.status === "failed") {
+          setError(data.error || "El proceso falló");
           setStatus("failed");
           setIsGenerating(false);
           clearInterval(pollRef.current!);
@@ -301,16 +294,22 @@ export default function StellaDashboard() {
 
   /* ---- Download helper ---- */
   const handleDownload = async (url: string, filename: string) => {
-    const res = await fetch(url);
-    const blob = await res.blob();
-    const blobUrl = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = blobUrl;
-    a.download = filename || "stella-result.png";
-    document.body.appendChild(a);
-    a.click();
-    URL.revokeObjectURL(blobUrl);
-    document.body.removeChild(a);
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error("fetch failed");
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = blobUrl;
+      a.download = filename || "stella-result.png";
+      document.body.appendChild(a);
+      a.click();
+      URL.revokeObjectURL(blobUrl);
+      document.body.removeChild(a);
+    } catch {
+      // Fallback: open URL directly in new tab
+      window.open(url, "_blank");
+    }
   };
 
   /* ---- Logout ---- */
@@ -338,21 +337,19 @@ export default function StellaDashboard() {
         <div className="flex bg-gray-100 rounded-lg p-0.5">
           <button
             onClick={() => { setModelTab("upload"); setSelectedModelName(null); }}
-            className={`px-3 py-1.5 text-xs rounded-md transition-all ${
-              modelTab === "upload"
+            className={`px-3 py-1.5 text-xs rounded-md transition-all ${modelTab === "upload"
                 ? "bg-white text-gray-900 shadow-sm"
                 : "text-gray-500 hover:text-gray-700"
-            }`}
+              }`}
           >
             Subir
           </button>
           <button
             onClick={() => setModelTab("catalog")}
-            className={`px-3 py-1.5 text-xs rounded-md transition-all ${
-              modelTab === "catalog"
+            className={`px-3 py-1.5 text-xs rounded-md transition-all ${modelTab === "catalog"
                 ? "bg-white text-gray-900 shadow-sm"
                 : "text-gray-500 hover:text-gray-700"
-            }`}
+              }`}
           >
             Catálogo
           </button>
@@ -413,11 +410,10 @@ export default function StellaDashboard() {
               <button
                 key={model.name}
                 onClick={() => handleSelectCatalogModel(model)}
-                className={`relative rounded-lg overflow-hidden aspect-[3/4] group transition-all duration-200 ${
-                  isSelected
+                className={`relative rounded-lg overflow-hidden aspect-[3/4] group transition-all duration-200 ${isSelected
                     ? "ring-2 ring-gray-900 ring-offset-1"
                     : "hover:ring-1 hover:ring-gray-300 hover:ring-offset-1"
-                }`}
+                  }`}
               >
                 <img
                   src={model.image}
@@ -722,9 +718,6 @@ export default function StellaDashboard() {
           <p className="text-sm text-gray-700 font-medium mt-5">
             Procesando tu solicitud...
           </p>
-          <p className="text-xs text-gray-400 mt-1">
-            Esto usualmente toma 10-15 segundos
-          </p>
         </div>
       )}
 
@@ -748,12 +741,12 @@ export default function StellaDashboard() {
             {resultImages.map((img, i) => (
               <div
                 key={i}
-                className="relative rounded-xl overflow-hidden border border-gray-200"
+                className="relative rounded-xl overflow-hidden border border-gray-200 aspect-square"
               >
                 <img
                   src={img.url}
                   alt={`Resultado ${i + 1}`}
-                  className="w-full object-contain"
+                  className="w-full h-full object-contain"
                 />
                 <button
                   onClick={() => handleDownload(img.url, img.filename)}
@@ -839,9 +832,11 @@ export default function StellaDashboard() {
         <header className="px-8 pt-8 pb-4 shrink-0">
           <div className="flex items-center justify-between mb-5">
             <div>
-              <h1 className="text-lg font-light tracking-widest text-gray-900">
-                stella<sup className="text-[8px] align-super">®</sup>
-              </h1>
+              <img
+                src="/Stella_logo_black.png"
+                alt="Stella"
+                className="h-16 w-auto"
+              />
               <p className="text-xs text-gray-400 mt-1">
                 Generate professional fashion images with AI
               </p>

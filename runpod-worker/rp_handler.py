@@ -1,12 +1,19 @@
 """
-RunPod Serverless Handler - AI Talk (ComfyUI InfiniteTalk/WanVideo)
+RunPod Serverless Handler - AI Talk (ComfyUI LTX-2.3)
 
-Supports two modes:
-  - TTS mode: text + voice_id -> ElevenlabsTextToSpeech (node 333) -> video
-  - STS mode: audio + voice_id -> LoadAudio (900) -> ElevenLabsVoiceChanger (295) -> video
+Accepts audio input with two routing options:
+  - use_elevenlabs_vc=True (default): audio -> ElevenLabsVoiceChanger (node 408) -> video
+  - use_elevenlabs_vc=False: audio bypasses Voice Changer -> goes directly into pipeline
 
-The handler loads a base workflow with BOTH nodes, then removes the
-unused path before submitting to ComfyUI.
+Node mapping (new LTX-2.3 workflow):
+  - Node 167 (LoadImage): input character image
+  - Node 352 (PrimitiveStringMultiline): positive prompt
+  - Node 372 (LoadAudio): input audio file
+  - Node 408 (ElevenLabsVoiceChanger): voice conversion (optional, controlled by node 420)
+  - Node 420 (ComfySwitchNode): bypass switch for ElevenLabs Voice Changer
+      switch=True  -> on_true  -> uses node 408 output (ElevenLabs)
+      switch=False -> on_false -> uses node 372 output (direct audio)
+  - Node 140 (VHS_VideoCombine): video output
 """
 
 import runpod
@@ -72,8 +79,24 @@ def upload_to_s3(file_path: str, content_type: str = "video/mp4") -> str:
 
 
 # ---------------------------------------------------------------------------
-# Audio helpers
+# File helpers
 # ---------------------------------------------------------------------------
+def save_image_to_comfyui_input(image_b64: str, filename: str) -> str:
+    """Decode base64 image and save to ComfyUI input directory."""
+    image_data = image_b64
+    if "," in image_data:
+        image_data = image_data.split(",", 1)[1]
+    image_bytes = base64.b64decode(image_data)
+
+    input_dir = os.path.join(COMFYUI_DIR, "input")
+    os.makedirs(input_dir, exist_ok=True)
+    filepath = os.path.join(input_dir, filename)
+    with open(filepath, "wb") as f:
+        f.write(image_bytes)
+    print(f"[Image] Saved {len(image_bytes)} bytes to {filepath}")
+    return filename
+
+
 def save_audio_to_comfyui_input(audio_b64: str, filename: str) -> str:
     """Decode base64 audio and save to ComfyUI input directory."""
     audio_data = audio_b64
@@ -100,78 +123,61 @@ def load_workflow() -> dict:
 
 def prepare_workflow(workflow: dict, inputs: dict) -> dict:
     """
-    Inject user inputs and configure the workflow for TTS or STS mode.
+    Inject user inputs into the LTX-2.3 workflow.
 
-    TTS mode (text selected):
-      - Node 333 (ElevenlabsTextToSpeech) generates audio
-      - Node 214 audio_1 = ["333", 0]
-      - Remove STS nodes: 295, 900
-
-    STS mode (audio selected):
-      - Node 900 (LoadAudio) loads user audio
-      - Node 295 (ElevenLabsVoiceChanger) transforms voice
-      - Node 214 audio_1 = ["295", 0]
-      - Remove TTS node: 333
+    Parameters:
+      - input_image: base64 image for node 167 (LoadImage)
+      - input_audio: base64 audio for node 372 (LoadAudio) — required
+      - positive_prompt: text for node 352 (PrimitiveStringMultiline)
+      - voice_id: ElevenLabs voice ID for node 408 (only used when use_elevenlabs_vc=True)
+      - use_elevenlabs_vc: bool (default True)
+          True  -> node 420 switch=True  -> audio goes through ElevenLabs Voice Changer (408)
+          False -> node 420 switch=False -> audio bypasses Voice Changer, goes directly
     """
-    mode = inputs.get("mode", "tts")
+    use_elevenlabs_vc = inputs.get("use_elevenlabs_vc", True)
 
     # Remove _comment keys (not valid ComfyUI nodes)
     comment_keys = [k for k in workflow if k.startswith("_comment")]
     for k in comment_keys:
         del workflow[k]
 
-    # --- Input image (Node 737) ---
+    # --- Input image (Node 167 - LoadImage) ---
     if inputs.get("input_image"):
-        image_data = inputs["input_image"]
-        if "," in image_data:
-            image_data = image_data.split(",", 1)[1]
-        workflow["737"]["inputs"]["base64_data"] = image_data
+        image_filename = f"input_{uuid.uuid4().hex[:8]}.png"
+        save_image_to_comfyui_input(inputs["input_image"], image_filename)
+        workflow["167"]["inputs"]["image"] = image_filename
 
-    # --- Positive prompt (Node 225) ---
+    # --- Input audio (Node 372 - LoadAudio) ---
+    audio_b64 = inputs.get("input_audio", "")
+    if not audio_b64:
+        raise ValueError("input_audio is required")
+
+    audio_filename = f"audio_{uuid.uuid4().hex[:8]}.mp3"
+    save_audio_to_comfyui_input(audio_b64, audio_filename)
+    workflow["372"]["inputs"]["audio"] = audio_filename
+    workflow["372"]["inputs"]["audioUI"] = (
+        f"/api/view?filename={audio_filename}&type=input&subfolder=&rand=0.5"
+    )
+
+    # --- Positive prompt (Node 352 - PrimitiveStringMultiline) ---
     if inputs.get("positive_prompt"):
-        workflow["225"]["inputs"]["positive_prompt"] = inputs["positive_prompt"]
+        workflow["352"]["inputs"]["value"] = inputs["positive_prompt"]
 
-    # --- Audio routing based on mode ---
-    if mode == "sts":
-        print("[Workflow] STS mode: audio -> VoiceChanger (295) -> wav2vec (214)")
+    # --- ElevenLabs Voice Changer (Node 408) ---
+    voice_id = inputs.get("voice_id", "JBFqnCBsd6RMkjVDRZzb")
+    workflow["408"]["inputs"]["voice_id"] = voice_id
+    if ELEVENLABS_API_KEY:
+        workflow["408"]["inputs"]["api_key"] = ELEVENLABS_API_KEY
 
-        # Save input audio to file
-        audio_b64 = inputs.get("input_audio", "")
-        if not audio_b64:
-            raise ValueError("STS mode requires input_audio")
+    # --- ElevenLabs bypass switch (Node 420) ---
+    # switch=True  -> on_true  -> node 408 (ElevenLabs Voice Changer)
+    # switch=False -> on_false -> node 372 (direct audio, bypass ElevenLabs)
+    workflow["420"]["inputs"]["switch"] = bool(use_elevenlabs_vc)
 
-        audio_filename = f"sts_input_{uuid.uuid4().hex[:8]}.mp3"
-        save_audio_to_comfyui_input(audio_b64, audio_filename)
-
-        # Configure LoadAudio (900) -> VoiceChanger (295) -> wav2vec (214)
-        workflow["900"]["inputs"]["audio"] = audio_filename
-
-        if ELEVENLABS_API_KEY:
-            workflow["295"]["inputs"]["api_key"] = ELEVENLABS_API_KEY
-        if inputs.get("voice_id"):
-            workflow["295"]["inputs"]["voice_id"] = inputs["voice_id"]
-
-        workflow["214"]["inputs"]["audio_1"] = ["295", 0]
-
-        # Remove TTS node (not needed, avoid execution)
-        workflow.pop("333", None)
-
+    if use_elevenlabs_vc:
+        print(f"[Workflow] Audio -> ElevenLabs Voice Changer (voice_id={voice_id}) -> pipeline")
     else:
-        print("[Workflow] TTS mode: text -> TTS (333) -> wav2vec (214)")
-
-        # Configure TTS node (333)
-        if ELEVENLABS_API_KEY:
-            workflow["333"]["inputs"]["api_key"] = ELEVENLABS_API_KEY
-        if inputs.get("voice_id"):
-            workflow["333"]["inputs"]["voice_id"] = inputs["voice_id"]
-        if inputs.get("input_text"):
-            workflow["333"]["inputs"]["text"] = inputs["input_text"]
-
-        workflow["214"]["inputs"]["audio_1"] = ["333", 0]
-
-        # Remove STS nodes (not needed, avoid execution)
-        workflow.pop("295", None)
-        workflow.pop("900", None)
+        print("[Workflow] Audio -> direct (bypassing ElevenLabs Voice Changer) -> pipeline")
 
     return workflow
 
@@ -231,22 +237,23 @@ def poll_until_complete(prompt_id: str) -> dict:
 def find_output_video(history_entry: dict) -> str | None:
     outputs = history_entry.get("outputs", {})
 
-    # Check node 238 first (VHS_VideoCombine)
-    if "238" in outputs:
-        node_output = outputs["238"]
-        for key in ["gifs", "videos"]:
-            if key in node_output:
-                for item in node_output[key]:
-                    filename = item.get("filename", "")
-                    subfolder = item.get("subfolder", "")
-                    file_type = item.get("type", "output")
+    # Check node 140 first (VHS_VideoCombine - LTX-2.3 workflow)
+    for node_id in ["140", "338", "238"]:
+        if node_id in outputs:
+            node_output = outputs[node_id]
+            for key in ["gifs", "videos"]:
+                if key in node_output:
+                    for item in node_output[key]:
+                        filename = item.get("filename", "")
+                        subfolder = item.get("subfolder", "")
+                        file_type = item.get("type", "output")
 
-                    base = "temp" if file_type == "temp" else "output"
-                    video_path = os.path.join(COMFYUI_DIR, base, subfolder, filename)
+                        base = "temp" if file_type == "temp" else "output"
+                        video_path = os.path.join(COMFYUI_DIR, base, subfolder, filename)
 
-                    if os.path.exists(video_path):
-                        print(f"[Output] Found video: {video_path}")
-                        return video_path
+                        if os.path.exists(video_path):
+                            print(f"[Output] Found video: {video_path}")
+                            return video_path
 
     # Fallback: search all outputs
     for node_id, node_output in outputs.items():
@@ -279,26 +286,26 @@ def handler(job: dict) -> dict:
 
     Input:
     {
-        "input_image": "base64",
-        "input_audio": "base64" (STS mode),
-        "input_text": "text" (TTS mode),
-        "voice_id": "elevenlabs voice ID",
-        "positive_prompt": "scene description",
-        "mode": "tts" | "sts"
+        "input_image": "base64",          -- required: character image
+        "input_audio": "base64",          -- required: audio to drive the video
+        "positive_prompt": "text",        -- required: scene/motion description
+        "voice_id": "elevenlabs_voice_id",-- optional: ElevenLabs voice (default: JBFqnCBsd6RMkjVDRZzb)
+        "use_elevenlabs_vc": true/false   -- optional (default true):
+                                             true  = audio goes through ElevenLabs Voice Changer
+                                             false = audio bypasses Voice Changer (pre-generated audio)
     }
     """
     start_time = time.time()
     job_input = job.get("input", {})
-    mode = job_input.get("mode", "tts")
+    use_elevenlabs_vc = job_input.get("use_elevenlabs_vc", True)
 
     print("=" * 60)
-    print("  AI Talk Handler - New Job")
+    print("  AI Talk Handler - New Job (LTX-2.3)")
     print("=" * 60)
-    print(f"  Mode: {mode}")
+    print(f"  ElevenLabs VC: {use_elevenlabs_vc}")
     print(f"  Voice ID: {job_input.get('voice_id', 'default')}")
     print(f"  Has image: {bool(job_input.get('input_image'))}")
     print(f"  Has audio: {bool(job_input.get('input_audio'))}")
-    print(f"  Has text: {bool(job_input.get('input_text'))}")
     print(f"  Prompt: {str(job_input.get('positive_prompt', ''))[:100]}...")
 
     try:
@@ -306,7 +313,7 @@ def handler(job: dict) -> dict:
         print("\n[Step 1] Loading workflow...")
         workflow = load_workflow()
 
-        print("[Step 2] Preparing workflow for mode:", mode)
+        print("[Step 2] Preparing workflow...")
         workflow = prepare_workflow(workflow, job_input)
 
         # 3. Queue prompt

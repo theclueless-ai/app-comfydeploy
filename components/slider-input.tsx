@@ -12,6 +12,8 @@ interface SliderInputProps {
   max?: number;
   step?: number;
   required?: boolean;
+  suffix?: string;
+  decimals?: number;
 }
 
 export function SliderInput({
@@ -23,6 +25,8 @@ export function SliderInput({
   max = 3,
   step = 0.1,
   required = false,
+  suffix = "x",
+  decimals = 1,
 }: SliderInputProps) {
   const [localValue, setLocalValue] = useState(value);
 
@@ -47,7 +51,7 @@ export function SliderInput({
           {required && <span className="text-brand-pink ml-1">*</span>}
         </label>
         <span className="text-sm font-semibold text-brand-pink">
-          {localValue.toFixed(1)}x
+          {localValue.toFixed(decimals)}{suffix}
         </span>
       </div>
 
@@ -96,10 +100,10 @@ export function SliderInput({
         {/* Min/Max labels */}
         <div className="flex justify-between mt-1">
           <span className="text-xs text-[rgb(var(--muted-foreground))]">
-            {min}x
+            {min}{suffix}
           </span>
           <span className="text-xs text-[rgb(var(--muted-foreground))]">
-            {max}x
+            {max}{suffix}
           </span>
         </div>
       </div>

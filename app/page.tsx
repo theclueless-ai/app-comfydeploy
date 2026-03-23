@@ -8,7 +8,7 @@ import { PosesForm } from "@/components/poses-form";
 import { ResultDisplay } from "@/components/result-display";
 import { Gallery } from "@/components/gallery";
 import { WorkflowTabs, WorkflowTab } from "@/components/workflow-tabs";
-import { getDefaultWorkflow, getVellumWorkflow, getAiTalkWorkflow } from "@/lib/workflows";
+import { getDefaultWorkflow, getVellumWorkflow, getVellum20Workflow, getAiTalkWorkflow } from "@/lib/workflows";
 import { cn, compressImage } from "@/lib/utils";
 import { sanitizeErrorMessage } from "@/lib/error-messages";
 import { useHistory } from "@/hooks/use-history";
@@ -18,7 +18,7 @@ import { History } from "lucide-react";
 type RunStatus = "queued" | "running" | "completed" | "failed" | null;
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<WorkflowTab>("avatar");
+  const [activeTab, setActiveTab] = useState<WorkflowTab>("fashion");
   const [isLoading, setIsLoading] = useState(false);
   const [runId, setRunId] = useState<string | null>(null);
   const [status, setStatus] = useState<RunStatus>(null);
@@ -34,16 +34,19 @@ export default function Home() {
 
   const fashionWorkflow = getDefaultWorkflow();
   const vellumWorkflow = getVellumWorkflow();
+  const vellum20Workflow = getVellum20Workflow();
   const aiTalkWorkflow = getAiTalkWorkflow();
-  const avatarInfo = { name: "Avatar Generator", description: "Generate unique character portraits with customizable features, powered by local ComfyUI." };
-  const posesInfo = { name: "Poses", description: "Generate 9 different head poses from a single portrait, powered by local ComfyUI." };
+  const avatarInfo = { name: "Avatar Generator", description: "Generate unique character portraits with customizable features, powered by RunPod serverless." };
+  const posesInfo = { name: "Poses", description: "Generate 9 different head poses from a single portrait, powered by RunPod serverless." };
   const workflow = activeTab === "fashion"
     ? fashionWorkflow
     : activeTab === "vellum"
       ? vellumWorkflow
-      : activeTab === "ai-talk"
-        ? aiTalkWorkflow
-        : null;
+      : activeTab === "vellum20"
+        ? vellum20Workflow
+        : activeTab === "aiTalk"
+          ? aiTalkWorkflow
+          : null;
   const activeWorkflowName = activeTab === "poses" ? posesInfo.name : (workflow?.name ?? avatarInfo.name);
   const activeWorkflowDescription = activeTab === "poses" ? posesInfo.description : (workflow?.description ?? avatarInfo.description);
 
@@ -61,7 +64,7 @@ export default function Home() {
     }
   };
 
-  // Poll for webhook results (ComfyDeploy - both workflows now use ComfyDeploy)
+  // Poll for results via ComfyDeploy status API (fashion workflow)
   useEffect(() => {
     if (!runId || status === "completed" || status === "failed" || activeTab !== "fashion") {
       return;
@@ -69,54 +72,26 @@ export default function Home() {
 
     const pollInterval = setInterval(async () => {
       try {
-        // First check webhook endpoint
-        const webhookResponse = await fetch(`/api/webhook?runId=${runId}`);
-        const webhookData = await webhookResponse.json();
+        const res = await fetch(`/api/status/${runId}`);
+        if (!res.ok) return; // transient error, retry next tick
 
-        console.log("Webhook data:", webhookData);
+        const data = await res.json();
 
-        if (webhookData.status === "completed") {
+        if (data.status === "completed") {
           setStatus("completed");
-          if (webhookData.images && webhookData.images.length > 0) {
-            setResultImages(webhookData.images);
-            console.log(`Received ${webhookData.images.length} images from webhook`);
+          if (data.images && data.images.length > 0) {
+            setResultImages(data.images);
+            console.log(`Received ${data.images.length} images from status API`);
           }
           clearInterval(pollInterval);
           setIsLoading(false);
-          return;
-        }
-
-        if (webhookData.status === "failed") {
+        } else if (data.status === "failed") {
           setStatus("failed");
-          setError(webhookData.error);
+          setError(data.error);
           clearInterval(pollInterval);
           setIsLoading(false);
-          return;
-        }
-
-        // Fallback to status API
-        const statusResponse = await fetch(`/api/status/${runId}`);
-        if (statusResponse.ok) {
-          const statusData = await statusResponse.json();
-
-          console.log("Status data:", statusData);
-
-          if (statusData.status === "completed") {
-            setStatus("completed");
-            if (statusData.images && statusData.images.length > 0) {
-              setResultImages(statusData.images);
-              console.log(`Received ${statusData.images.length} images from status API`);
-            }
-            clearInterval(pollInterval);
-            setIsLoading(false);
-          } else if (statusData.status === "failed") {
-            setStatus("failed");
-            setError(statusData.error);
-            clearInterval(pollInterval);
-            setIsLoading(false);
-          } else if (statusData.status === "running") {
-            setStatus("running");
-          }
+        } else if (data.status === "running") {
+          setStatus("running");
         }
       } catch (error) {
         console.error("Polling error:", error);
@@ -163,33 +138,84 @@ export default function Home() {
     return () => clearInterval(pollInterval);
   }, [runId, status, activeTab]);
 
-  // Poll for local ComfyUI status (AI Talk workflow)
+  // Poll for RunPod status (Vellum 2.0 legacy workflow)
   useEffect(() => {
-    if (!runId || status === "completed" || status === "failed" || activeTab !== "ai-talk") {
+    if (!runId || status === "completed" || status === "failed" || activeTab !== "vellum20") {
       return;
     }
 
     const pollInterval = setInterval(async () => {
       try {
-        const response = await fetch(`/api/ai-talk-status?promptId=${runId}`);
+        const response = await fetch(`/api/vellum20-status?jobId=${runId}`);
         const data = await response.json();
 
+        console.log("vellum 2.0 status data:", data);
+
+        if (data.status === "completed") {
+          setStatus("completed");
+          if (data.images && data.images.length > 0) {
+            setResultImages(data.images);
+            console.log(`Received ${data.images.length} images from RunPod (Vellum 2.0)`);
+          }
+          clearInterval(pollInterval);
+          setIsLoading(false);
+        } else if (data.status === "failed") {
+          setStatus("failed");
+          setError(data.error || "Workflow failed");
+          clearInterval(pollInterval);
+          setIsLoading(false);
+        } else if (data.status === "running") {
+          setStatus("running");
+        }
+      } catch (error) {
+        console.error("vellum 2.0 polling error:", error);
+      }
+    }, 3000);
+
+    return () => clearInterval(pollInterval);
+  }, [runId, status, activeTab]);
+
+  // Poll for AI Talk status
+  useEffect(() => {
+    if (!runId || status === "completed" || status === "failed" || activeTab !== "aiTalk") {
+      return;
+    }
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const response = await fetch(`/api/ai-talk-status?runId=${runId}`);
+        if (response.status === 401) {
+          console.warn("AI Talk status polling: session expired");
+          clearInterval(pollInterval);
+          setIsLoading(false);
+          setStatus("failed");
+          setError("Tu sesión ha expirado. Recarga la página e inicia sesión de nuevo.");
+          return;
+        }
+
+        const contentType = response.headers.get("content-type") || "";
+        if (!contentType.includes("application/json")) {
+          console.warn("AI Talk status: unexpected response type", contentType);
+          return;
+        }
+
+        const data = await response.json();
         console.log("AI Talk status data:", data);
 
         if (data.status === "completed") {
           setStatus("completed");
           if (data.videos && data.videos.length > 0) {
             setResultImages(data.videos);
-            console.log(`Received ${data.videos.length} videos from local ComfyUI`);
+            console.log(`Received ${data.videos.length} videos from RunPod`);
           } else if (data.images && data.images.length > 0) {
             setResultImages(data.images);
-            console.log(`Received ${data.images.length} results from local ComfyUI`);
+            console.log(`Received ${data.images.length} results from RunPod`);
           }
           clearInterval(pollInterval);
           setIsLoading(false);
         } else if (data.status === "failed") {
           setStatus("failed");
-          setError(data.error || "AI Talk generation failed");
+          setError(data.error || "Workflow failed");
           clearInterval(pollInterval);
           setIsLoading(false);
         } else if (data.status === "running") {
@@ -198,12 +224,12 @@ export default function Home() {
       } catch (error) {
         console.error("AI Talk polling error:", error);
       }
-    }, 5000);
+    }, 3000);
 
     return () => clearInterval(pollInterval);
   }, [runId, status, activeTab]);
 
-  // Poll for local ComfyUI status (Avatar workflow)
+  // Poll for RunPod status (Avatar workflow)
   useEffect(() => {
     if (!runId || status === "completed" || status === "failed" || activeTab !== "avatar") {
       return;
@@ -211,7 +237,7 @@ export default function Home() {
 
     const pollInterval = setInterval(async () => {
       try {
-        const response = await fetch(`/api/avatar-status?promptId=${runId}`);
+        const response = await fetch(`/api/avatar-status?jobId=${runId}`);
         const data = await response.json();
 
         console.log("Avatar status data:", data);
@@ -220,7 +246,7 @@ export default function Home() {
           setStatus("completed");
           if (data.images && data.images.length > 0) {
             setResultImages(data.images);
-            console.log(`Received ${data.images.length} images from local ComfyUI`);
+            console.log(`Received ${data.images.length} images from RunPod (Avatar)`);
           }
           clearInterval(pollInterval);
           setIsLoading(false);
@@ -229,7 +255,7 @@ export default function Home() {
           setError(data.error || "Avatar generation failed");
           clearInterval(pollInterval);
           setIsLoading(false);
-        } else if (data.status === "running") {
+        } else if (data.status === "running" || data.status === "queued") {
           setStatus("running");
         }
       } catch (error) {
@@ -240,7 +266,7 @@ export default function Home() {
     return () => clearInterval(pollInterval);
   }, [runId, status, activeTab]);
 
-  // Poll for local ComfyUI status (Poses workflow)
+  // Poll for RunPod status (Poses workflow)
   useEffect(() => {
     if (!runId || status === "completed" || status === "failed" || activeTab !== "poses") {
       return;
@@ -248,7 +274,7 @@ export default function Home() {
 
     const pollInterval = setInterval(async () => {
       try {
-        const response = await fetch(`/api/poses-status?promptId=${runId}`);
+        const response = await fetch(`/api/poses-status?jobId=${runId}`);
         const data = await response.json();
 
         console.log("Poses status data:", data);
@@ -257,7 +283,7 @@ export default function Home() {
           setStatus("completed");
           if (data.images && data.images.length > 0) {
             setResultImages(data.images);
-            console.log(`Received ${data.images.length} images from local ComfyUI (Poses)`);
+            console.log(`Received ${data.images.length} images from RunPod (Poses)`);
           }
           clearInterval(pollInterval);
           setIsLoading(false);
@@ -266,7 +292,7 @@ export default function Home() {
           setError(data.error || "Poses generation failed");
           clearInterval(pollInterval);
           setIsLoading(false);
-        } else if (data.status === "running") {
+        } else if (data.status === "running" || data.status === "queued") {
           setStatus("running");
         }
       } catch (error) {
@@ -367,11 +393,13 @@ export default function Home() {
         ? "/api/run-workflow"
         : activeTab === "vellum"
           ? "/api/run-vellum"
-          : activeTab === "ai-talk"
-            ? "/api/run-ai-talk"
-            : activeTab === "poses"
-              ? "/api/run-poses"
-              : "/api/run-avatar";
+          : activeTab === "vellum20"
+            ? "/api/run-vellum20"
+            : activeTab === "aiTalk"
+              ? "/api/run-ai-talk"
+              : activeTab === "poses"
+                ? "/api/run-poses"
+                : "/api/run-avatar";
 
       const response = await fetch(apiEndpoint, {
         method: "POST",
@@ -430,9 +458,9 @@ export default function Home() {
               <h3 className="text-sm font-semibold mb-3 text-gray-400">
                 {activeTab === "fashion"
                   ? "Upload Images"
-                  : activeTab === "vellum"
+                  : activeTab === "vellum" || activeTab === "vellum20"
                     ? "Image Upscaling"
-                    : activeTab === "ai-talk"
+                    : activeTab === "aiTalk"
                       ? "Generate Talking Video"
                       : activeTab === "poses"
                         ? "Upload Portrait"
@@ -470,6 +498,7 @@ export default function Home() {
                   status={status}
                   images={resultImages}
                   error={error}
+                  onGeneratePoses={activeTab === "avatar" ? handleUsePoses : undefined}
                 />
               ) : (
                 <div

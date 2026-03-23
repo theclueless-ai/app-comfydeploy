@@ -122,6 +122,13 @@ export function WorkflowForm({
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-3">
         {workflow.inputs.map((input) => {
+          // Conditional visibility
+          if (input.showWhen) {
+            const currentValue = inputs[input.showWhen.field];
+            const defaultValue = workflow.inputs.find(i => i.id === input.showWhen!.field)?.defaultValue;
+            const resolvedValue = currentValue ?? defaultValue;
+            if (resolvedValue !== input.showWhen.value) return null;
+          }
           if (input.type === "image") {
             return (
               <ImageUpload
@@ -222,6 +229,8 @@ export function WorkflowForm({
                 max={input.max}
                 step={input.step}
                 required={input.required}
+                suffix={input.suffix}
+                decimals={input.decimals}
               />
             );
           }

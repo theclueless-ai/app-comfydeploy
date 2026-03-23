@@ -1,30 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-// import { fileToBase64 } from "@/lib/comfydeploy";
-import { fileToBase64, runWorkflowAsync, VellumWorkflowInput } from "@/lib/runpod";
+import { fileToBase64, runVellum20WorkflowAsync, Vellum20WorkflowInput } from "@/lib/runpod";
 import { sanitizeErrorMessage } from "@/lib/error-messages";
-import workflow from "@/lib/vellum-upscale.json";
+import workflow from "@/lib/vellum-upscale-v20.json";
 
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
-
-    // Get deployment ID from environment variable
-    const deploymentId = process.env.COMFYDEPLOY_VELLUM_DEPLOYMENT_ID;
-    const apiKey = process.env.COMFYDEPLOY_API_KEY;
-
-    if (!deploymentId) {
-      return NextResponse.json(
-        { error: "COMFYDEPLOY_VELLUM_DEPLOYMENT_ID is not configured" },
-        { status: 500 }
-      );
-    }
-
-    if (!apiKey) {
-      return NextResponse.json(
-        { error: "COMFYDEPLOY_API_KEY is not configured" },
-        { status: 500 }
-      );
-    }
 
     // Get the image file
     const imageFile = formData.get("input_image");
@@ -40,9 +21,9 @@ export async function POST(request: NextRequest) {
     const strengthModel = strengthModelStr ? parseFloat(strengthModelStr as string) : 0.5;
 
     // Validate strength model
-    if (isNaN(strengthModel) || strengthModel < 0 || strengthModel > 3) {
+    if (isNaN(strengthModel) || strengthModel < 0 || strengthModel > 1) {
       return NextResponse.json(
-        { error: "Strength model must be between 0 and 3" },
+        { error: "Strength model must be between 0 and 1" },
         { status: 400 }
       );
     }
@@ -56,7 +37,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    console.log("=== Vellum 2.0 Workflow Request ===");
+    console.log("=== Vellum 2.0 (Legacy) Workflow Request ===");
     console.log("Image:", imageFile.name, imageFile.type, imageFile.size);
     console.log("Strength Model:", strengthModel);
     console.log("Scale By:", scaleBy);
@@ -66,7 +47,7 @@ export async function POST(request: NextRequest) {
     console.log("Image converted to base64, length:", imageBase64.length);
 
     // Build workflow input
-    const workflowInput: VellumWorkflowInput = {
+    const workflowInput: Vellum20WorkflowInput = {
       workflow: workflow,
       input_image: imageBase64,
       strength_model: strengthModel,
@@ -74,14 +55,14 @@ export async function POST(request: NextRequest) {
     };
 
     // Run the workflow on RunPod
-    const result = await runWorkflowAsync(workflowInput);
+    const result = await runVellum20WorkflowAsync(workflowInput);
 
     return NextResponse.json({
       success: true,
       jobId: result.jobId,
     });
   } catch (error) {
-    console.error("Vellum workflow execution error:", error);
+    console.error("Vellum 2.0 workflow execution error:", error);
     return NextResponse.json(
       { error: sanitizeErrorMessage(error instanceof Error ? error.message : null) },
       { status: 500 }

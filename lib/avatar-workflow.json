@@ -315,7 +315,10 @@
   },
   "104": {
     "inputs": {
-      "text": "blurry image",
+      "text": [
+        "252",
+        2
+      ],
       "clip": [
         "43",
         1
@@ -509,22 +512,29 @@
       "A_ethnicity": "RANDOM",
       "A_age_range": "RANDOM",
       "A_face_aspect": "RANDOM",
+      "A_body_type": "RANDOM",
       "A_skin_tone": "RANDOM",
       "A_face_shape": "RANDOM",
       "A_hair_color": "RANDOM",
       "A_hair_style": "RANDOM",
       "A_eye_color": "RANDOM",
       "A_eye_shape": "RANDOM",
+      "A_eyebrows": "RANDOM",
+      "A_eyelashes": "RANDOM",
       "A_nose": "RANDOM",
       "A_lips": "RANDOM",
+      "A_ears": "normal ears",
       "A_freckles": "no freckles",
       "A_expression": "RANDOM",
-      "A_distinctive_features": "RANDOM",
+      "A_distinctive_features": "no distinctive features",
+      "B_hair_color": "RANDOM",
+      "B_hair_style": "RANDOM",
       "B_skin_texture": "RANDOM",
       "B_skin_color": "RANDOM",
       "B_eyes": "RANDOM",
       "B_face_structure": "RANDOM",
-      "B_organic_additions": "RANDOM"
+      "B_organic_additions": "RANDOM",
+      "extra_details": ""
     },
     "class_type": "CharacterPortraitGenerator",
     "_meta": {

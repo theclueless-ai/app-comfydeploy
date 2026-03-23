@@ -58,6 +58,10 @@ RUN git clone https://github.com/Bwebbfx/ComfyUI_FaceParsing.git && \
     cd ComfyUI_FaceParsing && \
     if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; fi
 
+# Character Generator Pack - Custom portrait/outfit/composition nodes
+# (CharacterPortraitGenerator, OutfitPromptGenerator, QwenEditCompositionGenerator)
+COPY custom_nodes/character_generator /comfyui/custom_nodes/character_generator
+
 # Return to root
 WORKDIR /
 

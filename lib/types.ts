@@ -22,6 +22,10 @@ export interface WorkflowInput {
   min?: number;
   max?: number;
   step?: number;
+  suffix?: string;
+  decimals?: number;
+  // Conditional visibility: only render this input when another field has a specific value
+  showWhen?: { field: string; value: string };
 }
 
 export interface WorkflowConfig {

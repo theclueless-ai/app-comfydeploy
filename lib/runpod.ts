@@ -437,20 +437,318 @@ function isS3Url(url: string): boolean {
 }
 
 // =============================================================================
+// Avatar & Poses - RunPod Serverless (shared endpoint)
+// =============================================================================
+
+function getRunPodAvatarConfig() {
+  const apiKey = process.env.RUNPOD_API_KEY;
+  const endpointId = process.env.RUNPOD_AVATAR_ENDPOINT_ID;
+  const baseUrl = process.env.BASE_URL_RUNPOD || "https://api.runpod.ai/v2";
+
+  if (!apiKey) {
+    throw new Error("RUNPOD_API_KEY is not set in environment variables");
+  }
+  if (!endpointId) {
+    throw new Error("RUNPOD_AVATAR_ENDPOINT_ID is not set in environment variables");
+  }
+
+  return { apiKey, endpointId, baseUrl };
+}
+
+/**
+ * Run an avatar workflow on RunPod serverless (async).
+ * Sends the full ComfyUI workflow JSON to the handler.
+ * @deprecated Use runAvatarAsync instead - sends flat params for the handler to inject.
+ */
+export async function runAvatarWorkflowAsync(
+  workflow: Record<string, unknown>
+): Promise<{ jobId: string }> {
+  const { apiKey, endpointId, baseUrl } = getRunPodAvatarConfig();
+  const url = `${baseUrl}/${endpointId}/run`;
+
+  const payload = {
+    input: {
+      workflow,
+      type: "avatar",
+    },
+  };
+
+  console.log("=== RunPod Avatar API Call (async) ===");
+  console.log("URL:", url);
+  console.log("Endpoint ID:", endpointId);
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  console.log("Response status:", response.status);
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("RunPod Avatar API Error:", errorText);
+    throw new Error(`RunPod Avatar API error: ${response.status} - ${errorText}`);
+  }
+
+  const result: RunPodJobResponse = await response.json();
+  console.log("Avatar job started with ID:", result.id);
+
+  return { jobId: result.id };
+}
+
+/**
+ * Run an avatar generation on RunPod serverless (async).
+ * Sends flat parameters directly in input so the handler can inject them
+ * into its baked workflow (Node 252 and Node 52).
+ */
+export async function runAvatarAsync(
+  params: Record<string, string | number>
+): Promise<{ jobId: string }> {
+  const { apiKey, endpointId, baseUrl } = getRunPodAvatarConfig();
+  const url = `${baseUrl}/${endpointId}/run`;
+
+  const payload = {
+    input: params,
+  };
+
+  console.log("=== RunPod Avatar API Call (async) ===");
+  console.log("URL:", url);
+  console.log("Endpoint ID:", endpointId);
+  console.log("Params:", JSON.stringify(params, null, 2));
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  console.log("Response status:", response.status);
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("RunPod Avatar API Error:", errorText);
+    throw new Error(`RunPod Avatar API error: ${response.status} - ${errorText}`);
+  }
+
+  const result: RunPodJobResponse = await response.json();
+  console.log("Avatar job started with ID:", result.id);
+
+  return { jobId: result.id };
+}
+
+/**
+ * Run a poses workflow on RunPod serverless (async).
+ * Sends the full ComfyUI workflow JSON plus the input image as base64.
+ */
+export async function runPosesWorkflowAsync(
+  workflow: Record<string, unknown>,
+  imageBase64: string
+): Promise<{ jobId: string }> {
+  const { apiKey, endpointId, baseUrl } = getRunPodAvatarConfig();
+  const url = `${baseUrl}/${endpointId}/run`;
+
+  const payload = {
+    input: {
+      workflow,
+      type: "poses",
+      image: imageBase64,
+    },
+  };
+
+  console.log("=== RunPod Poses API Call (async) ===");
+  console.log("URL:", url);
+  console.log("Endpoint ID:", endpointId);
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  console.log("Response status:", response.status);
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("RunPod Poses API Error:", errorText);
+    throw new Error(`RunPod Poses API error: ${response.status} - ${errorText}`);
+  }
+
+  const result: RunPodJobResponse = await response.json();
+  console.log("Poses job started with ID:", result.id);
+
+  return { jobId: result.id };
+}
+
+/**
+ * Check the status of an Avatar/Poses RunPod job.
+ */
+export async function getAvatarJobStatus(jobId: string): Promise<RunPodStatusResponse> {
+  const { apiKey, endpointId, baseUrl } = getRunPodAvatarConfig();
+  const url = `${baseUrl}/${endpointId}/status/${jobId}`;
+
+  console.log("Checking Avatar/Poses job status:", jobId);
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+    },
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("RunPod Avatar/Poses Status API Error:", errorText);
+    throw new Error(`RunPod status error: ${response.status} - ${errorText}`);
+  }
+
+  const result: RunPodStatusResponse = await response.json();
+  console.log("Avatar/Poses job status:", result.status);
+
+  return result;
+}
+
+// =============================================================================
+// Vellum 2.0 (Legacy) - Uses separate RunPod endpoint
+// =============================================================================
+
+function getRunPodVellum20Config() {
+  const apiKey = process.env.RUNPOD_API_KEY;
+  // Falls back to the same endpoint if no separate one is configured
+  const endpointId = process.env.RUNPOD_VELLUM20_ENDPOINT_ID || process.env.RUNPOD_ENDPOINT_ID;
+  const baseUrl = process.env.BASE_URL_RUNPOD || "https://api.runpod.ai/v2";
+
+  if (!apiKey) {
+    throw new Error("RUNPOD_API_KEY is not set in environment variables");
+  }
+  if (!endpointId) {
+    throw new Error("RUNPOD_VELLUM20_ENDPOINT_ID (or RUNPOD_ENDPOINT_ID) is not set in environment variables");
+  }
+
+  return { apiKey, endpointId, baseUrl };
+}
+
+/**
+ * Vellum 2.0 (Legacy) Workflow Inputs
+ * Uses SeedVR2 for upscaling instead of the newer pipeline
+ */
+export interface Vellum20WorkflowInput {
+  workflow: any;
+  input_image: string;    // Base64 data URI
+  strength_model: number; // 0 to 1 (LoRA strength)
+  scale_by: string;       // "2", "4", or "8"
+}
+
+/**
+ * Build the workflow payload for Vellum 2.0 (legacy)
+ */
+function buildVellum20WorkflowPayload(input: Vellum20WorkflowInput) {
+  let imageBase64 = input.input_image;
+  if (imageBase64.includes(',')) {
+    imageBase64 = imageBase64.split(',')[1];
+  }
+
+  return {
+    input: {
+      image: imageBase64,
+      scaleFactor: parseInt(input.scale_by, 10),
+      skin_texture_intensity: input.strength_model,
+    },
+  };
+}
+
+/**
+ * Run Vellum 2.0 workflow on RunPod (async)
+ */
+export async function runVellum20WorkflowAsync(
+  input: Vellum20WorkflowInput
+): Promise<{ jobId: string }> {
+  const { apiKey, endpointId, baseUrl } = getRunPodVellum20Config();
+  const url = `${baseUrl}/${endpointId}/run`;
+
+  const payload = buildVellum20WorkflowPayload(input);
+
+  console.log("=== RunPod Vellum 2.0 API Call (async) ===");
+  console.log("URL:", url);
+  console.log("Endpoint ID:", endpointId);
+  console.log("Skin Texture Intensity:", input.strength_model);
+  console.log("Scale Factor:", input.scale_by);
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  console.log("Response status:", response.status);
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("RunPod Vellum 2.0 API Error:", errorText);
+    throw new Error(`RunPod API error: ${response.status} - ${errorText}`);
+  }
+
+  const result: RunPodJobResponse = await response.json();
+  console.log("Vellum 2.0 job started with ID:", result.id);
+
+  return { jobId: result.id };
+}
+
+/**
+ * Check the status of a Vellum 2.0 RunPod job
+ */
+export async function getVellum20JobStatus(jobId: string): Promise<RunPodStatusResponse> {
+  const { apiKey, endpointId, baseUrl } = getRunPodVellum20Config();
+  const url = `${baseUrl}/${endpointId}/status/${jobId}`;
+
+  console.log("Checking Vellum 2.0 job status:", jobId);
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+    },
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("RunPod Vellum 2.0 Status API Error:", errorText);
+    throw new Error(`RunPod status error: ${response.status} - ${errorText}`);
+  }
+
+  const result: RunPodStatusResponse = await response.json();
+  console.log("Vellum 2.0 job status:", result.status);
+
+  return result;
+}
+
+// =============================================================================
 // AI Talk - RunPod Serverless (InfiniteTalk/WanVideo workflow)
 // =============================================================================
 
 /**
- * AI Talk workflow inputs sent to the RunPod handler.
+ * AI Talk workflow inputs sent to the RunPod handler (LTX-2.3 workflow).
  * The handler injects these into the ComfyUI workflow nodes.
  */
 export interface AiTalkWorkflowInput {
-  input_image: string;      // Base64 data URI of the face image
-  input_audio?: string;     // Base64 data URI of audio (for STS mode)
-  input_text?: string;      // Text for TTS mode
-  voice_id: string;         // ElevenLabs voice ID
-  positive_prompt: string;  // Scene/motion description for video generation
-  mode?: "tts" | "sts";    // TTS (text-to-speech) or STS (speech-to-speech)
+  input_image: string;          // Base64 data URI of the character image (node 167)
+  input_audio: string;          // Base64 data URI of the audio (node 372) — always required
+  positive_prompt: string;      // Scene/motion description (node 352)
+  voice_id?: string;            // ElevenLabs voice ID for node 408 (Voice Changer)
+  use_elevenlabs_vc?: boolean;  // true (default) = audio through ElevenLabs Voice Changer
+                                // false = audio bypasses Voice Changer (pre-generated audio)
 }
 
 /**
@@ -482,11 +780,10 @@ export async function runAiTalkWorkflowAsync(
   const payload = {
     input: {
       input_image: input.input_image,
-      input_audio: input.input_audio || "",
-      input_text: input.input_text || "",
-      voice_id: input.voice_id,
+      input_audio: input.input_audio,
       positive_prompt: input.positive_prompt,
-      mode: input.mode || "tts",
+      voice_id: input.voice_id || "JBFqnCBsd6RMkjVDRZzb",
+      use_elevenlabs_vc: input.use_elevenlabs_vc !== false, // default true
     },
   };
 
@@ -494,7 +791,7 @@ export async function runAiTalkWorkflowAsync(
   console.log("URL:", url);
   console.log("Endpoint ID:", endpointId);
   console.log("Voice ID:", input.voice_id);
-  console.log("Mode:", input.mode || "tts");
+  console.log("Use ElevenLabs VC:", input.use_elevenlabs_vc !== false);
   console.log("Has image:", !!input.input_image);
   console.log("Has audio:", !!input.input_audio);
 
@@ -512,6 +809,23 @@ export async function runAiTalkWorkflowAsync(
   if (!response.ok) {
     const errorText = await response.text();
     console.error("RunPod AI Talk API Error:", errorText);
+    if (response.status === 404) {
+      console.error(
+        `RunPod endpoint '${endpointId}' not found. ` +
+        "Please verify the endpoint exists and is active in your RunPod dashboard, " +
+        "and that RUNPOD_AITALK_ENDPOINT_ID is set correctly."
+      );
+      throw new Error(
+        "RunPod AI Talk endpoint not found. The serverless endpoint may have been " +
+        "deleted or deactivated. Please check your RunPod dashboard and update " +
+        "RUNPOD_AITALK_ENDPOINT_ID if needed."
+      );
+    }
+    if (response.status === 401) {
+      throw new Error(
+        "RunPod API authentication failed. Please verify RUNPOD_API_KEY is correct."
+      );
+    }
     throw new Error(`RunPod AI Talk API error: ${response.status} - ${errorText}`);
   }
 

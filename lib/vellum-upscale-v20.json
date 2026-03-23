@@ -1,0 +1,771 @@
+{
+  "last_node_id": 869,
+  "last_link_id": 52,
+  "nodes": [
+    {
+      "id": 479,
+      "type": "VAEDecode",
+      "pos": [0, 0],
+      "size": [350, 400],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [
+        { "name": "samples", "type": "*", "link": 1, "slot_index": 0 },
+        { "name": "vae", "type": "*", "link": 2, "slot_index": 1 }
+      ],
+      "outputs": [
+        { "name": "output_0", "type": "*", "links": [28, 51], "slot_index": 0 }
+      ],
+      "title": "Decodificaci\u00f3n VAE",
+      "properties": { "Node name for S&R": "VAEDecode" },
+      "widgets_values": []
+    },
+    {
+      "id": 507,
+      "type": "CLIPTextEncode",
+      "pos": [400, 0],
+      "size": [350, 400],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [
+        { "name": "clip", "type": "*", "link": 3, "slot_index": 0 }
+      ],
+      "outputs": [
+        { "name": "output_0", "type": "*", "links": [6], "slot_index": 0 }
+      ],
+      "title": "NEGATIVE",
+      "properties": { "Node name for S&R": "CLIPTextEncode" },
+      "widgets_values": [
+        "(airbrushed, plastic skin, waxy, liquid skin, silicone:1.2), smooth skin, makeup, glamorous, doll, mannequin, (cartoon, anime, 3d render, cgi, painting, illustration:1.2), soft focus, blurry, (excessive smoothing:1.2), over-sharpened, high contrast, jewelry, watermark, text, signature, low resolution, bad anatomy, deformed, (perfect skin:1.1), skin retouching, photorealistic fake, flat lighting"
+      ]
+    },
+    {
+      "id": 510,
+      "type": "KSampler",
+      "pos": [800, 0],
+      "size": [350, 400],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        { "name": "model", "type": "*", "link": 4, "slot_index": 0 },
+        { "name": "positive", "type": "*", "link": 5, "slot_index": 1 },
+        { "name": "negative", "type": "*", "link": 6, "slot_index": 2 },
+        { "name": "latent_image", "type": "*", "link": 7, "slot_index": 3 }
+      ],
+      "outputs": [
+        { "name": "output_0", "type": "*", "links": [1], "slot_index": 0 }
+      ],
+      "title": "KSampler",
+      "properties": { "Node name for S&R": "KSampler" },
+      "widgets_values": [258520138011541, 30, 4.5, "dpmpp_2m", "karras", 0.25]
+    },
+    {
+      "id": 520,
+      "type": "CheckpointLoaderSimple",
+      "pos": [1200, 0],
+      "size": [350, 400],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        { "name": "output_0", "type": "*", "links": [4], "slot_index": 0 },
+        { "name": "output_1", "type": "*", "links": [3, 10], "slot_index": 1 },
+        { "name": "output_2", "type": "*", "links": [2, 9], "slot_index": 2 }
+      ],
+      "title": "Cargar Punto de Control",
+      "properties": { "Node name for S&R": "CheckpointLoaderSimple" },
+      "widgets_values": ["cyberrealisticXL_v80.safetensors"]
+    },
+    {
+      "id": 530,
+      "type": "VAEEncode",
+      "pos": [0, 500],
+      "size": [350, 400],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [
+        { "name": "pixels", "type": "*", "link": 8, "slot_index": 0 },
+        { "name": "vae", "type": "*", "link": 9, "slot_index": 1 }
+      ],
+      "outputs": [
+        { "name": "output_0", "type": "*", "links": [7], "slot_index": 0 }
+      ],
+      "title": "VAE Codificar",
+      "properties": { "Node name for S&R": "VAEEncode" },
+      "widgets_values": []
+    },
+    {
+      "id": 661,
+      "type": "CLIPTextEncode",
+      "pos": [400, 500],
+      "size": [350, 400],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        { "name": "clip", "type": "*", "link": 10, "slot_index": 0 }
+      ],
+      "outputs": [
+        { "name": "output_0", "type": "*", "links": [5], "slot_index": 0 }
+      ],
+      "title": "Codificar Texto CLIP (Prompt)",
+      "properties": { "Node name for S&R": "CLIPTextEncode" },
+      "widgets_values": [
+        "extreme close-up photography, hyper-realistic skin texture, visible pores, natural skin imperfections, (tiny moles:0.7), subtle freckles, fine vellus hair, realistic skin oiliness, natural redness, capillaries, uneven skin tone, micro-creases, highly detailed dermis, soft natural daylight, shot on 85mm lens, f/2.8, raw photo, unedited, high dynamic range, sharp focus on skin grain."
+      ]
+    },
+    {
+      "id": 709,
+      "type": "ConditioningZeroOut",
+      "pos": [800, 500],
+      "size": [350, 400],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        { "name": "conditioning", "type": "*", "link": 11, "slot_index": 0 }
+      ],
+      "outputs": [
+        { "name": "output_0", "type": "*", "links": [47], "slot_index": 0 }
+      ],
+      "title": "Acondicionamiento Cero",
+      "properties": { "Node name for S&R": "ConditioningZeroOut" },
+      "widgets_values": []
+    },
+    {
+      "id": 711,
+      "type": "CLIPTextEncode",
+      "pos": [1200, 500],
+      "size": [350, 400],
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        { "name": "clip", "type": "*", "link": 12, "slot_index": 0 }
+      ],
+      "outputs": [
+        { "name": "output_0", "type": "*", "links": [11, 46], "slot_index": 0 }
+      ],
+      "title": "Codificar Texto CLIP (Prompt)",
+      "properties": { "Node name for S&R": "CLIPTextEncode" },
+      "widgets_values": [
+        "skin texture, authentic rough skin texture, sharp pore details, micro-texture, subsurface scattering, realistic surface roughness, ultra-detailed pore structure, hyperrealism,"
+      ]
+    },
+    {
+      "id": 718,
+      "type": "VAELoader",
+      "pos": [0, 1000],
+      "size": [350, 400],
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        { "name": "output_0", "type": "*", "links": [21, 23, 50], "slot_index": 0 }
+      ],
+      "title": "Cargar VAE",
+      "properties": { "Node name for S&R": "VAELoader" },
+      "widgets_values": ["ae.safetensors"]
+    },
+    {
+      "id": 719,
+      "type": "DualCLIPLoader",
+      "pos": [400, 1000],
+      "size": [350, 400],
+      "flags": {},
+      "order": 9,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        { "name": "output_0", "type": "*", "links": [32], "slot_index": 0 }
+      ],
+      "title": "DualCLIPLoader",
+      "properties": { "Node name for S&R": "DualCLIPLoader" },
+      "widgets_values": ["t5xxl_fp8_e4m3fn.safetensors", "clip_l.safetensors", "flux", "default"]
+    },
+    {
+      "id": 739,
+      "type": "Text to Number",
+      "pos": [800, 1000],
+      "size": [350, 400],
+      "flags": {},
+      "order": 10,
+      "mode": 0,
+      "inputs": [
+        { "name": "text", "type": "*", "link": 13, "slot_index": 0 }
+      ],
+      "outputs": [
+        { "name": "output_0", "type": "*", "links": [14], "slot_index": 0 }
+      ],
+      "title": "Text to Number",
+      "properties": { "Node name for S&R": "Text to Number" },
+      "widgets_values": []
+    },
+    {
+      "id": 742,
+      "type": "LF_MathOperation",
+      "pos": [1200, 1000],
+      "size": [350, 400],
+      "flags": {},
+      "order": 11,
+      "mode": 0,
+      "inputs": [
+        { "name": "a", "type": "*", "link": 14, "slot_index": 0 }
+      ],
+      "outputs": [
+        { "name": "output_0", "type": "*", "links": [26, 27], "slot_index": 0 }
+      ],
+      "title": "Math operation",
+      "properties": { "Node name for S&R": "LF_MathOperation" },
+      "widgets_values": [
+        "a * 1024",
+        "## Result:\n  **4096.0**\n\n## Variables:\n  a: **4** <int>\n  b: N/A\n  c: N/A\n  d: N/A\n\n## Full operation:\n  4.0 * 1024\n        "
+      ]
+    },
+    {
+      "id": 752,
+      "type": "Random Number",
+      "pos": [0, 1500],
+      "size": [350, 400],
+      "flags": {},
+      "order": 12,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        { "name": "output_0", "type": "*", "links": [], "slot_index": 0 },
+        { "name": "output_1", "type": "*", "links": [], "slot_index": 1 },
+        { "name": "output_2", "type": "*", "links": [15, 25], "slot_index": 2 }
+      ],
+      "title": "Random Number",
+      "properties": { "Node name for S&R": "Random Number" },
+      "widgets_values": ["float", 0, 979.6, 797366968225553]
+    },
+    {
+      "id": 783,
+      "type": "KSampler",
+      "pos": [400, 1500],
+      "size": [350, 400],
+      "flags": {},
+      "order": 13,
+      "mode": 0,
+      "inputs": [
+        { "name": "seed", "type": "*", "link": 15, "slot_index": 0 },
+        { "name": "model", "type": "*", "link": 16, "slot_index": 1 },
+        { "name": "positive", "type": "*", "link": 17, "slot_index": 2 },
+        { "name": "negative", "type": "*", "link": 18, "slot_index": 3 },
+        { "name": "latent_image", "type": "*", "link": 19, "slot_index": 4 }
+      ],
+      "outputs": [
+        { "name": "output_0", "type": "*", "links": [22], "slot_index": 0 }
+      ],
+      "title": "KSampler",
+      "properties": { "Node name for S&R": "KSampler" },
+      "widgets_values": [40, 1, "dpmpp_2m", "sgm_uniform", 0.35]
+    },
+    {
+      "id": 784,
+      "type": "VAEEncode",
+      "pos": [800, 1500],
+      "size": [350, 400],
+      "flags": {},
+      "order": 14,
+      "mode": 0,
+      "inputs": [
+        { "name": "pixels", "type": "*", "link": 20, "slot_index": 0 },
+        { "name": "vae", "type": "*", "link": 21, "slot_index": 1 }
+      ],
+      "outputs": [
+        { "name": "output_0", "type": "*", "links": [19], "slot_index": 0 }
+      ],
+      "title": "VAE Codificar",
+      "properties": { "Node name for S&R": "VAEEncode" },
+      "widgets_values": []
+    },
+    {
+      "id": 785,
+      "type": "VAEDecode",
+      "pos": [1200, 1500],
+      "size": [350, 400],
+      "flags": {},
+      "order": 15,
+      "mode": 0,
+      "inputs": [
+        { "name": "samples", "type": "*", "link": 22, "slot_index": 0 },
+        { "name": "vae", "type": "*", "link": 23, "slot_index": 1 }
+      ],
+      "outputs": [
+        { "name": "output_0", "type": "*", "links": [34, 41], "slot_index": 0 }
+      ],
+      "title": "Decodificaci\u00f3n VAE",
+      "properties": { "Node name for S&R": "VAEDecode" },
+      "widgets_values": []
+    },
+    {
+      "id": 787,
+      "type": "SeedVR2LoadVAEModel",
+      "pos": [0, 2000],
+      "size": [350, 400],
+      "flags": {},
+      "order": 16,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        { "name": "output_0", "type": "*", "links": [30], "slot_index": 0 }
+      ],
+      "title": "SeedVR2 (Down)Load VAE Model",
+      "properties": { "Node name for S&R": "SeedVR2LoadVAEModel" },
+      "widgets_values": ["ema_vae_fp16.safetensors", "cuda:0", true, 1024, 128, true, 1024, 128, "false", "cpu", false]
+    },
+    {
+      "id": 790,
+      "type": "SaveImage",
+      "pos": [400, 2000],
+      "size": [350, 400],
+      "flags": {},
+      "order": 17,
+      "mode": 0,
+      "inputs": [
+        { "name": "images", "type": "*", "link": 24, "slot_index": 0 }
+      ],
+      "outputs": [
+        { "name": "output_0", "type": "*", "links": [], "slot_index": 0 }
+      ],
+      "title": "Guardar Imagen",
+      "properties": { "Node name for S&R": "SaveImage" },
+      "widgets_values": ["4k"]
+    },
+    {
+      "id": 792,
+      "type": "SeedVR2LoadDiTModel",
+      "pos": [800, 2000],
+      "size": [350, 400],
+      "flags": {},
+      "order": 18,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        { "name": "output_0", "type": "*", "links": [29], "slot_index": 0 }
+      ],
+      "title": "SeedVR2 (Down)Load DiT Model",
+      "properties": { "Node name for S&R": "SeedVR2LoadDiTModel" },
+      "widgets_values": ["seedvr2_ema_7b_fp8_e4m3fn_mixed_block35_fp16.safetensors", "cuda:0", 35, false, "cpu", false, "sdpa"]
+    },
+    {
+      "id": 795,
+      "type": "SeedVR2VideoUpscaler",
+      "pos": [1200, 2000],
+      "size": [350, 400],
+      "flags": {},
+      "order": 19,
+      "mode": 0,
+      "inputs": [
+        { "name": "seed", "type": "*", "link": 25, "slot_index": 0 },
+        { "name": "resolution", "type": "*", "link": 26, "slot_index": 1 },
+        { "name": "max_resolution", "type": "*", "link": 27, "slot_index": 2 },
+        { "name": "image", "type": "*", "link": 28, "slot_index": 3 },
+        { "name": "dit", "type": "*", "link": 29, "slot_index": 4 },
+        { "name": "vae", "type": "*", "link": 30, "slot_index": 5 }
+      ],
+      "outputs": [
+        { "name": "output_0", "type": "*", "links": [24, 52], "slot_index": 0 }
+      ],
+      "title": "SeedVR2 Video Upscaler (v2.5.24)",
+      "properties": { "Node name for S&R": "SeedVR2VideoUpscaler" },
+      "widgets_values": [1, false, "lab", 16, 0, 0.005, 0.001, "cpu", false]
+    },
+    {
+      "id": 810,
+      "type": "LoraLoader",
+      "pos": [0, 2500],
+      "size": [350, 400],
+      "flags": {},
+      "order": 20,
+      "mode": 0,
+      "inputs": [
+        { "name": "model", "type": "*", "link": 31, "slot_index": 0 },
+        { "name": "clip", "type": "*", "link": 32, "slot_index": 1 }
+      ],
+      "outputs": [
+        { "name": "output_0", "type": "*", "links": [16], "slot_index": 0 },
+        { "name": "output_1", "type": "*", "links": [12], "slot_index": 1 }
+      ],
+      "title": "Cargar LoRA",
+      "properties": { "Node name for S&R": "LoraLoader" },
+      "widgets_values": ["Vellum/skintexture.safetensors", 3, 1]
+    },
+    {
+      "id": 814,
+      "type": "ImageScaleToTotalPixels",
+      "pos": [400, 2500],
+      "size": [350, 400],
+      "flags": {},
+      "order": 21,
+      "mode": 0,
+      "inputs": [
+        { "name": "image", "type": "*", "link": 33, "slot_index": 0 }
+      ],
+      "outputs": [
+        { "name": "output_0", "type": "*", "links": [8], "slot_index": 0 }
+      ],
+      "title": "Escalar Imagen a Total de Pixeles",
+      "properties": { "Node name for S&R": "ImageScaleToTotalPixels" },
+      "widgets_values": ["lanczos", 1.5, 1]
+    },
+    {
+      "id": 831,
+      "type": "FaceParsingLoader",
+      "pos": [800, 2500],
+      "size": [350, 400],
+      "flags": {},
+      "order": 22,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        { "name": "output_0", "type": "*", "links": [35], "slot_index": 0 }
+      ],
+      "title": "FaceParsingLoader",
+      "properties": { "Node name for S&R": "FaceParsingLoader" },
+      "widgets_values": ["resnet18", "auto", ""]
+    },
+    {
+      "id": 832,
+      "type": "FaceParsingInfer",
+      "pos": [1200, 2500],
+      "size": [350, 400],
+      "flags": {},
+      "order": 23,
+      "mode": 0,
+      "inputs": [
+        { "name": "image", "type": "*", "link": 34, "slot_index": 0 },
+        { "name": "model", "type": "*", "link": 35, "slot_index": 1 }
+      ],
+      "outputs": [
+        { "name": "output_0", "type": "*", "links": [36, 37], "slot_index": 0 }
+      ],
+      "title": "FaceParsingInfer",
+      "properties": { "Node name for S&R": "FaceParsingInfer" },
+      "widgets_values": [true, true]
+    },
+    {
+      "id": 833,
+      "type": "FacePartMask",
+      "pos": [0, 3000],
+      "size": [350, 400],
+      "flags": {},
+      "order": 24,
+      "mode": 0,
+      "inputs": [
+        { "name": "seg_map", "type": "*", "link": 36, "slot_index": 0 }
+      ],
+      "outputs": [
+        { "name": "output_0", "type": "*", "links": [38], "slot_index": 0 }
+      ],
+      "title": "FacePartMask",
+      "properties": { "Node name for S&R": "FacePartMask" },
+      "widgets_values": [6, "l_brow", false, "r_brow", "l_eye", "r_eye", "u_lip", "l_lip"]
+    },
+    {
+      "id": 834,
+      "type": "FacePartMask",
+      "pos": [400, 3000],
+      "size": [350, 400],
+      "flags": {},
+      "order": 25,
+      "mode": 0,
+      "inputs": [
+        { "name": "seg_map", "type": "*", "link": 37, "slot_index": 0 }
+      ],
+      "outputs": [
+        { "name": "output_0", "type": "*", "links": [39], "slot_index": 0 }
+      ],
+      "title": "FacePartMask",
+      "properties": { "Node name for S&R": "FacePartMask" },
+      "widgets_values": [5, "cloth", false, "hair", "hat", "ear_ring", "eye_g", "l_lip"]
+    },
+    {
+      "id": 835,
+      "type": "MaskComposite",
+      "pos": [800, 3000],
+      "size": [350, 400],
+      "flags": {},
+      "order": 26,
+      "mode": 0,
+      "inputs": [
+        { "name": "destination", "type": "*", "link": 38, "slot_index": 0 },
+        { "name": "source", "type": "*", "link": 39, "slot_index": 1 }
+      ],
+      "outputs": [
+        { "name": "output_0", "type": "*", "links": [40], "slot_index": 0 }
+      ],
+      "title": "Composici\u00f3n de M\u00e1scara",
+      "properties": { "Node name for S&R": "MaskComposite" },
+      "widgets_values": [0, 0, "add"]
+    },
+    {
+      "id": 836,
+      "type": "GrowMaskWithBlur",
+      "pos": [1200, 3000],
+      "size": [350, 400],
+      "flags": {},
+      "order": 27,
+      "mode": 0,
+      "inputs": [
+        { "name": "mask", "type": "*", "link": 40, "slot_index": 0 }
+      ],
+      "outputs": [
+        { "name": "output_0", "type": "*", "links": [43], "slot_index": 0 }
+      ],
+      "title": "Grow Mask With Blur",
+      "properties": { "Node name for S&R": "GrowMaskWithBlur" },
+      "widgets_values": [10, 0, true, false, 4, 1, 1, false]
+    },
+    {
+      "id": 837,
+      "type": "ImageCompositeMasked",
+      "pos": [0, 3500],
+      "size": [350, 400],
+      "flags": {},
+      "order": 28,
+      "mode": 0,
+      "inputs": [
+        { "name": "destination", "type": "*", "link": 41, "slot_index": 0 },
+        { "name": "source", "type": "*", "link": 42, "slot_index": 1 },
+        { "name": "mask", "type": "*", "link": 43, "slot_index": 2 }
+      ],
+      "outputs": [
+        { "name": "output_0", "type": "*", "links": [33], "slot_index": 0 }
+      ],
+      "title": "ImageCompositeMasked",
+      "properties": { "Node name for S&R": "ImageCompositeMasked" },
+      "widgets_values": [0, 0, true]
+    },
+    {
+      "id": 847,
+      "type": "ImageScaleToTotalPixels",
+      "pos": [400, 3500],
+      "size": [350, 400],
+      "flags": {},
+      "order": 29,
+      "mode": 0,
+      "inputs": [
+        { "name": "image", "type": "*", "link": 44, "slot_index": 0 }
+      ],
+      "outputs": [
+        { "name": "output_0", "type": "*", "links": [20, 45], "slot_index": 0 }
+      ],
+      "title": "Escalar Imagen a Total de Pixeles",
+      "properties": { "Node name for S&R": "ImageScaleToTotalPixels" },
+      "widgets_values": ["nearest-exact", 1, 1]
+    },
+    {
+      "id": 848,
+      "type": "Text String",
+      "pos": [800, 3500],
+      "size": [350, 400],
+      "flags": {},
+      "order": 30,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        { "name": "output_0", "type": "*", "links": [13], "slot_index": 0 }
+      ],
+      "title": "Text String",
+      "properties": { "Node name for S&R": "Text String" },
+      "widgets_values": ["4", "", "", ""]
+    },
+    {
+      "id": 853,
+      "type": "UnetLoaderGGUF",
+      "pos": [1200, 3500],
+      "size": [350, 400],
+      "flags": {},
+      "order": 31,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        { "name": "output_0", "type": "*", "links": [31], "slot_index": 0 }
+      ],
+      "title": "Unet Loader (GGUF)",
+      "properties": { "Node name for S&R": "UnetLoaderGGUF" },
+      "widgets_values": ["flux1-dev-Q8_0.gguf"]
+    },
+    {
+      "id": 857,
+      "type": "Canny",
+      "pos": [0, 4000],
+      "size": [350, 400],
+      "flags": {},
+      "order": 32,
+      "mode": 0,
+      "inputs": [
+        { "name": "image", "type": "*", "link": 45, "slot_index": 0 }
+      ],
+      "outputs": [
+        { "name": "output_0", "type": "*", "links": [49], "slot_index": 0 }
+      ],
+      "title": "Canny",
+      "properties": { "Node name for S&R": "Canny" },
+      "widgets_values": [0.3, 0.3]
+    },
+    {
+      "id": 858,
+      "type": "ControlNetApplyAdvanced",
+      "pos": [400, 4000],
+      "size": [350, 400],
+      "flags": {},
+      "order": 33,
+      "mode": 0,
+      "inputs": [
+        { "name": "positive", "type": "*", "link": 46, "slot_index": 0 },
+        { "name": "negative", "type": "*", "link": 47, "slot_index": 1 },
+        { "name": "control_net", "type": "*", "link": 48, "slot_index": 2 },
+        { "name": "image", "type": "*", "link": 49, "slot_index": 3 },
+        { "name": "vae", "type": "*", "link": 50, "slot_index": 4 }
+      ],
+      "outputs": [
+        { "name": "output_0", "type": "*", "links": [17], "slot_index": 0 },
+        { "name": "output_1", "type": "*", "links": [18], "slot_index": 1 }
+      ],
+      "title": "Aplicar ControlNet",
+      "properties": { "Node name for S&R": "ControlNetApplyAdvanced" },
+      "widgets_values": [0.9, 0, 1]
+    },
+    {
+      "id": 859,
+      "type": "ControlNetLoader",
+      "pos": [800, 4000],
+      "size": [350, 400],
+      "flags": {},
+      "order": 34,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        { "name": "output_0", "type": "*", "links": [48], "slot_index": 0 }
+      ],
+      "title": "Cargar Modelo ControlNet",
+      "properties": { "Node name for S&R": "ControlNetLoader" },
+      "widgets_values": ["FLUX.1-dev-Controlnet-Canny.safetensors"]
+    },
+    {
+      "id": 867,
+      "type": "easy loadImageBase64",
+      "pos": [1200, 4000],
+      "size": [350, 400],
+      "flags": {},
+      "order": 35,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        { "name": "output_0", "type": "*", "links": [42, 44], "slot_index": 0 }
+      ],
+      "title": "Load Image (Base64)",
+      "properties": { "Node name for S&R": "easy loadImageBase64" },
+      "widgets_values": ["", "Preview", "ComfyUI"]
+    },
+    {
+      "id": 868,
+      "type": "easy cleanGpuUsed",
+      "pos": [0, 4500],
+      "size": [350, 400],
+      "flags": {},
+      "order": 36,
+      "mode": 0,
+      "inputs": [
+        { "name": "anything", "type": "*", "link": 51, "slot_index": 0 }
+      ],
+      "outputs": [
+        { "name": "output_0", "type": "*", "links": [], "slot_index": 0 }
+      ],
+      "title": "Clean VRAM Used",
+      "properties": { "Node name for S&R": "easy cleanGpuUsed" },
+      "widgets_values": []
+    },
+    {
+      "id": 869,
+      "type": "easy cleanGpuUsed",
+      "pos": [400, 4500],
+      "size": [350, 400],
+      "flags": {},
+      "order": 37,
+      "mode": 0,
+      "inputs": [
+        { "name": "anything", "type": "*", "link": 52, "slot_index": 0 }
+      ],
+      "outputs": [
+        { "name": "output_0", "type": "*", "links": [], "slot_index": 0 }
+      ],
+      "title": "Clean VRAM Used",
+      "properties": { "Node name for S&R": "easy cleanGpuUsed" },
+      "widgets_values": []
+    }
+  ],
+  "links": [
+    [1, 510, 0, 479, 0, "*"],
+    [2, 520, 2, 479, 1, "*"],
+    [3, 520, 1, 507, 0, "*"],
+    [4, 520, 0, 510, 0, "*"],
+    [5, 661, 0, 510, 1, "*"],
+    [6, 507, 0, 510, 2, "*"],
+    [7, 530, 0, 510, 3, "*"],
+    [8, 814, 0, 530, 0, "*"],
+    [9, 520, 2, 530, 1, "*"],
+    [10, 520, 1, 661, 0, "*"],
+    [11, 711, 0, 709, 0, "*"],
+    [12, 810, 1, 711, 0, "*"],
+    [13, 848, 0, 739, 0, "*"],
+    [14, 739, 0, 742, 0, "*"],
+    [15, 752, 2, 783, 0, "*"],
+    [16, 810, 0, 783, 1, "*"],
+    [17, 858, 0, 783, 2, "*"],
+    [18, 858, 1, 783, 3, "*"],
+    [19, 784, 0, 783, 4, "*"],
+    [20, 847, 0, 784, 0, "*"],
+    [21, 718, 0, 784, 1, "*"],
+    [22, 783, 0, 785, 0, "*"],
+    [23, 718, 0, 785, 1, "*"],
+    [24, 795, 0, 790, 0, "*"],
+    [25, 752, 2, 795, 0, "*"],
+    [26, 742, 0, 795, 1, "*"],
+    [27, 742, 0, 795, 2, "*"],
+    [28, 479, 0, 795, 3, "*"],
+    [29, 792, 0, 795, 4, "*"],
+    [30, 787, 0, 795, 5, "*"],
+    [31, 853, 0, 810, 0, "*"],
+    [32, 719, 0, 810, 1, "*"],
+    [33, 837, 0, 814, 0, "*"],
+    [34, 785, 0, 832, 0, "*"],
+    [35, 831, 0, 832, 1, "*"],
+    [36, 832, 0, 833, 0, "*"],
+    [37, 832, 0, 834, 0, "*"],
+    [38, 833, 0, 835, 0, "*"],
+    [39, 834, 0, 835, 1, "*"],
+    [40, 835, 0, 836, 0, "*"],
+    [41, 785, 0, 837, 0, "*"],
+    [42, 867, 0, 837, 1, "*"],
+    [43, 836, 0, 837, 2, "*"],
+    [44, 867, 0, 847, 0, "*"],
+    [45, 847, 0, 857, 0, "*"],
+    [46, 711, 0, 858, 0, "*"],
+    [47, 709, 0, 858, 1, "*"],
+    [48, 859, 0, 858, 2, "*"],
+    [49, 857, 0, 858, 3, "*"],
+    [50, 718, 0, 858, 4, "*"],
+    [51, 479, 0, 868, 0, "*"],
+    [52, 795, 0, 869, 0, "*"]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ds": {
+      "scale": 0.7,
+      "offset": [0, 0]
+    }
+  },
+  "version": 0.4
+}

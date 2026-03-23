@@ -11,6 +11,7 @@ import {
   COLOR_GRADING,
   withRandom,
 } from "@/lib/avatar-data";
+import { MultiSelectInput } from "./multi-select-input";
 
 interface AvatarFormProps {
   onSubmit: (inputs: Record<string, string | number>) => Promise<void>;
@@ -116,24 +117,33 @@ export function AvatarForm({ onSubmit, isLoading, reusedParameters, onParameters
   const [ethnicity, setEthnicity] = useState("RANDOM");
   const [ageRange, setAgeRange] = useState("RANDOM");
   const [faceAspect, setFaceAspect] = useState("RANDOM");
+  const [bodyType, setBodyType] = useState("RANDOM");
   const [skinTone, setSkinTone] = useState("RANDOM");
   const [faceShape, setFaceShape] = useState("RANDOM");
   const [hairColor, setHairColor] = useState("RANDOM");
   const [hairStyle, setHairStyle] = useState("RANDOM");
   const [eyeColor, setEyeColor] = useState("RANDOM");
   const [eyeShape, setEyeShape] = useState("RANDOM");
+  const [eyebrows, setEyebrows] = useState("RANDOM");
+  const [eyelashes, setEyelashes] = useState("RANDOM");
   const [nose, setNose] = useState("RANDOM");
   const [lips, setLips] = useState("RANDOM");
+  const [ears, setEars] = useState("normal ears");
   const [freckles, setFreckles] = useState("no freckles");
   const [expression, setExpression] = useState("RANDOM");
-  const [distinctiveFeatures, setDistinctiveFeatures] = useState("RANDOM");
+  const [distinctiveFeatures, setDistinctiveFeatures] = useState<string[]>(["no distinctive features"]);
 
   // Non-human features
+  const [nhHairColor, setNhHairColor] = useState("RANDOM");
+  const [nhHairStyle, setNhHairStyle] = useState("RANDOM");
   const [skinTexture, setSkinTexture] = useState("RANDOM");
   const [skinColor, setSkinColor] = useState("RANDOM");
   const [eyes, setEyes] = useState("RANDOM");
   const [faceStructure, setFaceStructure] = useState("RANDOM");
   const [organicAdditions, setOrganicAdditions] = useState("RANDOM");
+
+  // Extra custom details
+  const [extraDetails, setExtraDetails] = useState("");
 
   // Color grading
   const [showColorGrading, setShowColorGrading] = useState(false);
@@ -167,24 +177,36 @@ export function AvatarForm({ onSubmit, isLoading, reusedParameters, onParameters
     if (p.A_ethnicity) setEthnicity(String(p.A_ethnicity));
     if (p.A_age_range) setAgeRange(String(p.A_age_range));
     if (p.A_face_aspect) setFaceAspect(String(p.A_face_aspect));
+    if (p.A_body_type) setBodyType(String(p.A_body_type));
     if (p.A_skin_tone) setSkinTone(String(p.A_skin_tone));
     if (p.A_face_shape) setFaceShape(String(p.A_face_shape));
     if (p.A_hair_color) setHairColor(String(p.A_hair_color));
     if (p.A_hair_style) setHairStyle(String(p.A_hair_style));
     if (p.A_eye_color) setEyeColor(String(p.A_eye_color));
     if (p.A_eye_shape) setEyeShape(String(p.A_eye_shape));
+    if (p.A_eyebrows) setEyebrows(String(p.A_eyebrows));
+    if (p.A_eyelashes) setEyelashes(String(p.A_eyelashes));
     if (p.A_nose) setNose(String(p.A_nose));
     if (p.A_lips) setLips(String(p.A_lips));
+    if (p.A_ears) setEars(String(p.A_ears));
     if (p.A_freckles) setFreckles(String(p.A_freckles));
     if (p.A_expression) setExpression(String(p.A_expression));
-    if (p.A_distinctive_features) setDistinctiveFeatures(String(p.A_distinctive_features));
+    if (p.A_distinctive_features) {
+      const dfStr = String(p.A_distinctive_features);
+      setDistinctiveFeatures(dfStr.includes(",") ? dfStr.split(",").map(s => s.trim()) : [dfStr]);
+    }
 
     // Non-human features
+    if (p.B_hair_color) setNhHairColor(String(p.B_hair_color));
+    if (p.B_hair_style) setNhHairStyle(String(p.B_hair_style));
     if (p.B_skin_texture) setSkinTexture(String(p.B_skin_texture));
     if (p.B_skin_color) setSkinColor(String(p.B_skin_color));
     if (p.B_eyes) setEyes(String(p.B_eyes));
     if (p.B_face_structure) setFaceStructure(String(p.B_face_structure));
     if (p.B_organic_additions) setOrganicAdditions(String(p.B_organic_additions));
+
+    // Extra details
+    if (p.extra_details) setExtraDetails(String(p.extra_details));
 
     // Color grading
     const cg: Partial<ColorGradingValues> = {};
@@ -217,24 +239,33 @@ export function AvatarForm({ onSubmit, isLoading, reusedParameters, onParameters
       A_ethnicity: ethnicity,
       A_age_range: ageRange,
       A_face_aspect: faceAspect,
+      A_body_type: bodyType,
       A_skin_tone: skinTone,
       A_face_shape: faceShape,
       A_hair_color: hairColor,
       A_hair_style: hairStyle,
       A_eye_color: eyeColor,
       A_eye_shape: eyeShape,
+      A_eyebrows: eyebrows,
+      A_eyelashes: eyelashes,
       A_nose: nose,
       A_lips: lips,
+      A_ears: ears,
       A_freckles: freckles,
       A_expression: expression,
-      A_distinctive_features: distinctiveFeatures,
+      A_distinctive_features: distinctiveFeatures.join(", "),
 
       // Non-human features
+      B_hair_color: nhHairColor,
+      B_hair_style: nhHairStyle,
       B_skin_texture: skinTexture,
       B_skin_color: skinColor,
       B_eyes: eyes,
       B_face_structure: faceStructure,
       B_organic_additions: organicAdditions,
+
+      // Extra custom details
+      extra_details: extraDetails,
 
       // Color grading
       temperature: colorGrading.temperature,
@@ -347,6 +378,12 @@ export function AvatarForm({ onSubmit, isLoading, reusedParameters, onParameters
             options={withRandom([...HUMAN_DATA.face_aspect])}
           />
           <SelectInput
+            label="Body Type"
+            value={bodyType}
+            onChange={setBodyType}
+            options={withRandom([...HUMAN_DATA.body_type])}
+          />
+          <SelectInput
             label="Skin Tone"
             value={skinTone}
             onChange={setSkinTone}
@@ -383,6 +420,18 @@ export function AvatarForm({ onSubmit, isLoading, reusedParameters, onParameters
             options={withRandom([...HUMAN_DATA.eye_shape])}
           />
           <SelectInput
+            label="Eyebrows"
+            value={eyebrows}
+            onChange={setEyebrows}
+            options={withRandom([...HUMAN_DATA.eyebrows])}
+          />
+          <SelectInput
+            label="Eyelashes"
+            value={eyelashes}
+            onChange={setEyelashes}
+            options={withRandom([...HUMAN_DATA.eyelashes])}
+          />
+          <SelectInput
             label="Nose"
             value={nose}
             onChange={setNose}
@@ -393,6 +442,12 @@ export function AvatarForm({ onSubmit, isLoading, reusedParameters, onParameters
             value={lips}
             onChange={setLips}
             options={withRandom([...HUMAN_DATA.lips])}
+          />
+          <SelectInput
+            label="Ears"
+            value={ears}
+            onChange={setEars}
+            options={[...HUMAN_DATA.ears]}
           />
           <SelectInput
             label="Freckles"
@@ -406,11 +461,11 @@ export function AvatarForm({ onSubmit, isLoading, reusedParameters, onParameters
             onChange={setExpression}
             options={withRandom([...HUMAN_DATA.expression])}
           />
-          <SelectInput
-            label="Distinctive Features"
-            value={distinctiveFeatures}
+          <MultiSelectInput
+            label="Distinctive Features (multi-select)"
+            values={distinctiveFeatures}
             onChange={setDistinctiveFeatures}
-            options={withRandom([...HUMAN_DATA.distinctive_features])}
+            options={[...HUMAN_DATA.distinctive_features]}
           />
         </>
       )}
@@ -419,6 +474,18 @@ export function AvatarForm({ onSubmit, isLoading, reusedParameters, onParameters
       {characterType === "NON-HUMAN" && (
         <>
           <SectionHeader title="Non-Human Features" />
+          <SelectInput
+            label="Hair Color"
+            value={nhHairColor}
+            onChange={setNhHairColor}
+            options={withRandom([...NONHUMAN_DATA.hair_color])}
+          />
+          <SelectInput
+            label="Hair Style"
+            value={nhHairStyle}
+            onChange={setNhHairStyle}
+            options={withRandom([...NONHUMAN_DATA.hair_style])}
+          />
           <SelectInput
             label="Skin Texture"
             value={skinTexture}
@@ -451,6 +518,29 @@ export function AvatarForm({ onSubmit, isLoading, reusedParameters, onParameters
           />
         </>
       )}
+
+      {/* Extra Custom Details */}
+      <SectionHeader title="Custom Details" />
+      <div className="space-y-1">
+        <label className="block text-xs font-medium text-[rgb(var(--muted-foreground))]">
+          Extra Details
+        </label>
+        <textarea
+          value={extraDetails}
+          onChange={(e) => setExtraDetails(e.target.value)}
+          placeholder="Add any custom details not covered by the options above: 'face tattoo of a dragon', 'glowing eyes', 'cybernetic implant'..."
+          rows={3}
+          className={cn(
+            "w-full px-3 py-2",
+            "bg-[rgb(var(--input))] border border-[rgb(var(--border-input))] rounded-md",
+            "text-[rgb(var(--muted-foreground))] text-xs",
+            "focus:outline-none focus:ring-1 focus:ring-brand-pink focus:border-transparent",
+            "transition-all duration-200",
+            "hover:border-brand-pink/50",
+            "resize-none"
+          )}
+        />
+      </div>
 
       {/* Color Grading (collapsible) */}
       <div className="pt-1">
