@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { runPosesWorkflowAsync } from "@/lib/runpod";
-import posesWorkflow from "@/lib/poses-workflow.json";
+import { uploadImage, queuePrompt } from "@/lib/comfyui-local";
+import posesWorkflowTemplate from "@/lib/poses-workflow.json";
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,19 +15,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Convert image to base64 for sending to RunPod
+    // Upload image to local ComfyUI
     const arrayBuffer = await imageFile.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    const imageBase64 = `data:${imageFile.type || "image/png"};base64,${buffer.toString("base64")}`;
+    const uploadedFilename = await uploadImage(
+      arrayBuffer,
+      imageFile.name || "reference.png",
+      imageFile.type || "image/png"
+    );
 
-    // Deep clone the workflow template
-    const workflow = JSON.parse(JSON.stringify(posesWorkflow)) as Record<string, unknown>;
+    // Clone workflow template and inject uploaded filename into Node 99 (LoadImage)
+    type WorkflowNode = { inputs: Record<string, unknown> };
+    const workflow = JSON.parse(JSON.stringify(posesWorkflowTemplate)) as Record<string, WorkflowNode>;
 
-    // Send workflow + image to RunPod serverless
-    // The handler will upload the image to ComfyUI and inject the filename into Node 99
-    const { jobId } = await runPosesWorkflowAsync(workflow, imageBase64);
+    const node99 = workflow["99"];
+    if (node99) {
+      node99.inputs.image = uploadedFilename;
+    }
 
-    return NextResponse.json({ jobId });
+    // Submit to local ComfyUI
+    const promptId = await queuePrompt(workflow as Record<string, unknown>);
+    return NextResponse.json({ jobId: promptId });
   } catch (error) {
     console.error("Poses workflow error:", error);
     return NextResponse.json(

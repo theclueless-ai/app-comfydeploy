@@ -1,16 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { runAvatarAsync } from "@/lib/runpod";
+import { queuePrompt } from "@/lib/comfyui-local";
+import avatarWorkflowTemplate from "@/lib/avatar-workflow.json";
+
+const COLOR_FIELDS = ["temperature", "hue", "brightness", "contrast", "saturation", "gamma"];
 
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
 
-    // Build flat parameter object matching what the RunPod handler expects.
-    // The handler loads its own baked workflow and injects these params into
-    // Node 252 (CharacterPortraitGenerator) and Node 52 (Color Grading).
-    const params: Record<string, string | number> = {
-      type: "avatar",
-    };
+    // Build flat parameter object (same fields as before)
+    const params: Record<string, string | number> = {};
 
     // Global settings
     params.character_type = (formData.get("character_type") as string) || "HUMAN";
@@ -33,9 +32,7 @@ export async function POST(request: NextRequest) {
     ];
     for (const field of humanFields) {
       const value = formData.get(field) as string;
-      if (value) {
-        params[field] = value;
-      }
+      if (value) params[field] = value;
     }
 
     // Non-human features (B_ prefix)
@@ -45,30 +42,54 @@ export async function POST(request: NextRequest) {
     ];
     for (const field of nonhumanFields) {
       const value = formData.get(field) as string;
-      if (value) {
-        params[field] = value;
-      }
+      if (value) params[field] = value;
     }
 
     // Extra custom details
     const extraDetails = formData.get("extra_details") as string;
-    if (extraDetails) {
-      params.extra_details = extraDetails;
-    }
+    if (extraDetails) params.extra_details = extraDetails;
 
     // Color grading
-    const colorFields = ["temperature", "hue", "brightness", "contrast", "saturation", "gamma"];
-    for (const field of colorFields) {
+    for (const field of COLOR_FIELDS) {
       const value = formData.get(field);
       if (value !== null && value !== "") {
         params[field] = parseFloat(value as string);
       }
     }
 
-    // Send flat params to RunPod serverless
-    const { jobId } = await runAvatarAsync(params);
+    // Clone workflow template and inject params
+    type WorkflowNode = { inputs: Record<string, unknown> };
+    const workflow = JSON.parse(JSON.stringify(avatarWorkflowTemplate)) as Record<string, WorkflowNode>;
 
-    return NextResponse.json({ jobId });
+    // Node 252: CharacterPortraitGenerator — receives all non-color params
+    const node252 = workflow["252"];
+    if (node252) {
+      for (const [key, value] of Object.entries(params)) {
+        if (!COLOR_FIELDS.includes(key)) {
+          node252.inputs[key] = value;
+        }
+      }
+    }
+
+    // Node 52: ColorCorrect — receives color grading params
+    const node52 = workflow["52"];
+    if (node52) {
+      for (const field of COLOR_FIELDS) {
+        if (params[field] !== undefined) {
+          node52.inputs[field] = params[field];
+        }
+      }
+    }
+
+    // Node 3: KSampler — update seed for randomness
+    const node3 = workflow["3"];
+    if (node3) {
+      node3.inputs.seed = params.seed;
+    }
+
+    // Submit to local ComfyUI
+    const promptId = await queuePrompt(workflow as Record<string, unknown>);
+    return NextResponse.json({ jobId: promptId });
   } catch (error) {
     console.error("Avatar workflow error:", error);
     return NextResponse.json(

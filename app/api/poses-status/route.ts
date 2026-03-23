@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAvatarJobStatus, mapRunPodStatus, extractImagesFromOutput } from "@/lib/runpod";
-import { sanitizeErrorMessage } from "@/lib/error-messages";
+import { getHistory } from "@/lib/comfyui-local";
 
 export async function GET(request: NextRequest) {
   const jobId = request.nextUrl.searchParams.get("jobId");
@@ -13,25 +12,41 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    const rawStatus = await getAvatarJobStatus(jobId);
-    const appStatus = mapRunPodStatus(rawStatus.status);
+    const entry = await getHistory(jobId);
 
-    if (appStatus === "completed") {
-      const images = extractImagesFromOutput(rawStatus.output);
-      return NextResponse.json({
-        status: "completed",
-        images,
-      });
+    // Not in history yet — still queued/running
+    if (!entry) {
+      return NextResponse.json({ status: "running" });
     }
 
-    if (appStatus === "failed") {
+    if (entry.status.status_str === "error") {
       return NextResponse.json({
         status: "failed",
-        error: sanitizeErrorMessage(rawStatus.error || "Poses generation failed on RunPod"),
+        error: "Poses generation failed in ComfyUI",
       });
     }
 
-    return NextResponse.json({ status: appStatus });
+    if (entry.status.completed) {
+      const images: Array<{ url: string; filename: string }> = [];
+      for (const nodeOutput of Object.values(entry.outputs)) {
+        if (nodeOutput.images) {
+          for (const img of nodeOutput.images) {
+            const params = new URLSearchParams({
+              filename: img.filename,
+              subfolder: img.subfolder,
+              type: img.type,
+            });
+            images.push({
+              url: `/api/poses-image?${params.toString()}`,
+              filename: img.filename,
+            });
+          }
+        }
+      }
+      return NextResponse.json({ status: "completed", images });
+    }
+
+    return NextResponse.json({ status: "running" });
   } catch (error) {
     console.error("Poses status error:", error);
     return NextResponse.json(
