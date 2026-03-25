@@ -10,7 +10,7 @@ Node mapping (LTX-2.3 workflow):
   - Node 352 (PrimitiveStringMultiline): positive prompt
   - Node 372 (LoadAudio): input audio file
   - Node 408 (ElevenLabsVoiceChanger): voice conversion (optional, controlled by node 420)
-  - Node 420 (ComfySwitchNode): bypass switch for ElevenLabs Voice Changer
+  - Node 445 (ComfySwitchNode): bypass switch for ElevenLabs Voice Changer
       switch=True  -> on_true  -> uses node 408 output (ElevenLabs)
       switch=False -> on_false -> uses node 372 output (direct audio)
   - Node 140 (VHS_VideoCombine): video output
@@ -131,8 +131,8 @@ def prepare_workflow(workflow: dict, inputs: dict) -> dict:
       - positive_prompt: text for node 352 (PrimitiveStringMultiline)
       - voice_id: ElevenLabs voice ID for node 408 (only used when use_elevenlabs_vc=True)
       - use_elevenlabs_vc: bool (default True)
-          True  -> node 420 switch=True  -> audio goes through ElevenLabs Voice Changer (408)
-          False -> node 420 switch=False -> audio bypasses Voice Changer, goes directly
+          True  -> node 445 switch=True  -> audio goes through ElevenLabs Voice Changer (408)
+          False -> node 445 switch=False -> audio bypasses Voice Changer, goes directly
     """
     use_elevenlabs_vc = inputs.get("use_elevenlabs_vc", True)
 
@@ -169,10 +169,10 @@ def prepare_workflow(workflow: dict, inputs: dict) -> dict:
     if ELEVENLABS_API_KEY:
         workflow["408"]["inputs"]["api_key"] = ELEVENLABS_API_KEY
 
-    # --- ElevenLabs bypass switch (Node 420) ---
+    # --- ElevenLabs bypass switch (Node 445) ---
     # switch=True  -> on_true  -> node 408 (ElevenLabs Voice Changer)
     # switch=False -> on_false -> node 372 (direct audio, bypass ElevenLabs)
-    workflow["420"]["inputs"]["switch"] = bool(use_elevenlabs_vc)
+    workflow["445"]["inputs"]["switch"] = bool(use_elevenlabs_vc)
 
     if use_elevenlabs_vc:
         print(f"[Workflow] Audio -> ElevenLabs Voice Changer (voice_id={voice_id}) -> pipeline")
