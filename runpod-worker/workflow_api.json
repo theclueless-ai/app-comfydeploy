@@ -1,34 +1,4 @@
 {
-  "100": {
-    "inputs": {
-      "sigmas": "0.909375, 0.725, 0.421875, 0.0"
-    },
-    "class_type": "ManualSigmas",
-    "_meta": {
-      "title": "ManualSigmas (LTX 2.0)"
-    }
-  },
-  "103": {
-    "inputs": {
-      "cfg": 1,
-      "model": [
-        "342",
-        0
-      ],
-      "positive": [
-        "107",
-        0
-      ],
-      "negative": [
-        "107",
-        1
-      ]
-    },
-    "class_type": "CFGGuider",
-    "_meta": {
-      "title": "GuíaCFG"
-    }
-  },
   "107": {
     "inputs": {
       "frame_rate": [
@@ -136,114 +106,6 @@
       "title": "Ruido aleatorio"
     }
   },
-  "116": {
-    "inputs": {
-      "av_latent": [
-        "113",
-        0
-      ]
-    },
-    "class_type": "LTXVSeparateAVLatent",
-    "_meta": {
-      "title": "LTXVSeparateAVLatent"
-    }
-  },
-  "117": {
-    "inputs": {
-      "video_latent": [
-        "160",
-        0
-      ],
-      "audio_latent": [
-        "116",
-        1
-      ]
-    },
-    "class_type": "LTXVConcatAVLatent",
-    "_meta": {
-      "title": "LTXVConcatAVLatent"
-    }
-  },
-  "118": {
-    "inputs": {
-      "samples": [
-        "116",
-        0
-      ],
-      "upscale_model": [
-        "189",
-        0
-      ],
-      "vae": [
-        "184",
-        0
-      ]
-    },
-    "class_type": "LTXVLatentUpsampler",
-    "_meta": {
-      "title": "spatial"
-    }
-  },
-  "119": {
-    "inputs": {
-      "noise": [
-        "114",
-        0
-      ],
-      "guider": [
-        "103",
-        0
-      ],
-      "sampler": [
-        "417",
-        0
-      ],
-      "sigmas": [
-        "380",
-        0
-      ],
-      "latent_image": [
-        "117",
-        0
-      ]
-    },
-    "class_type": "SamplerCustomAdvanced",
-    "_meta": {
-      "title": "SamplerCustomAdvanced"
-    }
-  },
-  "125": {
-    "inputs": {
-      "av_latent": [
-        "119",
-        0
-      ]
-    },
-    "class_type": "LTXVSeparateAVLatent",
-    "_meta": {
-      "title": "LTXVSeparateAVLatent"
-    }
-  },
-  "127": {
-    "inputs": {
-      "tile_size": 512,
-      "overlap": 64,
-      "temporal_size": 4096,
-      "temporal_overlap": 8,
-      "samples": [
-        "125",
-        0
-      ],
-      "vae": [
-        "184",
-        0
-      ]
-    },
-    "class_type": "VAEDecodeTiled",
-    "_meta": {
-      "title": "VAE Decodificar (Mosaico)"
-    }
-  },
   "129": {
     "inputs": {
       "cfg": 1,
@@ -268,7 +130,7 @@
   "134": {
     "inputs": {
       "lora_name": "Ltx-2.3/ltx-2-19b-lora-camera-control-static.safetensors",
-      "strength_model": 0.15,
+      "strength_model": 0.1,
       "model": [
         "412",
         0
@@ -277,60 +139,6 @@
     "class_type": "LoraLoaderModelOnly",
     "_meta": {
       "title": "Distill Lora (ONLY if you use DEV model)"
-    }
-  },
-  "140": {
-    "inputs": {
-      "frame_rate": [
-        "285",
-        0
-      ],
-      "loop_count": 0,
-      "filename_prefix": "LTX-2",
-      "format": "video/h264-mp4",
-      "pix_fmt": "yuv420p",
-      "crf": 19,
-      "save_metadata": true,
-      "trim_to_audio": false,
-      "pingpong": false,
-      "save_output": true,
-      "images": [
-        "127",
-        0
-      ],
-      "audio": [
-        "373",
-        0
-      ]
-    },
-    "class_type": "VHS_VideoCombine",
-    "_meta": {
-      "title": "Video Combine 🎥🅥🅗🅢"
-    }
-  },
-  "160": {
-    "inputs": {
-      "strength": 1,
-      "bypass": [
-        "290",
-        0
-      ],
-      "vae": [
-        "184",
-        0
-      ],
-      "image": [
-        "165",
-        0
-      ],
-      "latent": [
-        "118",
-        0
-      ]
-    },
-    "class_type": "LTXVImgToVideoInplace",
-    "_meta": {
-      "title": "LTXVImgToVideoInplace"
     }
   },
   "161": {
@@ -398,7 +206,7 @@
   },
   "167": {
     "inputs": {
-      "image": "AITANA .png"
+      "image": "openart-image_1774274671304_13586545_1774274671875_f9cb08a7.jpg"
     },
     "class_type": "LoadImage",
     "_meta": {
@@ -453,22 +261,6 @@
     "class_type": "LTXVEmptyLatentAudio",
     "_meta": {
       "title": "LTXV Audio Latente Vacío"
-    }
-  },
-  "201": {
-    "inputs": {
-      "samples": [
-        "125",
-        1
-      ],
-      "audio_vae": [
-        "196",
-        0
-      ]
-    },
-    "class_type": "LTXVAudioVAEDecode",
-    "_meta": {
-      "title": "Decodificar LTXV Audio VAE"
     }
   },
   "206": {
@@ -536,46 +328,6 @@
       "title": "SimpleCalculatorKJ"
     }
   },
-  "330": {
-    "inputs": {
-      "vae_name": "ltx2-3/taeltx2_3.safetensors"
-    },
-    "class_type": "VAELoader",
-    "_meta": {
-      "title": "Tiny VAE (for sampler previews)"
-    }
-  },
-  "332": {
-    "inputs": {
-      "chunks": 2,
-      "dim_threshold": 4096,
-      "model": [
-        "411",
-        0
-      ]
-    },
-    "class_type": "LTXVChunkFeedForward",
-    "_meta": {
-      "title": "LTXV Chunk FeedForward (for low VRAM)"
-    }
-  },
-  "337": {
-    "inputs": {
-      "preview_rate": 8,
-      "model": [
-        "332",
-        0
-      ],
-      "vae": [
-        "330",
-        0
-      ]
-    },
-    "class_type": "LTX2SamplingPreviewOverride",
-    "_meta": {
-      "title": "LTX2 Sampling Preview Override"
-    }
-  },
   "342": {
     "inputs": {
       "nag_scale": 11,
@@ -583,7 +335,7 @@
       "nag_tau": 2.5,
       "inplace": true,
       "model": [
-        "337",
+        "411",
         0
       ],
       "nag_cond_video": [
@@ -600,22 +352,9 @@
       "title": "LTX2 NAG"
     }
   },
-  "351": {
-    "inputs": {
-      "text": "<comfy.sd.CLIP object at 0x2b2465b57ed0>",
-      "anything": [
-        "392",
-        0
-      ]
-    },
-    "class_type": "easy showAnything",
-    "_meta": {
-      "title": "Enhanced Prompt"
-    }
-  },
   "352": {
     "inputs": {
-      "value": "woman speak to the camera, static camera,"
+      "value": "The woman speaks directly to the camera, camera static"
     },
     "class_type": "PrimitiveStringMultiline",
     "_meta": {
@@ -715,8 +454,8 @@
   },
   "372": {
     "inputs": {
-      "audio": "10.mp3",
-      "audioUI": "/api/view?filename=10.mp3&type=input&subfolder=&rand=0.5943012321557682"
+      "audio": "ElevenLabs_2026-02-27T10_01_35_Aitana Voice English _ivc_sp96_s51_sb75_se25_m2.mp3",
+      "audioUI": "/api/view?filename=ElevenLabs_2026-02-27T10_01_35_Aitana%20Voice%20English%20_ivc_sp96_s51_sb75_se25_m2.mp3&type=input&subfolder=&rand=0.5456093342440304"
     },
     "class_type": "LoadAudio",
     "_meta": {
@@ -731,7 +470,7 @@
         0
       ],
       "audio": [
-        "420",
+        "445",
         0
       ]
     },
@@ -755,15 +494,6 @@
     "class_type": "ComfySwitchNode",
     "_meta": {
       "title": "Custom Audio = true |  LTX Audio  = false"
-    }
-  },
-  "380": {
-    "inputs": {
-      "sigmas": "0.65, 0.55, 0.35, 0.0"
-    },
-    "class_type": "ManualSigmas",
-    "_meta": {
-      "title": "ManualSigmas"
     }
   },
   "382": {
@@ -845,7 +575,7 @@
   },
   "392": {
     "inputs": {
-      "clip_name1": "ltx-2.3/ltx-2/split_files/text_encoders/gemma_3_12B_it_fp8_scaled.safetensors",
+      "clip_name1": "ltx-2.3/ltx-2/split_files/text_encoders/gemma_3_12B_it.safetensors",
       "clip_name2": "ltx-2.3/ltx-2.3-22b-dev_embeddings_connectors.safetensors",
       "type": "ltxv",
       "device": "default"
@@ -871,13 +601,30 @@
   "398": {
     "inputs": {
       "audio": [
-        "420",
+        "445",
         0
       ]
     },
     "class_type": "Audio Duration (mtb)",
     "_meta": {
       "title": "Audio Duration (mtb)"
+    }
+  },
+  "445": {
+    "inputs": {
+      "switch": true,
+      "on_false": [
+        "372",
+        0
+      ],
+      "on_true": [
+        "408",
+        0
+      ]
+    },
+    "class_type": "ComfySwitchNode",
+    "_meta": {
+      "title": "Interruptor"
     }
   },
   "402": {
@@ -1008,28 +755,79 @@
   },
   "417": {
     "inputs": {
-      "sampler_name": "res_2s"
+      "sampler_name": "euler_ancestral_cfg_pp"
     },
     "class_type": "KSamplerSelect",
     "_meta": {
       "title": "KSamplerSelect"
     }
   },
-  "420": {
+  "140": {
     "inputs": {
-      "switch": true,
-      "on_false": [
-        "372",
+      "frame_rate": 24,
+      "loop_count": 0,
+      "filename_prefix": "LTX-2",
+      "format": "video/h264-mp4",
+      "pix_fmt": "yuv420p",
+      "crf": 19,
+      "save_metadata": true,
+      "trim_to_audio": false,
+      "pingpong": false,
+      "save_output": true,
+      "images": [
+        "386",
         0
       ],
-      "on_true": [
-        "408",
+      "audio": [
+        "373",
+        0
+      ],
+      "vae": [
+        "184",
         0
       ]
     },
-    "class_type": "ComfySwitchNode",
+    "class_type": "VHS_VideoCombine",
     "_meta": {
-      "title": "USE ELEVENLABS VOICE CHANGER"
+      "title": "Video Combine 🎥🅥🅗🅢"
+    }
+  },
+  "442": {
+    "inputs": {
+      "filename_prefix": "stage1_video_latent",
+      "samples": [
+        "444",
+        0
+      ]
+    },
+    "class_type": "SaveLatent",
+    "_meta": {
+      "title": "SAVE: Video Latent S1"
+    }
+  },
+  "443": {
+    "inputs": {
+      "filename_prefix": "stage1_audio_latent",
+      "samples": [
+        "444",
+        1
+      ]
+    },
+    "class_type": "SaveLatent",
+    "_meta": {
+      "title": "SAVE: Audio Latent S1"
+    }
+  },
+  "444": {
+    "inputs": {
+      "av_latent": [
+        "113",
+        0
+      ]
+    },
+    "class_type": "LTXVSeparateAVLatent",
+    "_meta": {
+      "title": "Separate AV Latent S1"
     }
   }
 }
