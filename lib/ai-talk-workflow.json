@@ -470,7 +470,7 @@
         0
       ],
       "audio": [
-        "420",
+        "445",
         0
       ]
     },
@@ -601,7 +601,7 @@
   "398": {
     "inputs": {
       "audio": [
-        "420",
+        "445",
         0
       ]
     },
@@ -610,7 +610,7 @@
       "title": "Audio Duration (mtb)"
     }
   },
-  "420": {
+  "445": {
     "inputs": {
       "switch": true,
       "on_false": [
@@ -624,7 +624,7 @@
     },
     "class_type": "ComfySwitchNode",
     "_meta": {
-      "title": "ElevenLabs VC = true | Direct Audio = false"
+      "title": "Interruptor"
     }
   },
   "402": {
