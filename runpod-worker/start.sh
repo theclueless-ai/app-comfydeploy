@@ -12,36 +12,9 @@ MODELS_DIR="${VOLUME_DIR}/models"
 
 # =============================================================================
 # 1. Link models from Network Volume to ComfyUI
-#
-# Expected volume structure (under /runpod-volume/models/):
-#
-#   checkpoints/
-#     Ltx2-3/ltx-2.3-22b-dev.safetensors
-#
-#   vae/
-#     ltx2-3/kj/LTX23_video_vae_bf16.safetensors
-#     ltx2-3/kj/LTX23_audio_vae_bf16.safetensors
-#     ltx2-3/taeltx2_3.safetensors              ← root of vae/, no subdir
-#
-#   loras/
-#     Ltx-2.3/ltx-2-19b-lora-camera-control-static.safetensors
-#     Ltx-2.3/ltx-2-19b-ic-lora-detailer.safetensors
-#     Ltx-2.3/ltx-2.3-22b-distilled-lora-384.safetensors
-#
-#   latent_upscale_models/                      ← NOT upscale_models/
-#     ltx-2.3-spatial-upscaler-x2-1.0.safetensors
-#
-#   clip/
-#     ltx-2.3/ltx-2/split_files/text_encoders/gemma_3_12B_it_fp8_scaled.safetensors
-#     ltx-2.3/ltx-2.3-22b-dev_embeddings_connectors.safetensors
-#
-#   diffusion_models/                           ← MelBandRoFormer goes HERE
-#     MelBandRoFormer_comfy/MelBandRoformer_fp32.safetensors
-#
 # =============================================================================
 echo "[1/4] Setting up model symlinks from Network Volume..."
 
-# Helper: link every file/subdir in a volume model category into ComfyUI's dir
 link_model_category() {
     local category="$1"
     local vol_cat="${MODELS_DIR}/${category}"
@@ -54,7 +27,6 @@ link_model_category() {
         return
     fi
 
-    # Link each entry (file or subdir) from the volume category into ComfyUI
     for item in "${vol_cat}"/*; do
         [ -e "${item}" ] || continue
         name=$(basename "${item}")
@@ -69,9 +41,9 @@ if [ -d "${VOLUME_DIR}" ]; then
     link_model_category checkpoints
     link_model_category vae
     link_model_category loras
-    link_model_category latent_upscale_models   # LatentUpscaleModelLoader (spatial upscaler)
+    link_model_category latent_upscale_models
     link_model_category clip
-    link_model_category diffusion_models        # MelBandRoFormerModelLoader
+    link_model_category diffusion_models
 
     echo ""
     echo "  Model linking complete."
@@ -91,6 +63,12 @@ python main.py \
     --port 8188 \
     --disable-auto-launch \
     --disable-metadata \
+    --highvram \
+    --use-pytorch-cross-attention \
+    --fast \
+    --bf16-vae \
+    --preview-method none \
+    --disable-dynamic-vram \
     &
 
 COMFYUI_PID=$!
@@ -101,7 +79,7 @@ echo "  ComfyUI PID: ${COMFYUI_PID}"
 # =============================================================================
 echo "[3/4] Waiting for ComfyUI to be ready..."
 
-MAX_RETRIES=120  # 2 minutes max
+MAX_RETRIES=120
 RETRY_COUNT=0
 
 while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
