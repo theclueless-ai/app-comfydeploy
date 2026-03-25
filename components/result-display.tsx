@@ -109,9 +109,10 @@ export function ResultDisplay({ status, images, error, onGeneratePoses }: Result
                       <video
                         src={image.url}
                         controls
-                        autoPlay
                         loop
+                        playsInline
                         className="w-full"
+                        onError={(e) => console.error("[ResultDisplay] Video load error:", e)}
                       />
                     </div>
                   ) : (
