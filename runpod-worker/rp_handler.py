@@ -237,8 +237,8 @@ def poll_until_complete(prompt_id: str) -> dict:
 def find_output_video(history_entry: dict) -> str | None:
     outputs = history_entry.get("outputs", {})
 
-    # Check node 140 first (VHS_VideoCombine - LTX-2.3 workflow)
-    for node_id in ["140", "338", "238"]:
+    # Check node 140/426 first (VHS_VideoCombine - LTX-2.3 workflow)
+    for node_id in ["140", "426", "338", "238"]:
         if node_id in outputs:
             node_output = outputs[node_id]
             for key in ["gifs", "videos"]:
