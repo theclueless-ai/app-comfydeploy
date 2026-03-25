@@ -5,7 +5,7 @@ Accepts audio input with two routing options:
   - use_elevenlabs_vc=True (default): audio -> ElevenLabsVoiceChanger (node 408) -> video
   - use_elevenlabs_vc=False: audio bypasses Voice Changer -> goes directly into pipeline
 
-Node mapping (new LTX-2.3 workflow):
+Node mapping (LTX-2.3 workflow):
   - Node 167 (LoadImage): input character image
   - Node 352 (PrimitiveStringMultiline): positive prompt
   - Node 372 (LoadAudio): input audio file
