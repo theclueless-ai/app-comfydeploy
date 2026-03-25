@@ -42,9 +42,14 @@ export async function GET(request: NextRequest) {
     if (status === "completed" && rawStatus.output) {
       const videos = extractVideoFromAiTalkOutput(rawStatus.output);
       if (videos.length > 0) {
-        result.videos = videos;
+        // Proxy S3 URLs through the server to avoid CORS issues in the browser
+        const proxiedVideos = videos.map((v) => ({
+          url: `/api/proxy-video?url=${encodeURIComponent(v.url)}`,
+          filename: v.filename,
+        }));
+        result.videos = proxiedVideos;
         // Also set as images for compatibility with ResultDisplay
-        result.images = videos;
+        result.images = proxiedVideos;
       }
     }
 
