@@ -576,7 +576,7 @@
   "392": {
     "inputs": {
       "clip_name1": "ltx-2.3/ltx-2/split_files/text_encoders/gemma_3_12B_it.safetensors",
-      "clip_name2": "ltx-2.3/ltx-2.3-22b-dev_embeddings_connectors.safetensors",
+      "clip_name2": "ltx-2.3/ltx-2/ltx-2.3-22b-dev_embeddings_connectors.safetensors",
       "type": "ltxv",
       "device": "default"
     },
