@@ -9,7 +9,7 @@ Node mapping (LTX-2.3 workflow):
   - Node 167 (LoadImage): input character image
   - Node 352 (PrimitiveStringMultiline): positive prompt
   - Node 372 (LoadAudio): input audio file
-  - Node 408 (ElevenLabsVoiceChanger): voice conversion (optional, controlled by node 420)
+  - Node 408 (ElevenLabsVoiceChanger): voice conversion (optional, controlled by node 445)
   - Node 445 (ComfySwitchNode): bypass switch for ElevenLabs Voice Changer
       switch=True  -> on_true  -> uses node 408 output (ElevenLabs)
       switch=False -> on_false -> uses node 372 output (direct audio)
