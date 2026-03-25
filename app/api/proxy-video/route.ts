@@ -19,6 +19,22 @@ export async function GET(request: NextRequest) {
     return new Response("Invalid URL: only S3 URLs are allowed", { status: 403 });
   }
 
+  // Strip presigned query params (X-Amz-*) to avoid region mismatch issues.
+  // RunPod sometimes generates presigned URLs with the wrong region in the
+  // credential, which causes S3 to reject the request. The bucket objects are
+  // publicly readable, so we can use the plain object URL instead.
+  let fetchUrl: string;
+  try {
+    const parsed = new URL(videoUrl);
+    ["X-Amz-Algorithm", "X-Amz-Credential", "X-Amz-Date", "X-Amz-Expires",
+     "X-Amz-SignedHeaders", "X-Amz-Signature", "X-Amz-Security-Token"].forEach(
+      (p) => parsed.searchParams.delete(p)
+    );
+    fetchUrl = parsed.toString();
+  } catch {
+    fetchUrl = videoUrl;
+  }
+
   // Forward Range header so the browser can seek through the video
   const fetchHeaders: HeadersInit = {};
   const range = request.headers.get("range");
@@ -28,7 +44,7 @@ export async function GET(request: NextRequest) {
 
   let s3Response: Response;
   try {
-    s3Response = await fetch(videoUrl, { headers: fetchHeaders });
+    s3Response = await fetch(fetchUrl, { headers: fetchHeaders });
   } catch (err) {
     console.error("[proxy-video] Failed to fetch from S3:", err);
     return new Response("Failed to fetch video from storage", { status: 502 });
