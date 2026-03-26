@@ -19,12 +19,15 @@ function findHubSerial(data: Record<string, unknown>): string | null {
   return null;
 }
 
-// Extract fan channels from the hub's GetDevice.devices
-function extractFans(data: Record<string, unknown>) {
+// Extract channels from the hub, separated into fans and AIO
+function extractChannels(data: Record<string, unknown>) {
   const deviceMap = data.device as Record<string, Record<string, unknown>> | undefined;
-  if (!deviceMap) return [];
 
-  const fans: Array<{ serial: string; channelId: number; name: string; rpm: number; profile: string; temperature: number | null; temperatureString: string | null }> = [];
+  type Channel = { serial: string; channelId: number; name: string; rpm: number; profile: string; temperature: number | null; temperatureString: string | null };
+  const fans: Channel[] = [];
+  const aio: Channel[] = [];
+
+  if (!deviceMap) return { fans, aio };
 
   for (const [, device] of Object.entries(deviceMap)) {
     if (device.ProductType !== 0 || device.Hidden === true) continue;
@@ -36,19 +39,22 @@ function extractFans(data: Record<string, unknown>) {
     if (!channels) continue;
 
     for (const channel of Object.values(channels)) {
-      if (channel.description !== "Fan") continue;
-      fans.push({
+      const desc = channel.description as string;
+      if (desc !== "Fan" && desc !== "AIO") continue;
+      const entry: Channel = {
         serial,
         channelId: channel.channelId as number,
-        name: (channel.name as string) ?? "Fan",
+        name: (channel.name as string) ?? desc,
         rpm: (channel.rpm as number) ?? 0,
         profile: (channel.profile as string) ?? "Normal",
         temperature: typeof channel.temperature === "number" ? channel.temperature : null,
         temperatureString: (channel.temperatureString as string) ?? null,
-      });
+      };
+      if (desc === "AIO") aio.push(entry);
+      else fans.push(entry);
     }
   }
-  return fans;
+  return { fans, aio };
 }
 
 // GET /api/fan-control — current fan info (rpm, active profile)
@@ -68,17 +74,23 @@ export async function GET() {
     }
 
     const data = await res.json();
-    const fans = extractFans(data);
-    const avgRpm = fans.length > 0
-      ? Math.round(fans.reduce((s, f) => s + f.rpm, 0) / fans.length)
-      : null;
-    const temps = fans.map(f => f.temperature).filter((t): t is number => t !== null);
-    const avgTemp = temps.length > 0
-      ? Math.round(temps.reduce((s, t) => s + t, 0) / temps.length * 10) / 10
-      : null;
-    const currentProfile = fans[0]?.profile ?? null;
+    const { fans, aio } = extractChannels(data);
 
-    return NextResponse.json({ fans, fanCount: fans.length, averageRpm: avgRpm, averageTemp: avgTemp, currentProfile });
+    const avg = (arr: number[]) => arr.length > 0 ? Math.round(arr.reduce((s, v) => s + v, 0) / arr.length * 10) / 10 : null;
+
+    const fanTemps = fans.map(f => f.temperature).filter((t): t is number => t !== null);
+    const aioTemps = aio.map(f => f.temperature).filter((t): t is number => t !== null);
+
+    return NextResponse.json({
+      fans,
+      fanCount: fans.length,
+      averageRpm: fans.length > 0 ? Math.round(fans.reduce((s, f) => s + f.rpm, 0) / fans.length) : null,
+      averageTemp: avg(fanTemps),
+      currentProfile: fans[0]?.profile ?? aio[0]?.profile ?? null,
+      aio: aio[0] ?? null,          // H150i LCD — first AIO found
+      aioRpm: aio[0]?.rpm ?? null,
+      aioTemp: aioTemps.length > 0 ? avg(aioTemps) : null,
+    });
   } catch (err) {
     const isTimeout = err instanceof Error && (err.name === "TimeoutError" || err.name === "AbortError");
     return NextResponse.json(

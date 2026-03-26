@@ -48,6 +48,8 @@ export function FanControlModal() {
   const [currentRpm, setCurrentRpm] = useState<number | null>(null);
   const [currentTemp, setCurrentTemp] = useState<number | null>(null);
   const [fanCount, setFanCount] = useState<number | null>(null);
+  const [aioRpm, setAioRpm] = useState<number | null>(null);
+  const [aioTemp, setAioTemp] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [applying, setApplying] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -63,6 +65,8 @@ export function FanControlModal() {
       setCurrentRpm(data.averageRpm ?? null);
       setCurrentTemp(data.averageTemp ?? null);
       setFanCount(data.fanCount ?? null);
+      setAioRpm(data.aioRpm ?? null);
+      setAioTemp(data.aioTemp ?? null);
       if (data.currentProfile) {
         setCurrentProfile(data.currentProfile as FanProfile);
         setSelectedProfile(data.currentProfile as FanProfile);
@@ -149,8 +153,11 @@ export function FanControlModal() {
               </button>
             </div>
 
-            {/* Status row */}
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mb-5">
+            {/* Status row — Fans */}
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mb-3">
+              <span className="text-[10px] font-medium text-[rgb(var(--muted-foreground))] uppercase tracking-wide w-full">
+                Ventiladores{fanCount !== null && !loading ? ` · ${fanCount}` : ""}
+              </span>
               {/* Temperature */}
               <div className="flex items-center gap-2">
                 <span className="text-xs text-[rgb(var(--muted-foreground))]">Temp:</span>
@@ -181,11 +188,43 @@ export function FanControlModal() {
                   {loading ? "…" : currentRpm !== null ? currentRpm : "—"}
                 </span>
               </div>
-              {fanCount !== null && !loading && (
-                <span className="text-xs text-[rgb(var(--muted-foreground))]">
-                  · {fanCount} fan{fanCount !== 1 ? "s" : ""}
+            </div>
+
+            {/* Status row — AIO */}
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mb-5">
+              <span className="text-[10px] font-medium text-[rgb(var(--muted-foreground))] uppercase tracking-wide w-full">
+                AIO · H150i LCD
+              </span>
+              {/* AIO Temp (coolant) */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-[rgb(var(--muted-foreground))]">Líquido:</span>
+                <span className={cn(
+                  "text-xs font-semibold px-2 py-0.5 rounded-md border",
+                  "bg-[rgb(var(--background))]",
+                  loading
+                    ? "text-[rgb(var(--muted-foreground))] border-[rgb(var(--border))]"
+                    : aioTemp === null
+                    ? "text-[rgb(var(--muted-foreground))] border-[rgb(var(--border))]"
+                    : aioTemp < 35
+                    ? "text-green-400 border-green-400/30"
+                    : aioTemp < 45
+                    ? "text-orange-400 border-orange-400/30"
+                    : "text-red-400 border-red-400/30"
+                )}>
+                  {loading ? <Loader2 className="w-3 h-3 animate-spin inline" /> : aioTemp !== null ? `${aioTemp} °C` : "—"}
                 </span>
-              )}
+              </div>
+              {/* AIO RPM (pump) */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-[rgb(var(--muted-foreground))]">Bomba:</span>
+                <span className={cn(
+                  "text-xs font-semibold px-2 py-0.5 rounded-md",
+                  "bg-[rgb(var(--background))] border border-[rgb(var(--border))]",
+                  loading ? "text-[rgb(var(--muted-foreground))]" : "text-blue-400"
+                )}>
+                  {loading ? "…" : aioRpm !== null ? `${aioRpm} rpm` : "—"}
+                </span>
+              </div>
             </div>
 
             {/* Profile selector */}
