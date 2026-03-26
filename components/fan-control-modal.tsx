@@ -8,41 +8,29 @@ import { SliderInput } from "./slider-input";
 export function FanControlModal() {
   const [open, setOpen] = useState(false);
   const [speed, setSpeed] = useState(50);
-  const [currentSpeed, setCurrentSpeed] = useState<number | null>(null);
+  const [currentRpm, setCurrentRpm] = useState<number | null>(null);
+  const [fanCount, setFanCount] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [applying, setApplying] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  const fetchCurrentSpeed = useCallback(async () => {
+  const fetchFanInfo = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const res = await fetch("/api/fan-control");
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
         throw new Error(data.error ?? `Error ${res.status}`);
       }
-      const data = await res.json();
-      // OpenLinkHub returns device info; try to extract a speed value if present.
-      // The response shape varies by device, so we surface what we can.
-      const extractedSpeed =
-        data?.speed ??
-        data?.Speed ??
-        data?.devices?.[0]?.Channels?.[0]?.speed ??
-        data?.devices?.[0]?.Channels?.[0]?.Speed ??
-        null;
-      if (typeof extractedSpeed === "number") {
-        setCurrentSpeed(extractedSpeed);
-        setSpeed(extractedSpeed);
-      } else {
-        setCurrentSpeed(null);
-      }
+      setCurrentRpm(data.averageRpm ?? null);
+      setFanCount(data.fanCount ?? null);
     } catch (err) {
       setError(
         err instanceof Error
           ? err.message
-          : "Could not reach OpenLinkHub on the local machine."
+          : "Could not reach OpenLinkHub."
       );
     } finally {
       setLoading(false);
@@ -50,10 +38,8 @@ export function FanControlModal() {
   }, []);
 
   useEffect(() => {
-    if (open) {
-      fetchCurrentSpeed();
-    }
-  }, [open, fetchCurrentSpeed]);
+    if (open) fetchFanInfo();
+  }, [open, fetchFanInfo]);
 
   // Close on Escape key
   useEffect(() => {
@@ -79,9 +65,11 @@ export function FanControlModal() {
       if (!res.ok && res.status !== 207) {
         throw new Error(data.error ?? `Error ${res.status}`);
       }
-      setCurrentSpeed(speed);
-      setSuccessMsg(`Fan speed set to ${speed}%`);
-      setTimeout(() => setSuccessMsg(null), 3000);
+      const applied = data.applied ?? fanCount ?? "?";
+      setSuccessMsg(`Velocidad ${speed}% aplicada a ${applied} ventilador${applied !== 1 ? "es" : ""}`);
+      setTimeout(() => setSuccessMsg(null), 4000);
+      // Refresh RPM after a short delay
+      setTimeout(() => fetchFanInfo(), 1500);
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Failed to apply fan speed."
@@ -91,11 +79,10 @@ export function FanControlModal() {
     }
   };
 
-  // Zone helpers
   const getZoneLabel = (v: number) => {
-    if (v < 30) return "Quiet / Minimum";
+    if (v < 30) return "Silencioso / Mínimo";
     if (v < 70) return "Normal";
-    return "Performance";
+    return "Alto rendimiento";
   };
   const getZoneColor = (v: number) => {
     if (v < 30) return "text-orange-400";
@@ -120,15 +107,16 @@ export function FanControlModal() {
         <span className="hidden sm:inline">Fans</span>
       </button>
 
-      {/* Modal overlay */}
+      {/* Modal overlay — p-4 ensures the card never touches the viewport edges */}
       {open && (
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in"
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in p-4"
           onClick={(e) => {
             if (e.target === e.currentTarget) setOpen(false);
           }}
         >
-          <div className="bg-[rgb(var(--card))] border border-[rgb(var(--border))] rounded-xl p-6 w-full max-w-sm shadow-2xl animate-slide-up mx-4">
+          <div className="bg-[rgb(var(--card))] border border-[rgb(var(--border))] rounded-xl p-6 w-full max-w-sm shadow-2xl animate-slide-up max-h-[90vh] overflow-y-auto">
+
             {/* Header */}
             <div className="flex items-center justify-between mb-5">
               <div className="flex items-center gap-2">
@@ -149,27 +137,32 @@ export function FanControlModal() {
               </button>
             </div>
 
-            {/* Current speed badge */}
-            <div className="flex items-center gap-2 mb-5">
-              <span className="text-xs text-[rgb(var(--muted-foreground))]">
-                Current speed:
-              </span>
-              <span
-                className={cn(
-                  "text-xs font-semibold px-2 py-0.5 rounded-md",
-                  "bg-[rgb(var(--background))] border border-[rgb(var(--border))]",
-                  loading
-                    ? "text-[rgb(var(--muted-foreground))]"
-                    : "text-brand-pink"
-                )}
-              >
-                {loading ? "Loading…" : currentSpeed !== null ? `${currentSpeed}%` : "—"}
-              </span>
+            {/* Current status */}
+            <div className="flex items-center gap-3 mb-5">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-[rgb(var(--muted-foreground))]">
+                  RPM actual:
+                </span>
+                <span
+                  className={cn(
+                    "text-xs font-semibold px-2 py-0.5 rounded-md",
+                    "bg-[rgb(var(--background))] border border-[rgb(var(--border))]",
+                    loading ? "text-[rgb(var(--muted-foreground))]" : "text-brand-pink"
+                  )}
+                >
+                  {loading ? "Cargando…" : currentRpm !== null ? `${currentRpm} rpm` : "—"}
+                </span>
+              </div>
+              {fanCount !== null && !loading && (
+                <span className="text-xs text-[rgb(var(--muted-foreground))]">
+                  · {fanCount} ventilador{fanCount !== 1 ? "es" : ""}
+                </span>
+              )}
             </div>
 
             {/* Slider */}
             <SliderInput
-              label="Target Speed"
+              label="Velocidad objetivo"
               value={speed}
               onChange={setSpeed}
               min={20}
@@ -179,35 +172,34 @@ export function FanControlModal() {
               decimals={0}
             />
 
-            {/* Zone indicator */}
+            {/* Zone indicator bar */}
             <div className="mt-3 mb-1">
               <div className="flex h-2 rounded-full overflow-hidden">
-                {/* Quiet zone: 20–29% → 9/80 = ~11% */}
-                <div className="bg-orange-400/70" style={{ width: "11.25%" }} />
+                {/* Quiet zone: 20–29% → 10/80 = 12.5% of range */}
+                <div className="bg-orange-400/70" style={{ width: "12.5%" }} />
                 {/* Normal zone: 30–69% → 40/80 = 50% */}
                 <div className="bg-green-400/70" style={{ width: "50%" }} />
-                {/* Performance zone: 70–100% → 31/80 = ~39% */}
-                <div className="bg-blue-400/70" style={{ width: "38.75%" }} />
+                {/* Performance zone: 70–100% → 30/80 = 37.5% */}
+                <div className="bg-blue-400/70" style={{ width: "37.5%" }} />
               </div>
-              <div className="flex justify-between mt-1 text-[10px] text-[rgb(var(--muted-foreground))]">
-                <span className="text-orange-400">Quiet</span>
+              <div className="flex justify-between mt-1 text-[10px]">
+                <span className="text-orange-400">Silencioso</span>
                 <span className="text-green-400">Normal</span>
-                <span className="text-blue-400">Performance</span>
+                <span className="text-blue-400">Rendimiento</span>
               </div>
             </div>
 
-            {/* Zone label for current selection */}
+            {/* Zone label */}
             <p className={cn("text-xs font-medium mt-2", getZoneColor(speed))}>
               {getZoneLabel(speed)} — {speed}%
             </p>
 
-            {/* Warning */}
+            {/* Warning below 30% */}
             {speed < 30 && (
               <div className="flex items-start gap-2 mt-3 p-2.5 rounded-lg bg-orange-400/10 border border-orange-400/20">
                 <AlertTriangle className="w-3.5 h-3.5 text-orange-400 mt-0.5 shrink-0" />
                 <p className="text-xs text-orange-400">
-                  Below 30% is not recommended during AI workloads. Risk of
-                  thermal throttling.
+                  Por debajo del 30% no se recomienda durante cargas de trabajo de IA. Riesgo de thermal throttling.
                 </p>
               </div>
             )}
@@ -238,7 +230,7 @@ export function FanControlModal() {
                   "hover:bg-brand-pink-light disabled:opacity-50 disabled:cursor-not-allowed"
                 )}
               >
-                {applying ? "Applying…" : "Apply"}
+                {applying ? "Aplicando…" : "Aplicar"}
               </button>
               <button
                 onClick={() => setOpen(false)}
@@ -248,7 +240,7 @@ export function FanControlModal() {
                   "hover:text-[rgb(var(--foreground))] hover:border-[rgb(var(--foreground))]/30"
                 )}
               >
-                Close
+                Cerrar
               </button>
             </div>
           </div>
