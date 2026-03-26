@@ -24,7 +24,7 @@ function extractFans(data: Record<string, unknown>) {
   const deviceMap = data.device as Record<string, Record<string, unknown>> | undefined;
   if (!deviceMap) return [];
 
-  const fans: Array<{ serial: string; channelId: number; name: string; rpm: number; profile: string }> = [];
+  const fans: Array<{ serial: string; channelId: number; name: string; rpm: number; profile: string; temperature: number | null; temperatureString: string | null }> = [];
 
   for (const [, device] of Object.entries(deviceMap)) {
     if (device.ProductType !== 0 || device.Hidden === true) continue;
@@ -43,6 +43,8 @@ function extractFans(data: Record<string, unknown>) {
         name: (channel.name as string) ?? "Fan",
         rpm: (channel.rpm as number) ?? 0,
         profile: (channel.profile as string) ?? "Normal",
+        temperature: typeof channel.temperature === "number" ? channel.temperature : null,
+        temperatureString: (channel.temperatureString as string) ?? null,
       });
     }
   }
@@ -70,9 +72,13 @@ export async function GET() {
     const avgRpm = fans.length > 0
       ? Math.round(fans.reduce((s, f) => s + f.rpm, 0) / fans.length)
       : null;
+    const temps = fans.map(f => f.temperature).filter((t): t is number => t !== null);
+    const avgTemp = temps.length > 0
+      ? Math.round(temps.reduce((s, t) => s + t, 0) / temps.length * 10) / 10
+      : null;
     const currentProfile = fans[0]?.profile ?? null;
 
-    return NextResponse.json({ fans, fanCount: fans.length, averageRpm: avgRpm, currentProfile });
+    return NextResponse.json({ fans, fanCount: fans.length, averageRpm: avgRpm, averageTemp: avgTemp, currentProfile });
   } catch (err) {
     const isTimeout = err instanceof Error && (err.name === "TimeoutError" || err.name === "AbortError");
     return NextResponse.json(

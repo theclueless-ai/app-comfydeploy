@@ -46,6 +46,7 @@ export function FanControlModal() {
   const [currentProfile, setCurrentProfile] = useState<FanProfile | null>(null);
   const [selectedProfile, setSelectedProfile] = useState<FanProfile>("Normal");
   const [currentRpm, setCurrentRpm] = useState<number | null>(null);
+  const [currentTemp, setCurrentTemp] = useState<number | null>(null);
   const [fanCount, setFanCount] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
   const [applying, setApplying] = useState(false);
@@ -60,6 +61,7 @@ export function FanControlModal() {
       const data = await res.json().catch(() => ({}));
       if (!res.ok) throw new Error(data.error ?? `Error ${res.status}`);
       setCurrentRpm(data.averageRpm ?? null);
+      setCurrentTemp(data.averageTemp ?? null);
       setFanCount(data.fanCount ?? null);
       if (data.currentProfile) {
         setCurrentProfile(data.currentProfile as FanProfile);
@@ -148,20 +150,40 @@ export function FanControlModal() {
             </div>
 
             {/* Status row */}
-            <div className="flex items-center gap-3 mb-5">
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mb-5">
+              {/* Temperature */}
               <div className="flex items-center gap-2">
-                <span className="text-xs text-[rgb(var(--muted-foreground))]">RPM actual:</span>
+                <span className="text-xs text-[rgb(var(--muted-foreground))]">Temp:</span>
+                <span className={cn(
+                  "text-xs font-semibold px-2 py-0.5 rounded-md border",
+                  "bg-[rgb(var(--background))]",
+                  loading
+                    ? "text-[rgb(var(--muted-foreground))] border-[rgb(var(--border))]"
+                    : currentTemp === null
+                    ? "text-[rgb(var(--muted-foreground))] border-[rgb(var(--border))]"
+                    : currentTemp < 60
+                    ? "text-green-400 border-green-400/30"
+                    : currentTemp < 80
+                    ? "text-orange-400 border-orange-400/30"
+                    : "text-red-400 border-red-400/30"
+                )}>
+                  {loading ? <Loader2 className="w-3 h-3 animate-spin inline" /> : currentTemp !== null ? `${currentTemp} °C` : "—"}
+                </span>
+              </div>
+              {/* RPM */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-[rgb(var(--muted-foreground))]">RPM:</span>
                 <span className={cn(
                   "text-xs font-semibold px-2 py-0.5 rounded-md",
                   "bg-[rgb(var(--background))] border border-[rgb(var(--border))]",
                   loading ? "text-[rgb(var(--muted-foreground))]" : "text-brand-pink"
                 )}>
-                  {loading ? <Loader2 className="w-3 h-3 animate-spin inline" /> : currentRpm !== null ? `${currentRpm} rpm` : "—"}
+                  {loading ? "…" : currentRpm !== null ? currentRpm : "—"}
                 </span>
               </div>
               {fanCount !== null && !loading && (
                 <span className="text-xs text-[rgb(var(--muted-foreground))]">
-                  · {fanCount} ventilador{fanCount !== 1 ? "es" : ""}
+                  · {fanCount} fan{fanCount !== 1 ? "s" : ""}
                 </span>
               )}
             </div>
