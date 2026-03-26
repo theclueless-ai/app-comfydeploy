@@ -2,13 +2,49 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { Wind, X, AlertTriangle, CheckCircle } from "lucide-react";
+import { Wind, X, CheckCircle, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { SliderInput } from "./slider-input";
+
+type FanProfile = "Quiet" | "Normal" | "Performance";
+
+const PROFILES: Array<{
+  id: FanProfile;
+  label: string;
+  sublabel: string;
+  color: string;
+  activeClass: string;
+  borderClass: string;
+}> = [
+  {
+    id: "Quiet",
+    label: "Silencioso",
+    sublabel: "Mín. ruido",
+    color: "text-blue-400",
+    activeClass: "bg-blue-400/15 border-blue-400",
+    borderClass: "border-[rgb(var(--border))] hover:border-blue-400/50",
+  },
+  {
+    id: "Normal",
+    label: "Normal",
+    sublabel: "Equilibrado",
+    color: "text-green-400",
+    activeClass: "bg-green-400/15 border-green-400",
+    borderClass: "border-[rgb(var(--border))] hover:border-green-400/50",
+  },
+  {
+    id: "Performance",
+    label: "Rendimiento",
+    sublabel: "Máx. flujo",
+    color: "text-brand-pink",
+    activeClass: "bg-brand-pink/15 border-brand-pink",
+    borderClass: "border-[rgb(var(--border))] hover:border-brand-pink/50",
+  },
+];
 
 export function FanControlModal() {
   const [open, setOpen] = useState(false);
-  const [speed, setSpeed] = useState(50);
+  const [currentProfile, setCurrentProfile] = useState<FanProfile | null>(null);
+  const [selectedProfile, setSelectedProfile] = useState<FanProfile>("Normal");
   const [currentRpm, setCurrentRpm] = useState<number | null>(null);
   const [fanCount, setFanCount] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
@@ -22,17 +58,15 @@ export function FanControlModal() {
     try {
       const res = await fetch("/api/fan-control");
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        throw new Error(data.error ?? `Error ${res.status}`);
-      }
+      if (!res.ok) throw new Error(data.error ?? `Error ${res.status}`);
       setCurrentRpm(data.averageRpm ?? null);
       setFanCount(data.fanCount ?? null);
+      if (data.currentProfile) {
+        setCurrentProfile(data.currentProfile as FanProfile);
+        setSelectedProfile(data.currentProfile as FanProfile);
+      }
     } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Could not reach OpenLinkHub."
-      );
+      setError(err instanceof Error ? err.message : "Could not reach OpenLinkHub.");
     } finally {
       setLoading(false);
     }
@@ -42,12 +76,9 @@ export function FanControlModal() {
     if (open) fetchFanInfo();
   }, [open, fetchFanInfo]);
 
-  // Close on Escape key
   useEffect(() => {
     if (!open) return;
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setOpen(false);
-    };
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [open]);
@@ -60,40 +91,25 @@ export function FanControlModal() {
       const res = await fetch("/api/fan-control", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ speed }),
+        body: JSON.stringify({ profile: selectedProfile }),
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok && res.status !== 207) {
-        throw new Error(data.error ?? `Error ${res.status}`);
-      }
-      const applied = data.applied ?? fanCount ?? "?";
-      setSuccessMsg(`Velocidad ${speed}% aplicada a ${applied} ventilador${applied !== 1 ? "es" : ""}`);
-      setTimeout(() => setSuccessMsg(null), 4000);
-      // Refresh RPM after a short delay
+      if (!res.ok) throw new Error(data.error ?? `Error ${res.status}`);
+      setCurrentProfile(selectedProfile);
+      setSuccessMsg(`Perfil "${selectedProfile}" aplicado`);
+      setTimeout(() => setSuccessMsg(null), 3000);
       setTimeout(() => fetchFanInfo(), 1500);
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to apply fan speed."
-      );
+      setError(err instanceof Error ? err.message : "Failed to apply.");
     } finally {
       setApplying(false);
     }
   };
 
-  const getZoneLabel = (v: number) => {
-    if (v < 30) return "Silencioso / Mínimo";
-    if (v < 70) return "Normal";
-    return "Alto rendimiento";
-  };
-  const getZoneColor = (v: number) => {
-    if (v < 30) return "text-orange-400";
-    if (v < 70) return "text-green-400";
-    return "text-blue-400";
-  };
+  const hasChanged = selectedProfile !== currentProfile;
 
   return (
     <>
-      {/* Trigger button */}
       <button
         onClick={() => setOpen(true)}
         title="Fan Speed Control"
@@ -108,15 +124,12 @@ export function FanControlModal() {
         <span className="hidden sm:inline">Fans</span>
       </button>
 
-      {/* Modal — rendered via portal at document.body to escape the header's stacking context */}
       {open && createPortal(
         <div
           className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in p-4"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setOpen(false);
-          }}
+          onClick={(e) => { if (e.target === e.currentTarget) setOpen(false); }}
         >
-          <div className="bg-[rgb(var(--card))] border border-[rgb(var(--border))] rounded-xl p-6 w-full max-w-sm shadow-2xl animate-slide-up max-h-[90vh] overflow-y-auto">
+          <div className="bg-[rgb(var(--card))] border border-[rgb(var(--border))] rounded-xl p-6 w-full max-w-sm shadow-2xl animate-slide-up">
 
             {/* Header */}
             <div className="flex items-center justify-between mb-5">
@@ -128,30 +141,22 @@ export function FanControlModal() {
               </div>
               <button
                 onClick={() => setOpen(false)}
-                className={cn(
-                  "p-1 rounded-md transition-colors",
-                  "text-[rgb(var(--muted-foreground))] hover:text-[rgb(var(--foreground))]",
-                  "hover:bg-[rgb(var(--background))]"
-                )}
+                className="p-1 rounded-md text-[rgb(var(--muted-foreground))] hover:text-[rgb(var(--foreground))] hover:bg-[rgb(var(--background))] transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
-            {/* Current status */}
+            {/* Status row */}
             <div className="flex items-center gap-3 mb-5">
               <div className="flex items-center gap-2">
-                <span className="text-xs text-[rgb(var(--muted-foreground))]">
-                  RPM actual:
-                </span>
-                <span
-                  className={cn(
-                    "text-xs font-semibold px-2 py-0.5 rounded-md",
-                    "bg-[rgb(var(--background))] border border-[rgb(var(--border))]",
-                    loading ? "text-[rgb(var(--muted-foreground))]" : "text-brand-pink"
-                  )}
-                >
-                  {loading ? "Cargando…" : currentRpm !== null ? `${currentRpm} rpm` : "—"}
+                <span className="text-xs text-[rgb(var(--muted-foreground))]">RPM actual:</span>
+                <span className={cn(
+                  "text-xs font-semibold px-2 py-0.5 rounded-md",
+                  "bg-[rgb(var(--background))] border border-[rgb(var(--border))]",
+                  loading ? "text-[rgb(var(--muted-foreground))]" : "text-brand-pink"
+                )}>
+                  {loading ? <Loader2 className="w-3 h-3 animate-spin inline" /> : currentRpm !== null ? `${currentRpm} rpm` : "—"}
                 </span>
               </div>
               {fanCount !== null && !loading && (
@@ -161,49 +166,38 @@ export function FanControlModal() {
               )}
             </div>
 
-            {/* Slider */}
-            <SliderInput
-              label="Velocidad objetivo"
-              value={speed}
-              onChange={setSpeed}
-              min={20}
-              max={100}
-              step={5}
-              suffix="%"
-              decimals={0}
-            />
-
-            {/* Zone indicator bar */}
-            <div className="mt-3 mb-1">
-              <div className="flex h-2 rounded-full overflow-hidden">
-                {/* Quiet zone: 20–29% → 10/80 = 12.5% of range */}
-                <div className="bg-orange-400/70" style={{ width: "12.5%" }} />
-                {/* Normal zone: 30–69% → 40/80 = 50% */}
-                <div className="bg-green-400/70" style={{ width: "50%" }} />
-                {/* Performance zone: 70–100% → 30/80 = 37.5% */}
-                <div className="bg-blue-400/70" style={{ width: "37.5%" }} />
-              </div>
-              <div className="flex justify-between mt-1 text-[10px]">
-                <span className="text-orange-400">Silencioso</span>
-                <span className="text-green-400">Normal</span>
-                <span className="text-blue-400">Rendimiento</span>
+            {/* Profile selector */}
+            <div className="mb-2">
+              <p className="text-xs text-[rgb(var(--muted-foreground))] mb-3">Perfil de velocidad</p>
+              <div className="grid grid-cols-3 gap-2">
+                {PROFILES.map((p) => {
+                  const isActive = selectedProfile === p.id;
+                  const isCurrent = currentProfile === p.id;
+                  return (
+                    <button
+                      key={p.id}
+                      onClick={() => setSelectedProfile(p.id)}
+                      disabled={applying}
+                      className={cn(
+                        "flex flex-col items-center gap-1 px-2 py-3 rounded-lg border text-center transition-all",
+                        "disabled:opacity-50 disabled:cursor-not-allowed",
+                        isActive ? p.activeClass : p.borderClass
+                      )}
+                    >
+                      <span className={cn("text-xs font-semibold", isActive ? p.color : "text-[rgb(var(--muted-foreground))]")}>
+                        {p.label}
+                      </span>
+                      <span className="text-[10px] text-[rgb(var(--muted-foreground))]">
+                        {p.sublabel}
+                      </span>
+                      {isCurrent && (
+                        <span className={cn("text-[9px] font-medium", p.color)}>activo</span>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
             </div>
-
-            {/* Zone label */}
-            <p className={cn("text-xs font-medium mt-2", getZoneColor(speed))}>
-              {getZoneLabel(speed)} — {speed}%
-            </p>
-
-            {/* Warning below 30% */}
-            {speed < 30 && (
-              <div className="flex items-start gap-2 mt-3 p-2.5 rounded-lg bg-orange-400/10 border border-orange-400/20">
-                <AlertTriangle className="w-3.5 h-3.5 text-orange-400 mt-0.5 shrink-0" />
-                <p className="text-xs text-orange-400">
-                  Por debajo del 30% no se recomienda durante cargas de trabajo de IA. Riesgo de thermal throttling.
-                </p>
-              </div>
-            )}
 
             {/* Error */}
             {error && (
@@ -220,17 +214,18 @@ export function FanControlModal() {
               </div>
             )}
 
-            {/* Footer buttons */}
+            {/* Footer */}
             <div className="flex items-center gap-2 mt-5">
               <button
                 onClick={handleApply}
-                disabled={applying}
+                disabled={applying || !hasChanged}
                 className={cn(
-                  "flex-1 px-4 py-2 rounded-lg text-xs font-semibold transition-colors",
+                  "flex-1 flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg text-xs font-semibold transition-colors",
                   "bg-brand-pink text-gray-900",
-                  "hover:bg-brand-pink-light disabled:opacity-50 disabled:cursor-not-allowed"
+                  "hover:bg-brand-pink-light disabled:opacity-40 disabled:cursor-not-allowed"
                 )}
               >
+                {applying && <Loader2 className="w-3 h-3 animate-spin" />}
                 {applying ? "Aplicando…" : "Aplicar"}
               </button>
               <button
