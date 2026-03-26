@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { Wind, X, AlertTriangle, CheckCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SliderInput } from "./slider-input";
@@ -107,10 +108,10 @@ export function FanControlModal() {
         <span className="hidden sm:inline">Fans</span>
       </button>
 
-      {/* Modal overlay — p-4 ensures the card never touches the viewport edges */}
-      {open && (
+      {/* Modal — rendered via portal at document.body to escape the header's stacking context */}
+      {open && createPortal(
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in p-4"
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in p-4"
           onClick={(e) => {
             if (e.target === e.currentTarget) setOpen(false);
           }}
@@ -244,7 +245,8 @@ export function FanControlModal() {
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
