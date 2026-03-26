@@ -3,6 +3,7 @@
 import { ThemeToggle } from "./theme-toggle";
 import { useTheme } from "./theme-provider";
 import { useAuth } from "./auth-provider";
+import { FanControlModal } from "./fan-control-modal";
 import { LogOut, User } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -51,6 +52,7 @@ export function Header() {
                     {user.username}
                   </span>
                 </div>
+                <FanControlModal />
                 <button
                   onClick={handleLogout}
                   className={cn(
