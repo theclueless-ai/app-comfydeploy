@@ -545,11 +545,12 @@ export async function runAvatarAsync(
 
 /**
  * Run a poses workflow on RunPod serverless (async).
- * Sends the full ComfyUI workflow JSON plus the input image as base64.
+ * Sends the full ComfyUI workflow JSON plus the S3 key of the input image.
+ * The handler downloads the image from S3 using this key.
  */
 export async function runPosesWorkflowAsync(
   workflow: Record<string, unknown>,
-  imageBase64: string
+  s3Key: string
 ): Promise<{ jobId: string }> {
   const { apiKey, endpointId, baseUrl } = getRunPodAvatarConfig();
   const url = `${baseUrl}/${endpointId}/run`;
@@ -558,7 +559,7 @@ export async function runPosesWorkflowAsync(
     input: {
       workflow,
       type: "poses",
-      image: imageBase64,
+      s3_key: s3Key,
     },
   };
 

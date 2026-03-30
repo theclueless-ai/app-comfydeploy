@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { runPosesWorkflowAsync } from "@/lib/runpod";
+import { uploadPosesInputToS3 } from "@/lib/s3";
 import posesWorkflow from "@/lib/poses-workflow.json";
 
 export async function POST(request: NextRequest) {
@@ -15,17 +16,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Convert image to base64 for sending to RunPod
+    // Upload image to S3 so the RunPod handler can download it by key
     const arrayBuffer = await imageFile.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
-    const imageBase64 = `data:${imageFile.type || "image/png"};base64,${buffer.toString("base64")}`;
+    const filename = imageFile.name || "input.png";
+    const contentType = imageFile.type || "image/png";
+    const s3Key = await uploadPosesInputToS3(buffer, filename, contentType);
 
     // Deep clone the workflow template
     const workflow = JSON.parse(JSON.stringify(posesWorkflow)) as Record<string, unknown>;
 
-    // Send workflow + image to RunPod serverless
-    // The handler will upload the image to ComfyUI and inject the filename into Node 99
-    const { jobId } = await runPosesWorkflowAsync(workflow, imageBase64);
+    // Send workflow + S3 key to RunPod serverless
+    // The handler downloads the image from S3 using this key and injects it into Node 99
+    const { jobId } = await runPosesWorkflowAsync(workflow, s3Key);
 
     return NextResponse.json({ jobId });
   } catch (error) {

@@ -35,6 +35,29 @@ export async function uploadImageToS3(
 }
 
 /**
+ * Upload a poses input image to S3 and return the raw S3 key.
+ * The RunPod poses handler downloads this image by key from the same bucket.
+ */
+export async function uploadPosesInputToS3(
+  imageBuffer: Buffer,
+  filename: string,
+  contentType: string = "image/png"
+): Promise<string> {
+  const key = `poses-input/${Date.now()}-${filename}`;
+
+  await s3Client.send(
+    new PutObjectCommand({
+      Bucket: BUCKET_NAME,
+      Key: key,
+      Body: imageBuffer,
+      ContentType: contentType,
+    })
+  );
+
+  return key;
+}
+
+/**
  * Get an image from S3 by key.
  */
 export async function getImageFromS3(
