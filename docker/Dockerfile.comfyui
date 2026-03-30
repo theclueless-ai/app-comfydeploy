@@ -58,6 +58,11 @@ RUN git clone https://github.com/Bwebbfx/ComfyUI_FaceParsing.git && \
     cd ComfyUI_FaceParsing && \
     if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; fi
 
+# ComfyUI-QualityOfLifeSuit_Omar92 - Quality of life nodes (QOL Split String, etc.)
+RUN git clone https://github.com/omar92/ComfyUI-QualityOfLifeSuit_Omar92.git && \
+    cd ComfyUI-QualityOfLifeSuit_Omar92 && \
+    if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; fi
+
 # Character Generator Pack - Custom portrait/outfit/composition nodes
 # (CharacterPortraitGenerator, OutfitPromptGenerator, QwenEditCompositionGenerator)
 COPY custom_nodes/character_generator /comfyui/custom_nodes/character_generator
