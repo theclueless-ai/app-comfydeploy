@@ -21,28 +21,6 @@
       "title": "Cargar Imagen"
     }
   },
-  "100": {
-    "inputs": {
-      "value": "Keep the same person, same environment, same camera position, same framing, and same focal length. Rotate head exactly 45 degrees yaw to the subject's left (horizontal rotation). Tilt head upward 20 degrees pitch. Eyes looking top-left. Do not change camera angle. Plain studio background. Preserve exact bone structure, proportions, and identity.\n*\nKeep the same person, same environment, same camera position, same framing, and same focal length. Yaw 0 degrees (strict frontal). Tilt head backward 35 degrees pitch. Eyes looking straight upward. Full underside of jaw visible. Do not change camera angle. Plain studio background. Preserve exact bone structure, proportions, and identity.\n*\nKeep the same person, same environment, same camera position, same framing, and same focal length. Rotate head exactly 45 degrees yaw to the subject's right. Tilt head upward 20 degrees pitch. Eyes looking top-right. Do not change camera angle. Plain studio background. Preserve exact bone structure, proportions, and identity.\n*\nKeep the same person, same environment, same camera position, same framing, and same focal length. Rotate head exactly 90 degrees yaw to the subject's left (true profile). Pitch 0 degrees. Only one eye visible. Camera remains fixed. Plain studio background. Preserve exact bone structure, proportions, and identity.\n*\nKeep the same person, same environment, same camera position, same framing, and same focal length. Yaw 0 degrees. Pitch 0 degrees. Perfect frontal symmetry. Eyes looking directly into camera. Camera remains fixed. Plain studio background. Preserve exact bone structure, proportions, and identity.\n*\nKeep the same person, same environment, same camera position, same framing, and same focal length. Rotate head exactly 90 degrees yaw to the subject's right (true profile). Pitch 0 degrees. Only one eye visible. Camera remains fixed. Plain studio background. Preserve exact bone structure, proportions, and identity.\n*\nKeep the same person, same environment, same camera position, same framing, and same focal length. Rotate head exactly 45 degrees yaw to the subject's left. Tilt head downward 25 degrees pitch. Eyes looking down-left. Camera remains fixed. Plain studio background. Preserve exact bone structure, proportions, and identity.\n*\nKeep the same person, same environment, same camera position, same framing, and same focal length. Yaw 0 degrees. Tilt head downward 30 degrees pitch. Chin close to chest. Eyes looking straight downward. Camera remains fixed. Plain studio background. Preserve exact bone structure, proportions, and identity.\n*\nKeep the same person, same environment, same camera position, same framing, and same focal length. Rotate head exactly 45 degrees yaw to the subject's right. Tilt head downward 25 degrees pitch. Eyes looking down-right. Camera remains fixed. Plain studio background. Preserve exact bone structure, proportions, and identity."
-    },
-    "class_type": "PrimitiveStringMultiline",
-    "_meta": {
-      "title": "Prompt"
-    }
-  },
-  "101": {
-    "inputs": {
-      "text": [
-        "100",
-        0
-      ],
-      "delimiter": "*"
-    },
-    "class_type": "QOL Split String",
-    "_meta": {
-      "title": "QOL Split String"
-    }
-  },
   "106": {
     "inputs": {
       "unet_name": "Klein/flux-2-klein-9b.safetensors",
@@ -340,8 +318,8 @@
   "230:112": {
     "inputs": {
       "text": [
-        "101",
-        2
+        "101002",
+        0
       ],
       "clip": [
         "107",
@@ -529,8 +507,8 @@
   "230:141": {
     "inputs": {
       "text": [
-        "101",
-        5
+        "101005",
+        0
       ],
       "clip": [
         "107",
@@ -718,8 +696,8 @@
   "230:152": {
     "inputs": {
       "text": [
-        "101",
-        8
+        "101008",
+        0
       ],
       "clip": [
         "107",
@@ -907,8 +885,8 @@
   "230:167": {
     "inputs": {
       "text": [
-        "101",
-        1
+        "101001",
+        0
       ],
       "clip": [
         "107",
@@ -1096,8 +1074,8 @@
   "230:178": {
     "inputs": {
       "text": [
-        "101",
-        4
+        "101004",
+        0
       ],
       "clip": [
         "107",
@@ -1285,8 +1263,8 @@
   "230:189": {
     "inputs": {
       "text": [
-        "101",
-        7
+        "101007",
+        0
       ],
       "clip": [
         "107",
@@ -1474,7 +1452,7 @@
   "230:204": {
     "inputs": {
       "text": [
-        "101",
+        "101000",
         0
       ],
       "clip": [
@@ -1663,8 +1641,8 @@
   "230:215": {
     "inputs": {
       "text": [
-        "101",
-        3
+        "101003",
+        0
       ],
       "clip": [
         "107",
@@ -1852,8 +1830,8 @@
   "230:226": {
     "inputs": {
       "text": [
-        "101",
-        6
+        "101006",
+        0
       ],
       "clip": [
         "107",
@@ -2035,6 +2013,87 @@
     "class_type": "VAEDecode",
     "_meta": {
       "title": "Decodificación VAE"
+    }
+  },
+  "101000": {
+    "inputs": {
+      "value": "Keep the same person, same environment, same camera position, same framing, and same focal length. Rotate head exactly 45 degrees yaw to the subject's left (horizontal rotation). Tilt head upward 20 degrees pitch. Eyes looking top-left. Do not change camera angle. Plain studio background. Preserve exact bone structure, proportions, and identity."
+    },
+    "class_type": "PrimitiveStringMultiline",
+    "_meta": {
+      "title": "Prompt 0"
+    }
+  },
+  "101001": {
+    "inputs": {
+      "value": "Keep the same person, same environment, same camera position, same framing, and same focal length. Yaw 0 degrees (strict frontal). Tilt head backward 35 degrees pitch. Eyes looking straight upward. Full underside of jaw visible. Do not change camera angle. Plain studio background. Preserve exact bone structure, proportions, and identity."
+    },
+    "class_type": "PrimitiveStringMultiline",
+    "_meta": {
+      "title": "Prompt 1"
+    }
+  },
+  "101002": {
+    "inputs": {
+      "value": "Keep the same person, same environment, same camera position, same framing, and same focal length. Rotate head exactly 45 degrees yaw to the subject's right. Tilt head upward 20 degrees pitch. Eyes looking top-right. Do not change camera angle. Plain studio background. Preserve exact bone structure, proportions, and identity."
+    },
+    "class_type": "PrimitiveStringMultiline",
+    "_meta": {
+      "title": "Prompt 2"
+    }
+  },
+  "101003": {
+    "inputs": {
+      "value": "Keep the same person, same environment, same camera position, same framing, and same focal length. Rotate head exactly 90 degrees yaw to the subject's left (true profile). Pitch 0 degrees. Only one eye visible. Camera remains fixed. Plain studio background. Preserve exact bone structure, proportions, and identity."
+    },
+    "class_type": "PrimitiveStringMultiline",
+    "_meta": {
+      "title": "Prompt 3"
+    }
+  },
+  "101004": {
+    "inputs": {
+      "value": "Keep the same person, same environment, same camera position, same framing, and same focal length. Yaw 0 degrees. Pitch 0 degrees. Perfect frontal symmetry. Eyes looking directly into camera. Camera remains fixed. Plain studio background. Preserve exact bone structure, proportions, and identity."
+    },
+    "class_type": "PrimitiveStringMultiline",
+    "_meta": {
+      "title": "Prompt 4"
+    }
+  },
+  "101005": {
+    "inputs": {
+      "value": "Keep the same person, same environment, same camera position, same framing, and same focal length. Rotate head exactly 90 degrees yaw to the subject's right (true profile). Pitch 0 degrees. Only one eye visible. Camera remains fixed. Plain studio background. Preserve exact bone structure, proportions, and identity."
+    },
+    "class_type": "PrimitiveStringMultiline",
+    "_meta": {
+      "title": "Prompt 5"
+    }
+  },
+  "101006": {
+    "inputs": {
+      "value": "Keep the same person, same environment, same camera position, same framing, and same focal length. Rotate head exactly 45 degrees yaw to the subject's left. Tilt head downward 25 degrees pitch. Eyes looking down-left. Camera remains fixed. Plain studio background. Preserve exact bone structure, proportions, and identity."
+    },
+    "class_type": "PrimitiveStringMultiline",
+    "_meta": {
+      "title": "Prompt 6"
+    }
+  },
+  "101007": {
+    "inputs": {
+      "value": "Keep the same person, same environment, same camera position, same framing, and same focal length. Yaw 0 degrees. Tilt head downward 30 degrees pitch. Chin close to chest. Eyes looking straight downward. Camera remains fixed. Plain studio background. Preserve exact bone structure, proportions, and identity."
+    },
+    "class_type": "PrimitiveStringMultiline",
+    "_meta": {
+      "title": "Prompt 7"
+    }
+  },
+  "101008": {
+    "inputs": {
+      "value": "Keep the same person, same environment, same camera position, same framing, and same focal length. Rotate head exactly 45 degrees yaw to the subject's right. Tilt head downward 25 degrees pitch. Eyes looking down-right. Camera remains fixed. Plain studio background. Preserve exact bone structure, proportions, and identity."
+    },
+    "class_type": "PrimitiveStringMultiline",
+    "_meta": {
+      "title": "Prompt 8"
     }
   }
 }
