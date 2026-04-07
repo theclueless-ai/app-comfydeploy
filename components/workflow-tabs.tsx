@@ -2,7 +2,7 @@
 
 import { cn } from "@/lib/utils";
 
-export type WorkflowTab = "fashion" | "vellum" | "vellum20" | "aiTalk" | "avatar" | "avatarT" | "poses";
+export type WorkflowTab = "fashion" | "vellum" | "vellum20" | "vellumPiel" | "aiTalk" | "avatar" | "avatarT" | "poses";
 
 const externalTabs: Record<string, string> = {
   avatarT: "http://192.168.193.229:3000/",
@@ -18,6 +18,7 @@ export function WorkflowTabs({ activeTab, onTabChange }: WorkflowTabsProps) {
     { id: "fashion", label: "AI Fashion Commerce" },
     { id: "vellum", label: "Vellum 2.1" },
     { id: "vellum20", label: "Vellum 2.0" },
+    { id: "vellumPiel", label: "Vellum Piel" },
     { id: "aiTalk", label: "AI Talk" },
     { id: "avatar", label: "Avatar Generator" },
     { id: "avatarT", label: "Avatar Generator T" },

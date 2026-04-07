@@ -8,7 +8,7 @@ import { PosesForm } from "@/components/poses-form";
 import { ResultDisplay } from "@/components/result-display";
 import { Gallery } from "@/components/gallery";
 import { WorkflowTabs, WorkflowTab } from "@/components/workflow-tabs";
-import { getDefaultWorkflow, getVellumWorkflow, getVellum20Workflow, getAiTalkWorkflow } from "@/lib/workflows";
+import { getDefaultWorkflow, getVellumWorkflow, getVellum20Workflow, getVellumPielWorkflow, getAiTalkWorkflow } from "@/lib/workflows";
 import { cn, compressImage } from "@/lib/utils";
 import { sanitizeErrorMessage } from "@/lib/error-messages";
 import { useHistory } from "@/hooks/use-history";
@@ -35,6 +35,7 @@ export default function Home() {
   const fashionWorkflow = getDefaultWorkflow();
   const vellumWorkflow = getVellumWorkflow();
   const vellum20Workflow = getVellum20Workflow();
+  const vellumPielWorkflow = getVellumPielWorkflow();
   const aiTalkWorkflow = getAiTalkWorkflow();
   const avatarInfo = { name: "Avatar Generator", description: "Generate unique character portraits with customizable features, powered by RunPod serverless." };
   const posesInfo = { name: "Poses", description: "Generate 9 different head poses from a single portrait, powered by RunPod serverless." };
@@ -44,9 +45,11 @@ export default function Home() {
       ? vellumWorkflow
       : activeTab === "vellum20"
         ? vellum20Workflow
-        : activeTab === "aiTalk"
-          ? aiTalkWorkflow
-          : null;
+        : activeTab === "vellumPiel"
+          ? vellumPielWorkflow
+          : activeTab === "aiTalk"
+            ? aiTalkWorkflow
+            : null;
   const activeWorkflowName = activeTab === "poses" ? posesInfo.name : (workflow?.name ?? avatarInfo.name);
   const activeWorkflowDescription = activeTab === "poses" ? posesInfo.description : (workflow?.description ?? avatarInfo.description);
 
@@ -169,6 +172,43 @@ export default function Home() {
         }
       } catch (error) {
         console.error("vellum 2.0 polling error:", error);
+      }
+    }, 3000);
+
+    return () => clearInterval(pollInterval);
+  }, [runId, status, activeTab]);
+
+  // Poll for RunPod status (Vellum Piel workflow)
+  useEffect(() => {
+    if (!runId || status === "completed" || status === "failed" || activeTab !== "vellumPiel") {
+      return;
+    }
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const response = await fetch(`/api/vellum20-status?jobId=${runId}`);
+        const data = await response.json();
+
+        console.log("vellum piel status data:", data);
+
+        if (data.status === "completed") {
+          setStatus("completed");
+          if (data.images && data.images.length > 0) {
+            setResultImages(data.images);
+            console.log(`Received ${data.images.length} images from RunPod (Vellum Piel)`);
+          }
+          clearInterval(pollInterval);
+          setIsLoading(false);
+        } else if (data.status === "failed") {
+          setStatus("failed");
+          setError(data.error || "Workflow failed");
+          clearInterval(pollInterval);
+          setIsLoading(false);
+        } else if (data.status === "running") {
+          setStatus("running");
+        }
+      } catch (error) {
+        console.error("vellum piel polling error:", error);
       }
     }, 3000);
 
@@ -395,11 +435,13 @@ export default function Home() {
           ? "/api/run-vellum"
           : activeTab === "vellum20"
             ? "/api/run-vellum20"
-            : activeTab === "aiTalk"
-              ? "/api/run-ai-talk"
-              : activeTab === "poses"
-                ? "/api/run-poses"
-                : "/api/run-avatar";
+            : activeTab === "vellumPiel"
+              ? "/api/run-vellum-piel"
+              : activeTab === "aiTalk"
+                ? "/api/run-ai-talk"
+                : activeTab === "poses"
+                  ? "/api/run-poses"
+                  : "/api/run-avatar";
 
       const response = await fetch(apiEndpoint, {
         method: "POST",
@@ -460,11 +502,13 @@ export default function Home() {
                   ? "Upload Images"
                   : activeTab === "vellum" || activeTab === "vellum20"
                     ? "Image Upscaling"
-                    : activeTab === "aiTalk"
-                      ? "Generate Talking Video"
-                      : activeTab === "poses"
-                        ? "Upload Portrait"
-                        : "Character Settings"}
+                    : activeTab === "vellumPiel"
+                      ? "Skin Enhancement"
+                      : activeTab === "aiTalk"
+                        ? "Generate Talking Video"
+                        : activeTab === "poses"
+                          ? "Upload Portrait"
+                          : "Character Settings"}
               </h3>
               {activeTab === "avatar" ? (
                 <AvatarForm

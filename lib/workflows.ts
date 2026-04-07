@@ -155,6 +155,34 @@ export const workflows: WorkflowConfig[] = [
     ],
   },
   {
+    id: "vellum-piel",
+    name: "Vellum Piel",
+    description: "AI-powered skin texture enhancement with 4K/8K output.",
+    deploymentId: "",
+    backend: "runpod",
+    inputs: [
+      {
+        id: "input_image",
+        name: "input_image",
+        type: "image",
+        label: "Input Image",
+        description: "",
+        required: true,
+        accept: "image/*",
+      },
+      {
+        id: "scale_by",
+        name: "scale_by",
+        type: "button-group",
+        label: "Output Resolution",
+        description: "",
+        required: true,
+        defaultValue: "4K",
+        options: ["4K", "8K"],
+      },
+    ],
+  },
+  {
     id: "ai-talk",
     name: "AI Talk",
     description: "Generate talking head videos with AI-powered lip sync and voice synthesis.",
@@ -228,4 +256,8 @@ export function getVellum20Workflow(): WorkflowConfig {
 
 export function getAiTalkWorkflow(): WorkflowConfig {
   return workflows.find((w) => w.id === "ai-talk")!;
+}
+
+export function getVellumPielWorkflow(): WorkflowConfig {
+  return workflows.find((w) => w.id === "vellum-piel")!;
 }

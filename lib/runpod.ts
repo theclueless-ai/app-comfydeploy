@@ -652,7 +652,64 @@ export interface Vellum20WorkflowInput {
 export interface VellumPielWorkflowInput {
   workflow: any;
   input_image: string;    // Base64 data URI
-  scale_by: number;       // 1 for 4k, 2 for 8k
+  scale_by: number;       // 1 for 4K, 2 for 8K (node 261 INTConstant)
+}
+
+/**
+ * Build the workflow payload for Vellum Piel
+ * Sends image + scale value (1=4K, 2=8K) for node 261
+ */
+function buildVellumPielWorkflowPayload(input: VellumPielWorkflowInput) {
+  let imageBase64 = input.input_image;
+  if (imageBase64.includes(',')) {
+    imageBase64 = imageBase64.split(',')[1];
+  }
+
+  return {
+    input: {
+      image: imageBase64,
+      scaleFactor: input.scale_by,
+    },
+  };
+}
+
+/**
+ * Run Vellum Piel workflow on RunPod (async)
+ */
+export async function runVellumPielWorkflowAsync(
+  input: VellumPielWorkflowInput
+): Promise<{ jobId: string }> {
+  const { apiKey, endpointId, baseUrl } = getRunPodVellum20Config();
+  const url = `${baseUrl}/${endpointId}/run`;
+
+  const payload = buildVellumPielWorkflowPayload(input);
+
+  console.log("=== RunPod Vellum Piel API Call (async) ===");
+  console.log("URL:", url);
+  console.log("Endpoint ID:", endpointId);
+  console.log("Scale Factor:", input.scale_by);
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  console.log("Response status:", response.status);
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("RunPod Vellum Piel API Error:", errorText);
+    throw new Error(`RunPod API error: ${response.status} - ${errorText}`);
+  }
+
+  const result: RunPodJobResponse = await response.json();
+  console.log("Vellum Piel job started with ID:", result.id);
+
+  return { jobId: result.id };
 }
 
 /**
