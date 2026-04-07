@@ -1,0 +1,964 @@
+{
+    "25": {
+      "inputs": {
+        "model": "seedream 5.0 lite",
+        "prompt": [
+          "263",
+          0
+        ],
+        "size_preset": "Custom",
+        "width": [
+          "41",
+          0
+        ],
+        "height": [
+          "41",
+          1
+        ],
+        "sequential_image_generation": "disabled",
+        "max_images": 1,
+        "seed": 87760526,
+        "watermark": false,
+        "fail_on_partial": true,
+        "image": [
+          "262:15",
+          0
+        ]
+      },
+      "class_type": "ByteDanceSeedreamNode",
+      "_meta": {
+        "title": "ByteDance Seedream 4"
+      }
+    },
+    "32": {
+      "inputs": {
+        "image": "7-original.png"
+      },
+      "class_type": "LoadImage",
+      "_meta": {
+        "title": "Modelo"
+      }
+    },
+    "41": {
+      "inputs": {
+        "image": [
+          "48",
+          0
+        ]
+      },
+      "class_type": "GetImageSize",
+      "_meta": {
+        "title": "Obtener Tamaño de Imagen"
+      }
+    },
+    "48": {
+      "inputs": {
+        "size": 2560,
+        "interpolation_mode": "bicubic",
+        "image": [
+          "265",
+          0
+        ]
+      },
+      "class_type": "JWImageResizeByLongerSide",
+      "_meta": {
+        "title": "Image Resize by Longer Side"
+      }
+    },
+    "69": {
+      "inputs": {
+        "num_parts": 5,
+        "part_1": "cloth",
+        "as_soft": false,
+        "part_2": "hair",
+        "part_3": "hat",
+        "part_4": "ear_ring",
+        "part_5": "eye_g",
+        "part_6": "l_lip",
+        "seg_map": [
+          "90",
+          0
+        ]
+      },
+      "class_type": "FacePartMask",
+      "_meta": {
+        "title": "FacePartMask"
+      }
+    },
+    "70": {
+      "inputs": {
+        "expression": "round(a / 64) * 64",
+        "a": [
+          "76",
+          2
+        ]
+      },
+      "class_type": "MathExpression|pysssss",
+      "_meta": {
+        "title": "Math Expression 🐍"
+      }
+    },
+    "71": {
+      "inputs": {
+        "width": [
+          "70",
+          0
+        ],
+        "height": [
+          "74",
+          0
+        ],
+        "upscale_method": "nearest-exact",
+        "keep_proportion": "pad",
+        "pad_color": "0, 0, 0",
+        "crop_position": "center",
+        "divisible_by": 2,
+        "device": "cpu",
+        "image": [
+          "94",
+          0
+        ]
+      },
+      "class_type": "ImageResizeKJv2",
+      "_meta": {
+        "title": "Image Resize KJ v2 (Swwan)"
+      }
+    },
+    "72": {
+      "inputs": {
+        "pixels": [
+          "71",
+          0
+        ],
+        "vae": [
+          "75",
+          2
+        ]
+      },
+      "class_type": "VAEEncode",
+      "_meta": {
+        "title": "VAE Codificar"
+      }
+    },
+    "73": {
+      "inputs": {
+        "seed": 601016052850860,
+        "steps": 30,
+        "cfg": 4.5,
+        "sampler_name": "dpmpp_2m",
+        "scheduler": "karras",
+        "denoise": 0.15,
+        "model": [
+          "75",
+          0
+        ],
+        "positive": [
+          "77",
+          0
+        ],
+        "negative": [
+          "84",
+          0
+        ],
+        "latent_image": [
+          "72",
+          0
+        ]
+      },
+      "class_type": "KSampler",
+      "_meta": {
+        "title": "KSampler"
+      }
+    },
+    "74": {
+      "inputs": {
+        "expression": "round(a / 64) * 64",
+        "a": [
+          "76",
+          1
+        ]
+      },
+      "class_type": "MathExpression|pysssss",
+      "_meta": {
+        "title": "Math Expression 🐍"
+      }
+    },
+    "75": {
+      "inputs": {
+        "ckpt_name": "enhancer\\enhancor_skin_fix.safetensors"
+      },
+      "class_type": "CheckpointLoaderSimple",
+      "_meta": {
+        "title": "Cargar Punto de Control"
+      }
+    },
+    "76": {
+      "inputs": {
+        "ui_widget": {
+          "nodes": [
+            {
+              "icon": "x",
+              "id": 1,
+              "value": "Image 1: False"
+            }
+          ]
+        },
+        "image": [
+          "94",
+          0
+        ]
+      },
+      "class_type": "LF_IsLandscape",
+      "_meta": {
+        "title": "Is image in landscape res.?"
+      }
+    },
+    "77": {
+      "inputs": {
+        "text": "close-up portrait, photographic realism,\nnatural facial proportions,\nnatural skin texture focused on cheeks and nose,\nsubtle pores, light skin imperfections,\nfine vellus hair,\nrealistic skin oiliness,\nsoft skin transitions,\nnatural subsurface scattering,\nsoft natural daylight,\nshot on 85mm lens, f/2.8,\nraw photo look, balanced dynamic range,\n\nnatural eye alignment,\nbalanced gaze,\nrealistic iris detail,\nsharp pupils,\nclean sclera,\nrelaxed eyelids,\nnatural catchlight,\nsubtle facial asymmetry,\nslight head tilt",
+        "clip": [
+          "75",
+          1
+        ]
+      },
+      "class_type": "CLIPTextEncode",
+      "_meta": {
+        "title": "Positivo"
+      }
+    },
+    "78": {
+      "inputs": {
+        "samples": [
+          "73",
+          0
+        ],
+        "vae": [
+          "75",
+          2
+        ]
+      },
+      "class_type": "VAEDecode",
+      "_meta": {
+        "title": "Decodificación VAE"
+      }
+    },
+    "79": {
+      "inputs": {
+        "ckpt_name": "Sdxl\\intorealismUltra_v90.safetensors"
+      },
+      "class_type": "CheckpointLoaderSimple",
+      "_meta": {
+        "title": "Cargar Punto de Control"
+      }
+    },
+    "80": {
+      "inputs": {
+        "model_name": "segm/PitEyeDetailer-v2-seg.pt"
+      },
+      "class_type": "UltralyticsDetectorProvider",
+      "_meta": {
+        "title": "UltralyticsDetectorProvider"
+      }
+    },
+    "82": {
+      "inputs": {
+        "model_name": "sam_vit_b_01ec64.pth",
+        "device_mode": "AUTO"
+      },
+      "class_type": "SAMLoader",
+      "_meta": {
+        "title": "SAMLoader (Impact)"
+      }
+    },
+    "83": {
+      "inputs": {
+        "guide_size": 512,
+        "guide_size_for": true,
+        "max_size": 1024,
+        "seed": 705994487545054,
+        "steps": 20,
+        "cfg": 8,
+        "sampler_name": "euler",
+        "scheduler": "simple",
+        "denoise": 0.2,
+        "feather": 5,
+        "noise_mask": true,
+        "force_inpaint": true,
+        "bbox_threshold": 0.5,
+        "bbox_dilation": 10,
+        "bbox_crop_factor": 3,
+        "sam_detection_hint": "center-1",
+        "sam_dilation": 0,
+        "sam_threshold": 0.93,
+        "sam_bbox_expansion": 0,
+        "sam_mask_hint_threshold": 0.7,
+        "sam_mask_hint_use_negative": "False",
+        "drop_size": 10,
+        "wildcard": "",
+        "cycle": 1,
+        "inpaint_model": false,
+        "noise_mask_feather": 20,
+        "tiled_encode": false,
+        "tiled_decode": false,
+        "image": [
+          "78",
+          0
+        ],
+        "model": [
+          "79",
+          0
+        ],
+        "clip": [
+          "79",
+          1
+        ],
+        "vae": [
+          "79",
+          2
+        ],
+        "positive": [
+          "85",
+          0
+        ],
+        "negative": [
+          "86",
+          0
+        ],
+        "bbox_detector": [
+          "80",
+          0
+        ],
+        "sam_model_opt": [
+          "82",
+          0
+        ],
+        "segm_detector_opt": [
+          "80",
+          1
+        ]
+      },
+      "class_type": "FaceDetailer",
+      "_meta": {
+        "title": "FaceDetailer"
+      }
+    },
+    "84": {
+      "inputs": {
+        "text": "plastic skin, waxy skin, silicone skin, liquid skin,\ncartoon, anime, 3d render, cgi, painting, illustration,\nsoft focus, blurry,\nover-retouched skin, excessive smoothing,\nmannequin face, doll face,\ndeformed eyes, cross-eyed, extra pupils, distorted iris,\nwarped face,\nlow resolution, watermark, text, signature,\nflat lighting",
+        "clip": [
+          "75",
+          1
+        ]
+      },
+      "class_type": "CLIPTextEncode",
+      "_meta": {
+        "title": "NEGATIVE"
+      }
+    },
+    "85": {
+      "inputs": {
+        "text": "extreme macro photography of a single human iris,\nultra close-up eye detail,\n\nradial trabecular patterns,\ncrypts and furrows in iris visible,\nnatural collagen fiber texture,\nlimbal ring clearly defined,\ndeep iris color translucency,\nsharp crystalline pupil edge,\nnatural pupil dilation,\nsubtle iris color variation and depth,\nrealistic corneal surface wetness,\ncorneal reflection of soft window light,\nsingle soft natural catchlight on cornea,\ntear film layer visible on surface,\nnatural specular gloss on cornea,\n\nsubsurface light scattering through iris,\nshot on 180mm macro lens, f/5.6,\nsoft diffused natural daylight,\nextreme shallow depth of field,\ntack sharp iris center, soft bokeh edges,\nraw photo look, no color grading,\nultra high resolution, photographic realism,\nno makeup, no filters, clinical detail",
+        "clip": [
+          "79",
+          1
+        ]
+      },
+      "class_type": "CLIPTextEncode",
+      "_meta": {
+        "title": "Positivo"
+      }
+    },
+    "86": {
+      "inputs": {
+        "text": "artificial eye, CGI eye, 3D rendered eye, digital art,\ncartoon eye, anime eye, illustrated eye,\nplastic iris texture, glass eye, fake eye,\nsmooth iris with no texture, flat iris color,\noversaturated iris, neon colors, unrealistic color,\nperfect symmetry, too clean, airbrushed,\nno iris detail, blurry iris, out of focus iris,\nmakeup, eyeshadow, mascara, eyeliner,\ncolored contact lens, cat eye, alien eye,\nmultiple catchlights, harsh studio lighting,\noverexposed highlights, blown out cornea,\ndark underexposed iris,\ninstagram filter, color grading, LUT applied,\nwatermark, text, signature, border,\nlow resolution, pixelated, noise, grain artifact,\nlens distortion, chromatic aberration,\nmotion blur, camera shake,\nduplicate eye, multiple eyes,\ndoll eye, mannequin eye, taxidermy eye,\nheterochromia unless specified,",
+        "clip": [
+          "79",
+          1
+        ]
+      },
+      "class_type": "CLIPTextEncode",
+      "_meta": {
+        "title": "Positivo"
+      }
+    },
+    "87": {
+      "inputs": {
+        "x": 0,
+        "y": 0,
+        "resize_source": true,
+        "destination": [
+          "104",
+          0
+        ],
+        "source": [
+          "104",
+          0
+        ],
+        "mask": [
+          "93",
+          0
+        ]
+      },
+      "class_type": "ImageCompositeMasked",
+      "_meta": {
+        "title": "ImageCompositeMasked"
+      }
+    },
+    "89": {
+      "inputs": {
+        "backbone": "resnet18",
+        "device": "auto",
+        "weights_path": ""
+      },
+      "class_type": "FaceParsingLoader",
+      "_meta": {
+        "title": "FaceParsingLoader"
+      }
+    },
+    "90": {
+      "inputs": {
+        "keep_resolution": true,
+        "preview": true,
+        "image": [
+          "104",
+          0
+        ],
+        "model": [
+          "89",
+          0
+        ]
+      },
+      "class_type": "FaceParsingInfer",
+      "_meta": {
+        "title": "FaceParsingInfer"
+      }
+    },
+    "91": {
+      "inputs": {
+        "num_parts": 5,
+        "part_1": "l_brow",
+        "as_soft": false,
+        "part_2": "l_lip",
+        "part_3": "r_brow",
+        "part_4": "u_lip",
+        "part_5": "l_lip",
+        "part_6": "l_lip",
+        "seg_map": [
+          "90",
+          0
+        ]
+      },
+      "class_type": "FacePartMask",
+      "_meta": {
+        "title": "FacePartMask"
+      }
+    },
+    "92": {
+      "inputs": {
+        "x": 0,
+        "y": 0,
+        "operation": "add",
+        "destination": [
+          "91",
+          0
+        ],
+        "source": [
+          "69",
+          0
+        ]
+      },
+      "class_type": "MaskComposite",
+      "_meta": {
+        "title": "Composición de Máscara"
+      }
+    },
+    "93": {
+      "inputs": {
+        "expand": 10,
+        "incremental_expandrate": 0,
+        "tapered_corners": true,
+        "flip_input": false,
+        "blur_radius": 4,
+        "lerp_alpha": 1,
+        "decay_factor": 1,
+        "fill_holes": false,
+        "mask": [
+          "92",
+          0
+        ]
+      },
+      "class_type": "GrowMaskWithBlur",
+      "_meta": {
+        "title": "Grow Mask With Blur"
+      }
+    },
+    "94": {
+      "inputs": {
+        "upscale_method": "lanczos",
+        "megapixels": 1.5,
+        "resolution_steps": 1,
+        "image": [
+          "87",
+          0
+        ]
+      },
+      "class_type": "ImageScaleToTotalPixels",
+      "_meta": {
+        "title": "Escalar Imagen a Total de Pixeles"
+      }
+    },
+    "96": {
+      "inputs": {
+        "seed": [
+          "113",
+          0
+        ],
+        "resolution": 4000,
+        "max_resolution": 4000,
+        "batch_size": 1,
+        "uniform_batch_size": false,
+        "color_correction": "lab",
+        "temporal_overlap": 16,
+        "prepend_frames": 0,
+        "input_noise_scale": 0,
+        "latent_noise_scale": 0,
+        "offload_device": "cpu",
+        "enable_debug": false,
+        "image": [
+          "253",
+          0
+        ],
+        "dit": [
+          "99",
+          0
+        ],
+        "vae": [
+          "97",
+          0
+        ]
+      },
+      "class_type": "SeedVR2VideoUpscaler",
+      "_meta": {
+        "title": "SeedVR2 Video Upscaler (v2.5.24)"
+      }
+    },
+    "97": {
+      "inputs": {
+        "model": "ema_vae_fp16.safetensors",
+        "device": "cuda:0",
+        "encode_tiled": true,
+        "encode_tile_size": 1024,
+        "encode_tile_overlap": 128,
+        "decode_tiled": true,
+        "decode_tile_size": 1024,
+        "decode_tile_overlap": 128,
+        "tile_debug": "false",
+        "offload_device": "cpu",
+        "cache_model": false
+      },
+      "class_type": "SeedVR2LoadVAEModel",
+      "_meta": {
+        "title": "SeedVR2 (Down)Load VAE Model"
+      }
+    },
+    "98": {
+      "inputs": {
+        "upscale_method": "lanczos",
+        "scale_by": 0.5,
+        "image": [
+          "100",
+          0
+        ]
+      },
+      "class_type": "ImageScaleBy",
+      "_meta": {
+        "title": "Ampliar Imagen Por"
+      }
+    },
+    "99": {
+      "inputs": {
+        "model": "seedvr2_ema_7b_fp16.safetensors",
+        "device": "cuda:0",
+        "blocks_to_swap": 35,
+        "swap_io_components": false,
+        "offload_device": "cpu",
+        "cache_model": false,
+        "attention_mode": "sdpa"
+      },
+      "class_type": "SeedVR2LoadDiTModel",
+      "_meta": {
+        "title": "SeedVR2 (Down)Load DiT Model"
+      }
+    },
+    "100": {
+      "inputs": {
+        "measurement": "pixels",
+        "width": [
+          "76",
+          2
+        ],
+        "height": [
+          "76",
+          1
+        ],
+        "fit": "crop",
+        "method": "nearest-exact",
+        "image": [
+          "83",
+          0
+        ]
+      },
+      "class_type": "Image Resize (rgthree)",
+      "_meta": {
+        "title": "Image Resize (rgthree)"
+      }
+    },
+    "104": {
+      "inputs": {
+        "samples": [
+          "106",
+          0
+        ],
+        "vae": [
+          "79",
+          2
+        ]
+      },
+      "class_type": "VAEDecode",
+      "_meta": {
+        "title": "Decodificación VAE"
+      }
+    },
+    "106": {
+      "inputs": {
+        "pixels": [
+          "25",
+          0
+        ],
+        "vae": [
+          "79",
+          2
+        ]
+      },
+      "class_type": "VAEEncode",
+      "_meta": {
+        "title": "VAE Codificar"
+      }
+    },
+    "113": {
+      "inputs": {
+        "min_value": 0,
+        "max_value": 106.69,
+        "seed": 273290894370920
+      },
+      "class_type": "RandomNumber",
+      "_meta": {
+        "title": "Random Number"
+      }
+    },
+    "117": {
+      "inputs": {
+        "method": "hard",
+        "type": "median",
+        "intensity": 6,
+        "images": [
+          "96",
+          0
+        ]
+      },
+      "class_type": "Image Sharpen FS",
+      "_meta": {
+        "title": "Image Sharpen FS"
+      }
+    },
+    "231": {
+      "inputs": {
+        "method": "mkl",
+        "strength": 1,
+        "multithread": true,
+        "image_ref": [
+          "265",
+          0
+        ],
+        "image_target": [
+          "117",
+          0
+        ]
+      },
+      "class_type": "ColorMatch",
+      "_meta": {
+        "title": "Color Match (Swwan)"
+      }
+    },
+    "244": {
+      "inputs": {
+        "seed": 4105349922,
+        "resolution": 4000,
+        "max_resolution": 4000,
+        "batch_size": 1,
+        "uniform_batch_size": false,
+        "color_correction": "lab",
+        "temporal_overlap": 16,
+        "prepend_frames": 0,
+        "input_noise_scale": 0,
+        "latent_noise_scale": 0,
+        "offload_device": "cpu",
+        "enable_debug": false,
+        "image": [
+          "253",
+          1
+        ],
+        "dit": [
+          "99",
+          0
+        ],
+        "vae": [
+          "97",
+          0
+        ]
+      },
+      "class_type": "SeedVR2VideoUpscaler",
+      "_meta": {
+        "title": "SeedVR2 Video Upscaler (v2.5.24)"
+      }
+    },
+    "245": {
+      "inputs": {
+        "method": "hard",
+        "type": "median",
+        "intensity": 6,
+        "images": [
+          "244",
+          0
+        ]
+      },
+      "class_type": "Image Sharpen FS",
+      "_meta": {
+        "title": "Image Sharpen FS"
+      }
+    },
+    "246": {
+      "inputs": {
+        "method": "mkl",
+        "strength": 1,
+        "multithread": true,
+        "image_ref": [
+          "265",
+          0
+        ],
+        "image_target": [
+          "245",
+          0
+        ]
+      },
+      "class_type": "ColorMatch",
+      "_meta": {
+        "title": "Color Match (Swwan)"
+      }
+    },
+    "247": {
+      "inputs": {
+        "upscale_model": [
+          "248",
+          0
+        ],
+        "image": [
+          "246",
+          0
+        ]
+      },
+      "class_type": "ImageUpscaleWithModel",
+      "_meta": {
+        "title": "Ampliar Imagen (usando Modelo)"
+      }
+    },
+    "248": {
+      "inputs": {
+        "model_name": "RealESRGAN_x2plus.pth"
+      },
+      "class_type": "UpscaleModelLoader",
+      "_meta": {
+        "title": "Cargar Modelo de Escala Superior"
+      }
+    },
+    "253": {
+      "inputs": {
+        "select": [
+          "261",
+          0
+        ],
+        "sel_mode": false,
+        "input": [
+          "98",
+          0
+        ]
+      },
+      "class_type": "ImpactInversedSwitch",
+      "_meta": {
+        "title": "1-4k----2-8k"
+      }
+    },
+    "254": {
+      "inputs": {
+        "filename_prefix": "4k-V2",
+        "images": [
+          "256",
+          0
+        ]
+      },
+      "class_type": "SaveImage",
+      "_meta": {
+        "title": "Guardar Imagen"
+      }
+    },
+    "256": {
+      "inputs": {
+        "select": [
+          "261",
+          0
+        ],
+        "sel_mode": false,
+        "input1": [
+          "231",
+          0
+        ],
+        "input2": [
+          "247",
+          0
+        ]
+      },
+      "class_type": "ImpactSwitch",
+      "_meta": {
+        "title": "Switch (Any)"
+      }
+    },
+    "261": {
+      "inputs": {
+        "value": 1
+      },
+      "class_type": "INTConstant",
+      "_meta": {
+        "title": "1-4k----2-8k"
+      }
+    },
+    "263": {
+      "inputs": {
+        "text": "The woman in image1 is wearing the exact makeup look from image2. \nTransfer the makeup from image2 onto the face of the woman in image1: \napply the same foundation finish, blush placement, eyeshadow colors and \ntechnique, eyeliner style, and lip color shown in image2. The makeup must \nfollow the facial contours and lighting of image1. Preserve the identity, \nfacial features, skin texture, hair, and expression of the woman in image1 \nexactly. Do not change anything outside the makeup. Do not alter the \nbackground, clothing, or pose."
+      },
+      "class_type": "Text _O",
+      "_meta": {
+        "title": "Makeup"
+      }
+    },
+    "264": {
+      "inputs": {
+        "image": "f3acb895f413ac546daabd2573f22376.jpg"
+      },
+      "class_type": "LoadImage",
+      "_meta": {
+        "title": "Makeup"
+      }
+    },
+    "265": {
+      "inputs": {
+        "base64_data": [
+          "267",
+          0
+        ],
+        "image_output": "Preview",
+        "save_prefix": "ComfyUI"
+      },
+      "class_type": "easy loadImageBase64",
+      "_meta": {
+        "title": "Load Image (Base64)"
+      }
+    },
+    "266": {
+      "inputs": {
+        "base64_data": [
+          "268",
+          0
+        ],
+        "image_output": "Preview",
+        "save_prefix": "ComfyUI"
+      },
+      "class_type": "easy loadImageBase64",
+      "_meta": {
+        "title": "Load Image (Base64)"
+      }
+    },
+    "267": {
+      "inputs": {
+        "image": [
+          "32",
+          0
+        ]
+      },
+      "class_type": "easy imageToBase64",
+      "_meta": {
+        "title": "Image To Base64"
+      }
+    },
+    "268": {
+      "inputs": {
+        "image": [
+          "264",
+          0
+        ]
+      },
+      "class_type": "easy imageToBase64",
+      "_meta": {
+        "title": "Image To Base64"
+      }
+    },
+    "262:5": {
+      "inputs": {
+        "image": [
+          "265",
+          0
+        ]
+      },
+      "class_type": "GetImageSize",
+      "_meta": {
+        "title": "Obtener Tamaño de Imagen"
+      }
+    },
+    "262:15": {
+      "inputs": {
+        "images.image0": [
+          "265",
+          0
+        ],
+        "images.image1": [
+          "262:6",
+          0
+        ]
+      },
+      "class_type": "BatchImagesNode",
+      "_meta": {
+        "title": "Procesar imágenes por lotes"
+      }
+    },
+    "262:6": {
+      "inputs": {
+        "target_width": [
+          "262:5",
+          0
+        ],
+        "target_height": [
+          "262:5",
+          1
+        ],
+        "padding_color": "white",
+        "interpolation": "area",
+        "image": [
+          "266",
+          0
+        ]
+      },
+      "class_type": "ResizeAndPadImage",
+      "_meta": {
+        "title": "RedimensionarYRellenarImagen"
+      }
+    }
+  }

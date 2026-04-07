@@ -649,6 +649,12 @@ export interface Vellum20WorkflowInput {
   scale_by: string;       // "2", "4", or "8"
 }
 
+export interface VellumPielWorkflowInput {
+  workflow: any;
+  input_image: string;    // Base64 data URI
+  scale_by: number;       // 1 for 4k, 2 for 8k
+}
+
 /**
  * Build the workflow payload for Vellum 2.0 (legacy)
  */
