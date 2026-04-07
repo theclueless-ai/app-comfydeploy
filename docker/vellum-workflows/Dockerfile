@@ -165,7 +165,8 @@ COPY vellum-pecas.json   /workflows/vellum-pecas.json
 # Copy handler and start script
 COPY rp_handler.py /rp_handler.py
 COPY start.sh /start.sh
-RUN dos2unix /start.sh /rp_handler.py \
+RUN apt-get update && apt-get install -y --no-install-recommends dos2unix && rm -rf /var/lib/apt/lists/* \
+    && dos2unix /start.sh /rp_handler.py \
     && chmod +x /start.sh
 
 # Create model directories
