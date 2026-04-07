@@ -154,14 +154,17 @@ RUN pip install --no-cache-dir \
 WORKDIR /
 
 # Copy workflow JSON files
-COPY lib/vellum-piel.json    /workflows/vellum-piel.json
-COPY lib/vellum-edad.json    /workflows/vellum-edad.json
-COPY lib/vellum-makeup.json  /workflows/vellum-makeup.json
-COPY lib/vellum-pecas.json   /workflows/vellum-pecas.json
+# Place all these files alongside the Dockerfile before building:
+#   Dockerfile, start.sh, rp_handler.py,
+#   vellum-piel.json, vellum-edad.json, vellum-makeup.json, vellum-pecas.json
+COPY vellum-piel.json    /workflows/vellum-piel.json
+COPY vellum-edad.json    /workflows/vellum-edad.json
+COPY vellum-makeup.json  /workflows/vellum-makeup.json
+COPY vellum-pecas.json   /workflows/vellum-pecas.json
 
 # Copy handler and start script
-COPY docker/vellum-workflows/rp_handler.py /rp_handler.py
-COPY docker/vellum-workflows/start.sh /start.sh
+COPY rp_handler.py /rp_handler.py
+COPY start.sh /start.sh
 RUN dos2unix /start.sh /rp_handler.py \
     && chmod +x /start.sh
 
