@@ -122,22 +122,16 @@ RUN git clone https://github.com/omar92/ComfyUI-QualityOfLifeSuit_Omar92.git && 
     if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; fi
 
 # 13. Face Parsing - FaceParsingLoader, FaceParsingInfer, FacePartMask
-#     TODO: Confirm repo URL with user
 RUN git clone https://github.com/Bwebbfx/ComfyUI_FaceParsing.git && \
     cd ComfyUI_FaceParsing && \
     if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; fi
 
 # 14. Easy Use - easy loadImageBase64, easy imageToBase64
-#     TODO: Confirm repo URL with user
 RUN git clone https://github.com/yolain/ComfyUI-Easy-Use.git && \
     cd ComfyUI-Easy-Use && \
     if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; fi
 
-# 15. ByteDance Seedream - ByteDanceSeedreamNode
-#     TODO: Confirm repo URL with user
-RUN git clone https://github.com/ByteDance/ComfyUI-Seedream.git && \
-    cd ComfyUI-Seedream && \
-    if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; fi
+# 15. ByteDanceSeedreamNode is part of ComfyUI core - no separate install needed
 
 # =============================================================================
 # RUNPOD + S3 DEPENDENCIES
