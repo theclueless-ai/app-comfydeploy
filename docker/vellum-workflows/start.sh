@@ -34,14 +34,13 @@ if [ -d "/runpod-volume" ]; then
         fi
     done
 
-    # SeedVR2 models (DiT + VAE) - link into the node's expected directory
-    SEEDVR2_NODE="$COMFYUI_DIR/custom_nodes/ComfyUI-SeedVR2_VideoUpscaler/models"
-    if [ -d "$SEEDVR2_NODE" ] || mkdir -p "$SEEDVR2_NODE"; then
-        for f in "$MODELS_SRC/seedvr2"/*.safetensors; do
-            [ -f "$f" ] && ln -sf "$f" "$SEEDVR2_NODE/$(basename "$f")" && \
-                echo "[models] Linked SeedVR2 model: $(basename "$f")"
-        done
-    fi
+    # SeedVR2 models (DiT ~15GB + VAE) - link the whole directory
+    # ComfyUI expects: /comfyui/models/SEEDVR2/seedvr2_ema_7b_fp16.safetensors
+    SEEDVR2_TARGET="$COMFYUI_DIR/models/SEEDVR2"
+    SEEDVR2_SOURCE="$MODELS_SRC/seedvr2"
+    rm -rf "$SEEDVR2_TARGET" 2>/dev/null || true
+    ln -sfn "$SEEDVR2_SOURCE" "$SEEDVR2_TARGET"
+    echo "[models] Linked $SEEDVR2_TARGET -> $SEEDVR2_SOURCE"
 
     echo "[models] Network volume setup complete"
 else
@@ -71,6 +70,8 @@ check_model "$COMFYUI_DIR/models/checkpoints/Sdxl/intorealismUltra_v90.safetenso
 check_model "$COMFYUI_DIR/models/upscale_models/RealESRGAN_x2plus.pth" "RealESRGAN x2plus"
 check_model "$COMFYUI_DIR/models/ultralytics/segm/PitEyeDetailer-v2-seg.pt" "PitEyeDetailer Segm"
 check_model "$COMFYUI_DIR/models/sams/sam_vit_b_01ec64.pth" "SAM ViT-B"
+check_model "$COMFYUI_DIR/models/SEEDVR2/seedvr2_ema_7b_fp16.safetensors" "SeedVR2 DiT (15G)"
+check_model "$COMFYUI_DIR/models/SEEDVR2/ema_vae_fp16.safetensors" "SeedVR2 VAE"
 
 echo ""
 
