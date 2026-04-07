@@ -159,9 +159,10 @@ COPY lib/vellum-makeup.json  /workflows/vellum-makeup.json
 COPY lib/vellum-pecas.json   /workflows/vellum-pecas.json
 
 # Copy handler and start script
+# Fix line endings (CRLF → LF) to prevent "bad interpreter" on Linux
 COPY docker/vellum-workflows/rp_handler.py /rp_handler.py
 COPY docker/vellum-workflows/start.sh /start.sh
-RUN chmod +x /start.sh
+RUN sed -i 's/\r$//' /start.sh /rp_handler.py && chmod +x /start.sh
 
 # Create model directories
 RUN mkdir -p ${COMFYUI_DIR}/models/checkpoints/enhancer \

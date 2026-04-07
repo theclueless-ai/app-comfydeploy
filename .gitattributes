@@ -1,0 +1,4 @@
+# Force LF line endings for scripts (prevents CRLF issues in Docker/Linux)
+*.sh text eol=lf
+*.py text eol=lf
+Dockerfile text eol=lf
