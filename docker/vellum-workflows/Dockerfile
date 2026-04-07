@@ -31,6 +31,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libgl1-mesa-glx libglib2.0-0 libsm6 libxrender1 libxext6 \
     libgoogle-perftools-dev \
     build-essential gcc g++ cmake \
+    dos2unix \
     && rm -rf /var/lib/apt/lists/* \
     && ln -sf /usr/bin/python3.10 /usr/bin/python3 \
     && ln -sf /usr/bin/python3.10 /usr/bin/python
@@ -159,10 +160,10 @@ COPY lib/vellum-makeup.json  /workflows/vellum-makeup.json
 COPY lib/vellum-pecas.json   /workflows/vellum-pecas.json
 
 # Copy handler and start script
-# Fix line endings (CRLF → LF) to prevent "bad interpreter" on Linux
 COPY docker/vellum-workflows/rp_handler.py /rp_handler.py
 COPY docker/vellum-workflows/start.sh /start.sh
-RUN sed -i 's/\r$//' /start.sh /rp_handler.py && chmod +x /start.sh
+RUN dos2unix /start.sh /rp_handler.py \
+    && chmod +x /start.sh
 
 # Create model directories
 RUN mkdir -p ${COMFYUI_DIR}/models/checkpoints/enhancer \
