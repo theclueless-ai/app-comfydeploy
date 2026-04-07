@@ -669,6 +669,7 @@ function buildVellumPielWorkflowPayload(input: VellumPielWorkflowInput) {
     input: {
       image: imageBase64,
       scaleFactor: input.scale_by,
+      workflow_type: "piel",
     },
   };
 }
