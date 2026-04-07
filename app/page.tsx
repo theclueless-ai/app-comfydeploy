@@ -195,7 +195,7 @@ export default function Home() {
 
     const pollInterval = setInterval(async () => {
       try {
-        const response = await fetch(`/api/vellum20-status?jobId=${runId}`);
+        const response = await fetch(`/api/vellum-workflows-status?jobId=${runId}`);
         const data = await response.json();
 
         console.log("vellum piel status data:", data);
@@ -232,7 +232,7 @@ export default function Home() {
 
     const pollInterval = setInterval(async () => {
       try {
-        const response = await fetch(`/api/vellum20-status?jobId=${runId}`);
+        const response = await fetch(`/api/vellum-workflows-status?jobId=${runId}`);
         const data = await response.json();
 
         if (data.status === "completed") {
@@ -266,7 +266,7 @@ export default function Home() {
 
     const pollInterval = setInterval(async () => {
       try {
-        const response = await fetch(`/api/vellum20-status?jobId=${runId}`);
+        const response = await fetch(`/api/vellum-workflows-status?jobId=${runId}`);
         const data = await response.json();
 
         if (data.status === "completed") {
@@ -300,7 +300,7 @@ export default function Home() {
 
     const pollInterval = setInterval(async () => {
       try {
-        const response = await fetch(`/api/vellum20-status?jobId=${runId}`);
+        const response = await fetch(`/api/vellum-workflows-status?jobId=${runId}`);
         const data = await response.json();
 
         if (data.status === "completed") {

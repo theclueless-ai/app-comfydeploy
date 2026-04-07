@@ -619,6 +619,53 @@ export async function getAvatarJobStatus(jobId: string): Promise<RunPodStatusRes
 }
 
 // =============================================================================
+// Vellum Workflows (piel, edad, makeup, pecas) - Dedicated RunPod endpoint
+// =============================================================================
+
+function getRunPodVellumWorkflowsConfig() {
+  const apiKey = process.env.RUNPOD_API_KEY;
+  const endpointId = process.env.RUNPOD_VELLUM_WORKFLOWS_ENDPOINT_ID;
+  const baseUrl = process.env.BASE_URL_RUNPOD || "https://api.runpod.ai/v2";
+
+  if (!apiKey) {
+    throw new Error("RUNPOD_API_KEY is not set in environment variables");
+  }
+  if (!endpointId) {
+    throw new Error("RUNPOD_VELLUM_WORKFLOWS_ENDPOINT_ID is not set in environment variables");
+  }
+
+  return { apiKey, endpointId, baseUrl };
+}
+
+/**
+ * Check the status of a Vellum Workflows RunPod job
+ */
+export async function getVellumWorkflowsJobStatus(jobId: string): Promise<RunPodStatusResponse> {
+  const { apiKey, endpointId, baseUrl } = getRunPodVellumWorkflowsConfig();
+  const url = `${baseUrl}/${endpointId}/status/${jobId}`;
+
+  console.log("Checking Vellum Workflows job status:", jobId);
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+    },
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("RunPod Vellum Workflows Status API Error:", errorText);
+    throw new Error(`RunPod status error: ${response.status} - ${errorText}`);
+  }
+
+  const result: RunPodStatusResponse = await response.json();
+  console.log("Vellum Workflows job status:", result.status);
+
+  return result;
+}
+
+// =============================================================================
 // Vellum 2.0 (Legacy) - Uses separate RunPod endpoint
 // =============================================================================
 
@@ -701,7 +748,7 @@ function buildVellumPielWorkflowPayload(input: VellumPielWorkflowInput) {
 export async function runVellumPielWorkflowAsync(
   input: VellumPielWorkflowInput
 ): Promise<{ jobId: string }> {
-  const { apiKey, endpointId, baseUrl } = getRunPodVellum20Config();
+  const { apiKey, endpointId, baseUrl } = getRunPodVellumWorkflowsConfig();
   const url = `${baseUrl}/${endpointId}/run`;
 
   const payload = buildVellumPielWorkflowPayload(input);
@@ -760,7 +807,7 @@ function buildVellumEdadWorkflowPayload(input: VellumEdadWorkflowInput) {
 export async function runVellumEdadWorkflowAsync(
   input: VellumEdadWorkflowInput
 ): Promise<{ jobId: string }> {
-  const { apiKey, endpointId, baseUrl } = getRunPodVellum20Config();
+  const { apiKey, endpointId, baseUrl } = getRunPodVellumWorkflowsConfig();
   const url = `${baseUrl}/${endpointId}/run`;
 
   const payload = buildVellumEdadWorkflowPayload(input);
@@ -822,7 +869,7 @@ function buildVellumMakeupWorkflowPayload(input: VellumMakeupWorkflowInput) {
 export async function runVellumMakeupWorkflowAsync(
   input: VellumMakeupWorkflowInput
 ): Promise<{ jobId: string }> {
-  const { apiKey, endpointId, baseUrl } = getRunPodVellum20Config();
+  const { apiKey, endpointId, baseUrl } = getRunPodVellumWorkflowsConfig();
   const url = `${baseUrl}/${endpointId}/run`;
 
   const payload = buildVellumMakeupWorkflowPayload(input);
@@ -879,7 +926,7 @@ function buildVellumPecasWorkflowPayload(input: VellumPecasWorkflowInput) {
 export async function runVellumPecasWorkflowAsync(
   input: VellumPecasWorkflowInput
 ): Promise<{ jobId: string }> {
-  const { apiKey, endpointId, baseUrl } = getRunPodVellum20Config();
+  const { apiKey, endpointId, baseUrl } = getRunPodVellumWorkflowsConfig();
   const url = `${baseUrl}/${endpointId}/run`;
 
   const payload = buildVellumPecasWorkflowPayload(input);
