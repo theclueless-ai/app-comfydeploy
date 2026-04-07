@@ -45,6 +45,9 @@ S3_ACCESS_KEY = os.environ.get("AWS_ACCESS_KEY_ID", "")
 S3_SECRET_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY", "")
 S3_ENDPOINT_URL = os.environ.get("AWS_S3_ENDPOINT_URL", None)
 
+# ComfyUI API key for API nodes (ByteDanceSeedreamNode, etc.)
+COMFYUI_API_KEY = os.environ.get("COMFYUI_API_KEY", "")
+
 # Timeout for workflow execution (minutes)
 EXECUTION_TIMEOUT = 60
 
@@ -165,6 +168,8 @@ def queue_prompt(workflow: dict) -> str:
     Returns the prompt_id for tracking.
     """
     payload = {"prompt": workflow}
+    if COMFYUI_API_KEY:
+        payload["extra_data"] = {"api_key_comfy_org": COMFYUI_API_KEY}
     response = requests.post(f"{COMFYUI_URL}/prompt", json=payload, timeout=30)
     response.raise_for_status()
     result = response.json()
@@ -420,4 +425,5 @@ if __name__ == "__main__":
     print("[handler] Vellum Workflows handler starting...")
     print(f"[handler] Available workflows: {list(WORKFLOW_FILES.keys())}")
     print(f"[handler] S3 bucket: {S3_BUCKET or '(not configured)'}")
+    print(f"[handler] ComfyUI API key: {'configured' if COMFYUI_API_KEY else '(not configured - API nodes will fail)'}")
     runpod.serverless.start({"handler": handler})
