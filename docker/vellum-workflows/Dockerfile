@@ -28,7 +28,7 @@ ENV PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True,garbage_collection_threshol
 RUN apt-get update && apt-get install -y --no-install-recommends \
     python3.10 python3.10-venv python3-pip python3.10-dev \
     git wget curl \
-    libgl1-mesa-glx libglib2.0-0 libsm6 libxrender1 libxext6 \
+    libgl1-mesa-glx libglib2.0-0 libsm6 libxrender1 libxext6 libsndfile1 \
     libgoogle-perftools-dev \
     build-essential gcc g++ cmake \
     dos2unix \
@@ -79,9 +79,11 @@ RUN git clone https://github.com/ltdrdata/ComfyUI-Impact-Subpack.git && \
     if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; fi
 
 # 3. SeedVR2 VideoUpscaler
-RUN git clone https://github.com/numz/ComfyUI-SeedVR2_VideoUpscaler.git && \
+#    Pin transformers/diffusers to avoid flash_attn KeyError on import
+RUN pip install --no-cache-dir "transformers>=4.40,<4.46" "diffusers>=0.28,<0.31" && \
+    git clone https://github.com/numz/ComfyUI-SeedVR2_VideoUpscaler.git && \
     cd ComfyUI-SeedVR2_VideoUpscaler && \
-    if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; fi
+    if [ -f requirements.txt ]; then pip install --no-cache-dir --no-deps -r requirements.txt; fi
 
 # 4. KJNodes - ImageResizeKJv2, GrowMaskWithBlur
 RUN git clone https://github.com/kijai/ComfyUI-KJNodes.git && \
@@ -109,7 +111,9 @@ RUN git clone https://github.com/lucafoscili/lf-nodes.git && \
     if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; fi
 
 # 9. JW Various - JWImageResizeByLongerSide
-RUN git clone https://github.com/jamesWalker55/comfyui-various.git && \
+#    Needs soundfile explicitly (not always in requirements.txt)
+RUN pip install --no-cache-dir soundfile && \
+    git clone https://github.com/jamesWalker55/comfyui-various.git && \
     cd comfyui-various && \
     if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; fi
 
@@ -139,6 +143,12 @@ RUN git clone https://github.com/yolain/ComfyUI-Easy-Use.git && \
     if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; fi
 
 # 15. ByteDanceSeedreamNode is part of ComfyUI core - no separate install needed
+
+# =============================================================================
+# FIX: Re-pin transformers to avoid flash_attn KeyError (newer versions break)
+# This MUST come after all custom nodes since they may upgrade transformers
+# =============================================================================
+RUN pip install --no-cache-dir "transformers>=4.40,<4.46" "diffusers>=0.28,<0.31"
 
 # =============================================================================
 # RUNPOD + S3 DEPENDENCIES
