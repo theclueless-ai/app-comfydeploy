@@ -34,6 +34,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     dos2unix \
     && rm -rf /var/lib/apt/lists/* \
     && ln -sf /usr/bin/python3.10 /usr/bin/python3 \
+    && ln -sf /usr/bin/python3.10 /usr/bin/python \
+    && ln -sf /usr/bin/python3.10 /usr/bin/python3 \
     && ln -sf /usr/bin/python3.10 /usr/bin/python
 
 # =============================================================================
@@ -165,8 +167,7 @@ COPY vellum-pecas.json   /workflows/vellum-pecas.json
 # Copy handler and start script
 COPY rp_handler.py /rp_handler.py
 COPY start.sh /start.sh
-RUN apt-get update && apt-get install -y --no-install-recommends dos2unix && rm -rf /var/lib/apt/lists/* \
-    && dos2unix /start.sh /rp_handler.py \
+RUN dos2unix /start.sh /rp_handler.py \
     && chmod +x /start.sh
 
 # Create model directories
