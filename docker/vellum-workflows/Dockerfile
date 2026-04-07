@@ -55,6 +55,10 @@ RUN git clone https://github.com/comfyanonymous/ComfyUI.git ${COMFYUI_DIR} && \
 
 # =============================================================================
 # CUSTOM NODES
+# To force fresh clones (bypass Docker cache), rebuild with:
+#   docker build --build-arg CACHEBUST=$(date +%s) ...
+# This invalidates only from here down (PyTorch/CUDA layers stay cached)
+ARG CACHEBUST=1
 # Repos provided by the user + additional required nodes
 # =============================================================================
 WORKDIR ${COMFYUI_DIR}/custom_nodes
