@@ -655,6 +655,27 @@ export interface VellumPielWorkflowInput {
   scale_by: number;       // 1 for 4K, 2 for 8K (node 261 INTConstant)
 }
 
+export interface VellumEdadWorkflowInput {
+  workflow: any;
+  input_image: string;    // Base64 data URI
+  scale_by: number;       // 1 for 4K, 2 for 8K
+  age_select: number;     // 1-6 (maps to node 268 ImpactSwitch)
+}
+
+export interface VellumMakeupWorkflowInput {
+  workflow: any;
+  input_image: string;    // Base64 data URI (model face)
+  makeup_ref: string;     // Base64 data URI (makeup reference)
+  scale_by: number;       // 1 for 4K, 2 for 8K
+}
+
+export interface VellumPecasWorkflowInput {
+  workflow: any;
+  input_image: string;    // Base64 data URI
+  scale_by: number;       // 1 for 4K, 2 for 8K
+  freckle_select: number; // 1-3 (maps to node 268 ImpactSwitch)
+}
+
 /**
  * Build the workflow payload for Vellum Piel
  * Sends image + scale value (1=4K, 2=8K) for node 261
@@ -709,6 +730,182 @@ export async function runVellumPielWorkflowAsync(
 
   const result: RunPodJobResponse = await response.json();
   console.log("Vellum Piel job started with ID:", result.id);
+
+  return { jobId: result.id };
+}
+
+/**
+ * Build the workflow payload for Vellum Edad
+ * Sends image + scale + age_select (1-6) for node 268 ImpactSwitch
+ */
+function buildVellumEdadWorkflowPayload(input: VellumEdadWorkflowInput) {
+  let imageBase64 = input.input_image;
+  if (imageBase64.includes(',')) {
+    imageBase64 = imageBase64.split(',')[1];
+  }
+
+  return {
+    input: {
+      image: imageBase64,
+      scaleFactor: input.scale_by,
+      age_select: input.age_select,
+      workflow_type: "edad",
+    },
+  };
+}
+
+/**
+ * Run Vellum Edad workflow on RunPod (async)
+ */
+export async function runVellumEdadWorkflowAsync(
+  input: VellumEdadWorkflowInput
+): Promise<{ jobId: string }> {
+  const { apiKey, endpointId, baseUrl } = getRunPodVellum20Config();
+  const url = `${baseUrl}/${endpointId}/run`;
+
+  const payload = buildVellumEdadWorkflowPayload(input);
+
+  console.log("=== RunPod Vellum Edad API Call (async) ===");
+  console.log("URL:", url);
+  console.log("Scale Factor:", input.scale_by);
+  console.log("Age Select:", input.age_select);
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("RunPod Vellum Edad API Error:", errorText);
+    throw new Error(`RunPod API error: ${response.status} - ${errorText}`);
+  }
+
+  const result: RunPodJobResponse = await response.json();
+  console.log("Vellum Edad job started with ID:", result.id);
+
+  return { jobId: result.id };
+}
+
+/**
+ * Build the workflow payload for Vellum Makeup
+ * Sends model image + makeup reference image + scale
+ */
+function buildVellumMakeupWorkflowPayload(input: VellumMakeupWorkflowInput) {
+  let imageBase64 = input.input_image;
+  if (imageBase64.includes(',')) {
+    imageBase64 = imageBase64.split(',')[1];
+  }
+
+  let makeupBase64 = input.makeup_ref;
+  if (makeupBase64.includes(',')) {
+    makeupBase64 = makeupBase64.split(',')[1];
+  }
+
+  return {
+    input: {
+      image: imageBase64,
+      makeup_ref: makeupBase64,
+      scaleFactor: input.scale_by,
+      workflow_type: "makeup",
+    },
+  };
+}
+
+/**
+ * Run Vellum Makeup workflow on RunPod (async)
+ */
+export async function runVellumMakeupWorkflowAsync(
+  input: VellumMakeupWorkflowInput
+): Promise<{ jobId: string }> {
+  const { apiKey, endpointId, baseUrl } = getRunPodVellum20Config();
+  const url = `${baseUrl}/${endpointId}/run`;
+
+  const payload = buildVellumMakeupWorkflowPayload(input);
+
+  console.log("=== RunPod Vellum Makeup API Call (async) ===");
+  console.log("URL:", url);
+  console.log("Scale Factor:", input.scale_by);
+  console.log("Has makeup ref:", !!input.makeup_ref);
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("RunPod Vellum Makeup API Error:", errorText);
+    throw new Error(`RunPod API error: ${response.status} - ${errorText}`);
+  }
+
+  const result: RunPodJobResponse = await response.json();
+  console.log("Vellum Makeup job started with ID:", result.id);
+
+  return { jobId: result.id };
+}
+
+/**
+ * Build the workflow payload for Vellum Pecas
+ * Sends image + scale + freckle_select (1-3) for node 268 ImpactSwitch
+ */
+function buildVellumPecasWorkflowPayload(input: VellumPecasWorkflowInput) {
+  let imageBase64 = input.input_image;
+  if (imageBase64.includes(',')) {
+    imageBase64 = imageBase64.split(',')[1];
+  }
+
+  return {
+    input: {
+      image: imageBase64,
+      scaleFactor: input.scale_by,
+      freckle_select: input.freckle_select,
+      workflow_type: "pecas",
+    },
+  };
+}
+
+/**
+ * Run Vellum Pecas workflow on RunPod (async)
+ */
+export async function runVellumPecasWorkflowAsync(
+  input: VellumPecasWorkflowInput
+): Promise<{ jobId: string }> {
+  const { apiKey, endpointId, baseUrl } = getRunPodVellum20Config();
+  const url = `${baseUrl}/${endpointId}/run`;
+
+  const payload = buildVellumPecasWorkflowPayload(input);
+
+  console.log("=== RunPod Vellum Pecas API Call (async) ===");
+  console.log("URL:", url);
+  console.log("Scale Factor:", input.scale_by);
+  console.log("Freckle Select:", input.freckle_select);
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("RunPod Vellum Pecas API Error:", errorText);
+    throw new Error(`RunPod API error: ${response.status} - ${errorText}`);
+  }
+
+  const result: RunPodJobResponse = await response.json();
+  console.log("Vellum Pecas job started with ID:", result.id);
 
   return { jobId: result.id };
 }

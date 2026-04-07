@@ -183,6 +183,123 @@ export const workflows: WorkflowConfig[] = [
     ],
   },
   {
+    id: "vellum-edad",
+    name: "Vellum Edad",
+    description: "AI-powered age transformation with 4K/8K output.",
+    deploymentId: "",
+    backend: "runpod",
+    inputs: [
+      {
+        id: "input_image",
+        name: "input_image",
+        type: "image",
+        label: "Input Image",
+        description: "",
+        required: true,
+        accept: "image/*",
+      },
+      {
+        id: "age",
+        name: "age",
+        type: "slider",
+        label: "Target Age",
+        description: "",
+        required: true,
+        defaultValue: 30,
+        min: 10,
+        max: 80,
+        step: 1,
+        suffix: " years",
+        decimals: 0,
+      },
+      {
+        id: "scale_by",
+        name: "scale_by",
+        type: "button-group",
+        label: "Output Resolution",
+        description: "",
+        required: true,
+        defaultValue: "4K",
+        options: ["4K", "8K"],
+      },
+    ],
+  },
+  {
+    id: "vellum-makeup",
+    name: "Vellum Makeup",
+    description: "AI-powered makeup transfer from a reference image with 4K/8K output.",
+    deploymentId: "",
+    backend: "runpod",
+    inputs: [
+      {
+        id: "input_image",
+        name: "input_image",
+        type: "image",
+        label: "Model Image",
+        description: "",
+        required: true,
+        accept: "image/*",
+      },
+      {
+        id: "makeup_ref",
+        name: "makeup_ref",
+        type: "image",
+        label: "Makeup Reference",
+        description: "",
+        required: true,
+        accept: "image/*",
+      },
+      {
+        id: "scale_by",
+        name: "scale_by",
+        type: "button-group",
+        label: "Output Resolution",
+        description: "",
+        required: true,
+        defaultValue: "4K",
+        options: ["4K", "8K"],
+      },
+    ],
+  },
+  {
+    id: "vellum-pecas",
+    name: "Vellum Pecas",
+    description: "AI-powered freckle generation with 4K/8K output.",
+    deploymentId: "",
+    backend: "runpod",
+    inputs: [
+      {
+        id: "input_image",
+        name: "input_image",
+        type: "image",
+        label: "Input Image",
+        description: "",
+        required: true,
+        accept: "image/*",
+      },
+      {
+        id: "freckle_level",
+        name: "freckle_level",
+        type: "button-group",
+        label: "Freckle Intensity",
+        description: "",
+        required: true,
+        defaultValue: "Pocas",
+        options: ["Pocas", "Muchas", "Muchísimas"],
+      },
+      {
+        id: "scale_by",
+        name: "scale_by",
+        type: "button-group",
+        label: "Output Resolution",
+        description: "",
+        required: true,
+        defaultValue: "4K",
+        options: ["4K", "8K"],
+      },
+    ],
+  },
+  {
     id: "ai-talk",
     name: "AI Talk",
     description: "Generate talking head videos with AI-powered lip sync and voice synthesis.",
@@ -260,4 +377,16 @@ export function getAiTalkWorkflow(): WorkflowConfig {
 
 export function getVellumPielWorkflow(): WorkflowConfig {
   return workflows.find((w) => w.id === "vellum-piel")!;
+}
+
+export function getVellumEdadWorkflow(): WorkflowConfig {
+  return workflows.find((w) => w.id === "vellum-edad")!;
+}
+
+export function getVellumMakeupWorkflow(): WorkflowConfig {
+  return workflows.find((w) => w.id === "vellum-makeup")!;
+}
+
+export function getVellumPecasWorkflow(): WorkflowConfig {
+  return workflows.find((w) => w.id === "vellum-pecas")!;
 }

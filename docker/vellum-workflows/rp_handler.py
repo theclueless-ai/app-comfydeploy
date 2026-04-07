@@ -49,9 +49,13 @@ S3_ENDPOINT_URL = os.environ.get("AWS_S3_ENDPOINT_URL", None)
 EXECUTION_TIMEOUT = 60
 
 # Node IDs that are consistent across all 4 workflows
-NODE_LOAD_IMAGE = "32"       # LoadImage node
+NODE_LOAD_IMAGE = "32"       # LoadImage node (main image)
 NODE_SCALE_SELECTOR = "261"  # INTConstant: 1=4K, 2=8K
 NODE_SAVE_IMAGE = "254"      # SaveImage output node
+
+# Workflow-specific node IDs
+NODE_OPTION_SWITCH = "268"   # ImpactSwitch: edad (1-6) / pecas (1-3)
+NODE_MAKEUP_REF = "264"      # LoadImage: makeup reference image
 
 
 # =============================================================================
@@ -99,13 +103,21 @@ def save_image_to_input(image_base64: str, filename: str) -> str:
     return filename
 
 
-def prepare_workflow(workflow: dict, image_filename: str, scale_factor: int) -> dict:
+def prepare_workflow(
+    workflow: dict,
+    image_filename: str,
+    scale_factor: int,
+    workflow_type: str,
+    extra_params: dict,
+) -> dict:
     """
     Inject user inputs into the workflow:
       - Node 32 (LoadImage): set image filename
       - Node 261 (INTConstant): set scale value (1=4K, 2=8K)
+      - Node 268 (ImpactSwitch): set select for edad (1-6) or pecas (1-3)
+      - Node 264 (LoadImage): set makeup reference filename
     """
-    # Inject image
+    # Inject main image
     if NODE_LOAD_IMAGE in workflow:
         workflow[NODE_LOAD_IMAGE]["inputs"]["image"] = image_filename
         print(f"[handler] Injected image '{image_filename}' into node {NODE_LOAD_IMAGE}")
@@ -118,6 +130,31 @@ def prepare_workflow(workflow: dict, image_filename: str, scale_factor: int) -> 
         print(f"[handler] Injected scaleFactor={scale_factor} into node {NODE_SCALE_SELECTOR}")
     else:
         raise ValueError(f"Node {NODE_SCALE_SELECTOR} (INTConstant) not found in workflow")
+
+    # Workflow-specific injections
+    if workflow_type == "edad":
+        age_select = extra_params.get("age_select", 3)
+        if NODE_OPTION_SWITCH in workflow:
+            workflow[NODE_OPTION_SWITCH]["inputs"]["select"] = int(age_select)
+            print(f"[handler] Injected age_select={age_select} into node {NODE_OPTION_SWITCH}")
+        else:
+            raise ValueError(f"Node {NODE_OPTION_SWITCH} (ImpactSwitch) not found in edad workflow")
+
+    elif workflow_type == "makeup":
+        makeup_filename = extra_params.get("makeup_filename")
+        if makeup_filename and NODE_MAKEUP_REF in workflow:
+            workflow[NODE_MAKEUP_REF]["inputs"]["image"] = makeup_filename
+            print(f"[handler] Injected makeup ref '{makeup_filename}' into node {NODE_MAKEUP_REF}")
+        elif NODE_MAKEUP_REF not in workflow:
+            raise ValueError(f"Node {NODE_MAKEUP_REF} (LoadImage) not found in makeup workflow")
+
+    elif workflow_type == "pecas":
+        freckle_select = extra_params.get("freckle_select", 1)
+        if NODE_OPTION_SWITCH in workflow:
+            workflow[NODE_OPTION_SWITCH]["inputs"]["select"] = int(freckle_select)
+            print(f"[handler] Injected freckle_select={freckle_select} into node {NODE_OPTION_SWITCH}")
+        else:
+            raise ValueError(f"Node {NODE_OPTION_SWITCH} (ImpactSwitch) not found in pecas workflow")
 
     return workflow
 
@@ -307,8 +344,22 @@ def handler(job):
         image_filename = f"input_{uuid.uuid4().hex[:8]}.png"
         save_image_to_input(image_b64, image_filename)
 
+        # 2b. Save makeup reference image if present
+        extra_params = {}
+        if workflow_type == "makeup":
+            makeup_b64 = job_input.get("makeup_ref")
+            if not makeup_b64:
+                return {"error": "Missing required field: makeup_ref (base64)"}
+            makeup_filename = f"makeup_{uuid.uuid4().hex[:8]}.png"
+            save_image_to_input(makeup_b64, makeup_filename)
+            extra_params["makeup_filename"] = makeup_filename
+        elif workflow_type == "edad":
+            extra_params["age_select"] = job_input.get("age_select", 3)
+        elif workflow_type == "pecas":
+            extra_params["freckle_select"] = job_input.get("freckle_select", 1)
+
         # 3. Inject parameters into workflow
-        prepare_workflow(workflow, image_filename, scale_factor)
+        prepare_workflow(workflow, image_filename, scale_factor, workflow_type, extra_params)
 
         # 4. Submit to ComfyUI
         prompt_id = queue_prompt(workflow)
@@ -350,13 +401,15 @@ def handler(job):
         traceback.print_exc()
         return {"error": str(e)}
     finally:
-        # Cleanup input image
-        try:
-            input_path = os.path.join(COMFYUI_INPUT_DIR, image_filename)
-            if os.path.exists(input_path):
-                os.remove(input_path)
-        except Exception:
-            pass
+        # Cleanup input images
+        for fname in [image_filename, extra_params.get("makeup_filename")]:
+            try:
+                if fname:
+                    fpath = os.path.join(COMFYUI_INPUT_DIR, fname)
+                    if os.path.exists(fpath):
+                        os.remove(fpath)
+            except Exception:
+                pass
 
 
 # =============================================================================

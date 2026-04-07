@@ -1,20 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { fileToBase64, runVellumEdadWorkflowAsync, VellumEdadWorkflowInput } from "@/lib/runpod";
+import { fileToBase64, runVellumPecasWorkflowAsync, VellumPecasWorkflowInput } from "@/lib/runpod";
 import { sanitizeErrorMessage } from "@/lib/error-messages";
-import workflow from "@/lib/vellum-edad.json";
+import workflow from "@/lib/vellum-pecas.json";
 
 /**
- * Map a continuous age value (10-80) to the ImpactSwitch select (1-6).
- * Node 268 options: 1=10yo, 2=20yo, 3=30yo, 4=40yo, 5=60yo, 6=80yo
+ * Map freckle level to ImpactSwitch select (1-3).
+ * Node 268 options: 1=Pocas, 2=Muchas, 3=Muchísimas
  */
-function mapAgeToSelect(age: number): number {
-  if (age <= 14) return 1;       // ~10
-  if (age <= 24) return 2;       // ~20
-  if (age <= 34) return 3;       // ~30
-  if (age <= 49) return 4;       // ~40
-  if (age <= 69) return 5;       // ~60
-  return 6;                      // ~80
-}
+const FRECKLE_MAP: Record<string, number> = {
+  "Pocas": 1,
+  "Muchas": 2,
+  "Muchísimas": 3,
+};
 
 export async function POST(request: NextRequest) {
   try {
@@ -29,12 +26,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get the age value
-    const ageStr = formData.get("age") as string;
-    const age = ageStr ? parseInt(ageStr, 10) : 30;
-    if (isNaN(age) || age < 10 || age > 80) {
+    // Get the freckle level
+    const freckleLevel = formData.get("freckle_level") as string;
+    if (!freckleLevel || !FRECKLE_MAP[freckleLevel]) {
       return NextResponse.json(
-        { error: "Age must be between 10 and 80" },
+        { error: "Freckle level must be Pocas, Muchas, or Muchísimas" },
         { status: 400 }
       );
     }
@@ -48,31 +44,31 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const ageSelect = mapAgeToSelect(age);
+    const freckleSelect = FRECKLE_MAP[freckleLevel];
 
-    console.log("=== Vellum Edad Workflow Request ===");
+    console.log("=== Vellum Pecas Workflow Request ===");
     console.log("Image:", imageFile.name, imageFile.type, imageFile.size);
-    console.log("Age:", age, "→ select:", ageSelect);
+    console.log("Freckle level:", freckleLevel, "→ select:", freckleSelect);
     console.log("Scale By:", scaleBy);
 
     // Convert image to base64
     const imageBase64 = await fileToBase64(imageFile);
 
-    const workflowInput: VellumEdadWorkflowInput = {
+    const workflowInput: VellumPecasWorkflowInput = {
       workflow: workflow,
       input_image: imageBase64,
       scale_by: scaleBy === "4K" ? 1 : 2,
-      age_select: ageSelect,
+      freckle_select: freckleSelect,
     };
 
-    const result = await runVellumEdadWorkflowAsync(workflowInput);
+    const result = await runVellumPecasWorkflowAsync(workflowInput);
 
     return NextResponse.json({
       success: true,
       jobId: result.jobId,
     });
   } catch (error) {
-    console.error("Vellum Edad workflow execution error:", error);
+    console.error("Vellum Pecas workflow execution error:", error);
     return NextResponse.json(
       { error: sanitizeErrorMessage(error instanceof Error ? error.message : null) },
       { status: 500 }
