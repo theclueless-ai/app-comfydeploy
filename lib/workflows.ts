@@ -262,6 +262,43 @@ export const workflows: WorkflowConfig[] = [
     ],
   },
   {
+    id: "vellum-pelo",
+    name: "Vellum Pelo",
+    description: "AI-powered hair style and color transfer from a reference image with 4K/8K output.",
+    deploymentId: "",
+    backend: "runpod",
+    inputs: [
+      {
+        id: "input_image",
+        name: "input_image",
+        type: "image",
+        label: "Model Image",
+        description: "",
+        required: true,
+        accept: "image/*",
+      },
+      {
+        id: "pelo_ref",
+        name: "pelo_ref",
+        type: "image",
+        label: "Hair Reference",
+        description: "",
+        required: true,
+        accept: "image/*",
+      },
+      {
+        id: "scale_by",
+        name: "scale_by",
+        type: "button-group",
+        label: "Output Resolution",
+        description: "",
+        required: true,
+        defaultValue: "4K",
+        options: ["4K", "8K"],
+      },
+    ],
+  },
+  {
     id: "vellum-pecas",
     name: "Vellum Pecas",
     description: "AI-powered freckle generation with 4K/8K output.",
@@ -389,4 +426,8 @@ export function getVellumMakeupWorkflow(): WorkflowConfig {
 
 export function getVellumPecasWorkflow(): WorkflowConfig {
   return workflows.find((w) => w.id === "vellum-pecas")!;
+}
+
+export function getVellumPeloWorkflow(): WorkflowConfig {
+  return workflows.find((w) => w.id === "vellum-pelo")!;
 }

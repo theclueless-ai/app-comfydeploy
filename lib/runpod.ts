@@ -723,6 +723,13 @@ export interface VellumPecasWorkflowInput {
   freckle_select: number; // 1-3 (maps to node 268 ImpactSwitch)
 }
 
+export interface VellumPeloWorkflowInput {
+  workflow: any;
+  input_image: string;    // Base64 data URI (model face)
+  pelo_ref: string;       // Base64 data URI (hair reference)
+  scale_by: number;       // 1 for 4K, 2 for 8K
+}
+
 /**
  * Build the workflow payload for Vellum Piel
  * Sends image + scale value (1=4K, 2=8K) for node 261
@@ -953,6 +960,68 @@ export async function runVellumPecasWorkflowAsync(
 
   const result: RunPodJobResponse = await response.json();
   console.log("Vellum Pecas job started with ID:", result.id);
+
+  return { jobId: result.id };
+}
+
+/**
+ * Build the workflow payload for Vellum Pelo
+ * Sends model image + hair reference image + scale
+ */
+function buildVellumPeloWorkflowPayload(input: VellumPeloWorkflowInput) {
+  let imageBase64 = input.input_image;
+  if (imageBase64.includes(',')) {
+    imageBase64 = imageBase64.split(',')[1];
+  }
+
+  let peloBase64 = input.pelo_ref;
+  if (peloBase64.includes(',')) {
+    peloBase64 = peloBase64.split(',')[1];
+  }
+
+  return {
+    input: {
+      image: imageBase64,
+      pelo_ref: peloBase64,
+      scaleFactor: input.scale_by,
+      workflow_type: "pelo",
+    },
+  };
+}
+
+/**
+ * Run Vellum Pelo workflow on RunPod (async)
+ */
+export async function runVellumPeloWorkflowAsync(
+  input: VellumPeloWorkflowInput
+): Promise<{ jobId: string }> {
+  const { apiKey, endpointId, baseUrl } = getRunPodVellumWorkflowsConfig();
+  const url = `${baseUrl}/${endpointId}/run`;
+
+  const payload = buildVellumPeloWorkflowPayload(input);
+
+  console.log("=== RunPod Vellum Pelo API Call (async) ===");
+  console.log("URL:", url);
+  console.log("Scale Factor:", input.scale_by);
+  console.log("Has pelo ref:", !!input.pelo_ref);
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("RunPod Vellum Pelo API Error:", errorText);
+    throw new Error(`RunPod API error: ${response.status} - ${errorText}`);
+  }
+
+  const result: RunPodJobResponse = await response.json();
+  console.log("Vellum Pelo job started with ID:", result.id);
 
   return { jobId: result.id };
 }
