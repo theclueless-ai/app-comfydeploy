@@ -173,6 +173,7 @@ COPY vellum-piel.json    /workflows/vellum-piel.json
 COPY vellum-edad.json    /workflows/vellum-edad.json
 COPY vellum-makeup.json  /workflows/vellum-makeup.json
 COPY vellum-pecas.json   /workflows/vellum-pecas.json
+COPY vellum-orbital.json /workflows/vellum-orbital.json
 
 # Copy handler and start script
 COPY rp_handler.py /rp_handler.py
@@ -180,11 +181,15 @@ COPY start.sh /start.sh
 RUN dos2unix /start.sh /rp_handler.py \
     && chmod +x /start.sh
 
-# Create model directories
+# Create model directories (including Qwen orbital models)
 RUN mkdir -p ${COMFYUI_DIR}/models/checkpoints/enhancer \
              ${COMFYUI_DIR}/models/checkpoints/Sdxl \
              ${COMFYUI_DIR}/models/upscale_models \
              ${COMFYUI_DIR}/models/vae \
+             ${COMFYUI_DIR}/models/vae/Qwen \
+             ${COMFYUI_DIR}/models/clip \
+             ${COMFYUI_DIR}/models/unet/qwen-edit \
+             ${COMFYUI_DIR}/models/loras/Qwen \
              ${COMFYUI_DIR}/models/ultralytics/segm \
              ${COMFYUI_DIR}/models/sams \
              ${COMFYUI_DIR}/input \

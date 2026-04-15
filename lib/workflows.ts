@@ -337,6 +337,84 @@ export const workflows: WorkflowConfig[] = [
     ],
   },
   {
+    id: "vellum-orbital",
+    name: "Vellum Orbital",
+    description: "Genera nuevas perspectivas de cámara orbital (rotación horizontal + inclinación vertical) usando Qwen Image Edit con upscale SeedVR2.",
+    deploymentId: "",
+    backend: "runpod",
+    inputs: [
+      {
+        id: "input_image",
+        name: "input_image",
+        type: "image",
+        label: "Input Image",
+        description: "",
+        required: true,
+        accept: "image/*",
+      },
+      {
+        id: "horizontal",
+        name: "horizontal",
+        type: "select",
+        label: "Rotación Horizontal",
+        description: "",
+        required: true,
+        defaultValue: "Centro (0°)",
+        options: [
+          "180° Izq",
+          "135° Izq",
+          "90° Izq",
+          "45° Izq",
+          "Centro (0°)",
+          "45° Der",
+          "90° Der",
+          "135° Der",
+          "180° Der",
+        ],
+      },
+      {
+        id: "vertical",
+        name: "vertical",
+        type: "select",
+        label: "Inclinación Vertical",
+        description: "",
+        required: true,
+        defaultValue: "Centro (0°)",
+        options: [
+          "-90° (Suelo)",
+          "-60° (Bajo ext.)",
+          "-45° (Bajo)",
+          "-20° (Bajo suave)",
+          "Centro (0°)",
+          "+20° (Alto suave)",
+          "+45° (Alto)",
+          "+60° (Alto ext.)",
+          "+90° (Techo)",
+        ],
+      },
+      {
+        id: "zoom",
+        name: "zoom",
+        type: "button-group",
+        label: "Zoom",
+        description: "",
+        required: true,
+        defaultValue: "Normal",
+        options: ["Close-up", "Normal", "Wide"],
+      },
+      {
+        id: "scale_by",
+        name: "scale_by",
+        type: "button-group",
+        label: "Output Resolution",
+        description: "",
+        required: true,
+        defaultValue: "4K",
+        options: ["4K", "8K"],
+      },
+    ],
+  },
+  {
     id: "ai-talk",
     name: "AI Talk",
     description: "Generate talking head videos with AI-powered lip sync and voice synthesis.",
@@ -430,4 +508,8 @@ export function getVellumPecasWorkflow(): WorkflowConfig {
 
 export function getVellumPeloWorkflow(): WorkflowConfig {
   return workflows.find((w) => w.id === "vellum-pelo")!;
+}
+
+export function getVellumOrbitalWorkflow(): WorkflowConfig {
+  return workflows.find((w) => w.id === "vellum-orbital")!;
 }

@@ -32,10 +32,11 @@ COMFYUI_OUTPUT_DIR = "/comfyui/output"
 
 WORKFLOWS_DIR = "/workflows"
 WORKFLOW_FILES = {
-    "piel":   os.path.join(WORKFLOWS_DIR, "vellum-piel.json"),
-    "edad":   os.path.join(WORKFLOWS_DIR, "vellum-edad.json"),
-    "makeup": os.path.join(WORKFLOWS_DIR, "vellum-makeup.json"),
-    "pecas":  os.path.join(WORKFLOWS_DIR, "vellum-pecas.json"),
+    "piel":    os.path.join(WORKFLOWS_DIR, "vellum-piel.json"),
+    "edad":    os.path.join(WORKFLOWS_DIR, "vellum-edad.json"),
+    "makeup":  os.path.join(WORKFLOWS_DIR, "vellum-makeup.json"),
+    "pecas":   os.path.join(WORKFLOWS_DIR, "vellum-pecas.json"),
+    "orbital": os.path.join(WORKFLOWS_DIR, "vellum-orbital.json"),
 }
 
 # S3 configuration (from RunPod env vars)
@@ -51,14 +52,21 @@ COMFYUI_API_KEY = os.environ.get("COMFYUI_API_KEY", "")
 # Timeout for workflow execution (minutes)
 EXECUTION_TIMEOUT = 60
 
-# Node IDs that are consistent across all 4 workflows
+# Node IDs that are consistent across piel/edad/makeup/pecas workflows
 NODE_LOAD_IMAGE = "32"       # LoadImage node (main image)
 NODE_SCALE_SELECTOR = "261"  # INTConstant: 1=4K, 2=8K
 NODE_SAVE_IMAGE = "254"      # SaveImage output node
 
-# Workflow-specific node IDs
+# Workflow-specific node IDs (piel/edad/makeup/pecas)
 NODE_OPTION_SWITCH = "268"   # ImpactSwitch: edad (1-6) / pecas (1-3)
 NODE_MAKEUP_REF = "264"      # LoadImage: makeup reference image
+
+# Orbital workflow node IDs
+ORBITAL_LOAD_IMAGE = "290"   # LoadImage: main input image
+ORBITAL_SCALE_SELECTOR = "366"  # INTConstant: 1=4K, 2=8K
+ORBITAL_HORIZONTAL = "308"   # ImpactSwitch: horizontal angle (1-9)
+ORBITAL_VERTICAL = "310"     # ImpactSwitch: vertical angle (1-9)
+ORBITAL_ZOOM = "293"         # ImpactSwitch: zoom level (1-3)
 
 
 # =============================================================================
@@ -114,12 +122,64 @@ def prepare_workflow(
     extra_params: dict,
 ) -> dict:
     """
-    Inject user inputs into the workflow:
-      - Node 32 (LoadImage): set image filename
-      - Node 261 (INTConstant): set scale value (1=4K, 2=8K)
-      - Node 268 (ImpactSwitch): set select for edad (1-6) or pecas (1-3)
-      - Node 264 (LoadImage): set makeup reference filename
+    Inject user inputs into the workflow.
+
+    For piel/edad/makeup/pecas:
+      - Node 32  (LoadImage):   image filename
+      - Node 261 (INTConstant): scale value (1=4K, 2=8K)
+      - Node 268 (ImpactSwitch): edad (1-6) / pecas (1-3)
+      - Node 264 (LoadImage):   makeup reference filename
+
+    For orbital:
+      - Node 290 (LoadImage):   image filename
+      - Node 366 (INTConstant): scale value (1=4K, 2=8K)
+      - Node 308 (ImpactSwitch): horizontal angle (1-9)
+      - Node 310 (ImpactSwitch): vertical angle (1-9)
+      - Node 293 (ImpactSwitch): zoom level (1-3)
     """
+    if workflow_type == "orbital":
+        # Inject main image into orbital LoadImage node
+        if ORBITAL_LOAD_IMAGE in workflow:
+            workflow[ORBITAL_LOAD_IMAGE]["inputs"]["image"] = image_filename
+            print(f"[handler] Injected image '{image_filename}' into node {ORBITAL_LOAD_IMAGE}")
+        else:
+            raise ValueError(f"Node {ORBITAL_LOAD_IMAGE} (LoadImage) not found in orbital workflow")
+
+        # Inject scale factor
+        if ORBITAL_SCALE_SELECTOR in workflow:
+            workflow[ORBITAL_SCALE_SELECTOR]["inputs"]["value"] = scale_factor
+            print(f"[handler] Injected scaleFactor={scale_factor} into node {ORBITAL_SCALE_SELECTOR}")
+        else:
+            raise ValueError(f"Node {ORBITAL_SCALE_SELECTOR} (INTConstant) not found in orbital workflow")
+
+        # Inject horizontal angle
+        horizontal_select = extra_params.get("horizontal_select", 5)
+        if ORBITAL_HORIZONTAL in workflow:
+            workflow[ORBITAL_HORIZONTAL]["inputs"]["select"] = int(horizontal_select)
+            print(f"[handler] Injected horizontal_select={horizontal_select} into node {ORBITAL_HORIZONTAL}")
+        else:
+            raise ValueError(f"Node {ORBITAL_HORIZONTAL} (ImpactSwitch) not found in orbital workflow")
+
+        # Inject vertical angle
+        vertical_select = extra_params.get("vertical_select", 5)
+        if ORBITAL_VERTICAL in workflow:
+            workflow[ORBITAL_VERTICAL]["inputs"]["select"] = int(vertical_select)
+            print(f"[handler] Injected vertical_select={vertical_select} into node {ORBITAL_VERTICAL}")
+        else:
+            raise ValueError(f"Node {ORBITAL_VERTICAL} (ImpactSwitch) not found in orbital workflow")
+
+        # Inject zoom level
+        zoom_select = extra_params.get("zoom_select", 2)
+        if ORBITAL_ZOOM in workflow:
+            workflow[ORBITAL_ZOOM]["inputs"]["select"] = int(zoom_select)
+            print(f"[handler] Injected zoom_select={zoom_select} into node {ORBITAL_ZOOM}")
+        else:
+            raise ValueError(f"Node {ORBITAL_ZOOM} (ImpactSwitch) not found in orbital workflow")
+
+        return workflow
+
+    # --- piel / edad / makeup / pecas ---
+
     # Inject main image
     if NODE_LOAD_IMAGE in workflow:
         workflow[NODE_LOAD_IMAGE]["inputs"]["image"] = image_filename
@@ -339,6 +399,18 @@ def handler(job):
         return {"error": f"Unknown workflow_type: {workflow_type}. "
                          f"Valid: {list(WORKFLOW_FILES.keys())}"}
 
+    if workflow_type == "orbital":
+        horizontal_select = job_input.get("horizontal_select")
+        vertical_select = job_input.get("vertical_select")
+        zoom_select = job_input.get("zoom_select")
+        if horizontal_select is None or vertical_select is None or zoom_select is None:
+            return {"error": "orbital workflow requires horizontal_select, vertical_select, and zoom_select"}
+        h = int(horizontal_select)
+        v = int(vertical_select)
+        z = int(zoom_select)
+        if not (1 <= h <= 9) or not (1 <= v <= 9) or not (1 <= z <= 3):
+            return {"error": "horizontal_select/vertical_select must be 1-9, zoom_select must be 1-3"}
+
     print(f"[handler] Job started: workflow={workflow_type}, scale={scale_factor}")
 
     try:
@@ -362,6 +434,10 @@ def handler(job):
             extra_params["age_select"] = job_input.get("age_select", 3)
         elif workflow_type == "pecas":
             extra_params["freckle_select"] = job_input.get("freckle_select", 1)
+        elif workflow_type == "orbital":
+            extra_params["horizontal_select"] = int(job_input.get("horizontal_select", 5))
+            extra_params["vertical_select"] = int(job_input.get("vertical_select", 5))
+            extra_params["zoom_select"] = int(job_input.get("zoom_select", 2))
 
         # 3. Inject parameters into workflow
         prepare_workflow(workflow, image_filename, scale_factor, workflow_type, extra_params)
