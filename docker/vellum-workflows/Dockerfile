@@ -118,9 +118,12 @@ RUN git clone https://github.com/lucafoscili/lf-nodes.git && \
     if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; fi
 
 # 9. JW Various - JWImageResizeByLongerSide
-#    Needs soundfile explicitly (not always in requirements.txt)
+#    comfyui_sound.py imports torchaudio at module level which causes a
+#    circular-import crash at runtime, taking down the entire package and
+#    making JWImageResizeByLongerSide unavailable. Delete it after cloning.
 RUN pip install --no-cache-dir soundfile && \
     git clone https://github.com/jamesWalker55/comfyui-various.git && \
+    rm -f comfyui-various/comfyui_sound.py && \
     cd comfyui-various && \
     if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; fi
 

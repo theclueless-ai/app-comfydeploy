@@ -67,11 +67,11 @@ NODE_OPTION_SWITCH = "268"   # ImpactSwitch: edad (1-6) / pecas (1-3)
 NODE_MAKEUP_REF = "264"      # LoadImage: makeup reference image
 
 # Orbital workflow node IDs
-ORBITAL_LOAD_IMAGE = "290"   # LoadImage: main input image
+ORBITAL_LOAD_IMAGE_B64 = "400"  # easy loadImageBase64: injects raw base64 directly
 ORBITAL_SCALE_SELECTOR = "366"  # INTConstant: 1=4K, 2=8K
-ORBITAL_HORIZONTAL = "308"   # ImpactSwitch: horizontal angle (1-9)
-ORBITAL_VERTICAL = "310"     # ImpactSwitch: vertical angle (1-9)
-ORBITAL_ZOOM = "293"         # ImpactSwitch: zoom level (1-3)
+ORBITAL_HORIZONTAL = "308"      # ImpactSwitch: horizontal angle (1-9)
+ORBITAL_VERTICAL = "310"        # ImpactSwitch: vertical angle (1-9)
+ORBITAL_ZOOM = "293"            # ImpactSwitch: zoom level (1-3)
 
 
 # =============================================================================
@@ -136,19 +136,21 @@ def prepare_workflow(
       - Node 264 (LoadImage):   makeup reference filename
 
     For orbital:
-      - Node 290 (LoadImage):   image filename
+      - Node 400 (easy loadImageBase64): raw base64 injected into base64_data
       - Node 366 (INTConstant): scale value (1=4K, 2=8K)
       - Node 308 (ImpactSwitch): horizontal angle (1-9)
       - Node 310 (ImpactSwitch): vertical angle (1-9)
       - Node 293 (ImpactSwitch): zoom level (1-3)
     """
     if workflow_type == "orbital":
-        # Inject main image into orbital LoadImage node
-        if ORBITAL_LOAD_IMAGE in workflow:
-            workflow[ORBITAL_LOAD_IMAGE]["inputs"]["image"] = image_filename
-            print(f"[handler] Injected image '{image_filename}' into node {ORBITAL_LOAD_IMAGE}")
+        # Orbital uses "easy loadImageBase64" (node 400) — inject raw base64
+        # directly into base64_data; no file path needed.
+        image_base64 = extra_params.get("image_base64", "")
+        if ORBITAL_LOAD_IMAGE_B64 in workflow:
+            workflow[ORBITAL_LOAD_IMAGE_B64]["inputs"]["base64_data"] = image_base64
+            print(f"[handler] Injected base64 image ({len(image_base64)} chars) into node {ORBITAL_LOAD_IMAGE_B64}")
         else:
-            raise ValueError(f"Node {ORBITAL_LOAD_IMAGE} (LoadImage) not found in orbital workflow")
+            raise ValueError(f"Node {ORBITAL_LOAD_IMAGE_B64} (easy loadImageBase64) not found in orbital workflow")
 
         # Inject scale factor
         if ORBITAL_SCALE_SELECTOR in workflow:
@@ -445,6 +447,8 @@ def handler(job):
             extra_params["horizontal_select"] = int(job_input.get("horizontal_select", 5))
             extra_params["vertical_select"] = int(job_input.get("vertical_select", 5))
             extra_params["zoom_select"] = int(job_input.get("zoom_select", 2))
+            # Pass raw base64 so prepare_workflow can inject it into node 400
+            extra_params["image_base64"] = image_b64
 
         # 3. Inject parameters into workflow
         prepare_workflow(workflow, image_filename, scale_factor, workflow_type, extra_params)
