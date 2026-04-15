@@ -1,0 +1,1176 @@
+{
+    "96": {
+      "inputs": {
+        "seed": [
+          "113",
+          0
+        ],
+        "resolution": 4000,
+        "max_resolution": 4000,
+        "batch_size": 1,
+        "uniform_batch_size": false,
+        "color_correction": "lab",
+        "temporal_overlap": 16,
+        "prepend_frames": 0,
+        "input_noise_scale": 0,
+        "latent_noise_scale": 0,
+        "offload_device": "cpu",
+        "enable_debug": false,
+        "image": [
+          "391",
+          0
+        ],
+        "dit": [
+          "99",
+          0
+        ],
+        "vae": [
+          "97",
+          0
+        ]
+      },
+      "class_type": "SeedVR2VideoUpscaler",
+      "_meta": {
+        "title": "SeedVR2 Video Upscaler (v2.5.24)"
+      }
+    },
+    "97": {
+      "inputs": {
+        "model": "ema_vae_fp16.safetensors",
+        "device": "cuda:0",
+        "encode_tiled": true,
+        "encode_tile_size": 1024,
+        "encode_tile_overlap": 128,
+        "decode_tiled": true,
+        "decode_tile_size": 1024,
+        "decode_tile_overlap": 128,
+        "tile_debug": "false",
+        "offload_device": "cpu",
+        "cache_model": false
+      },
+      "class_type": "SeedVR2LoadVAEModel",
+      "_meta": {
+        "title": "SeedVR2 (Down)Load VAE Model"
+      }
+    },
+    "99": {
+      "inputs": {
+        "model": "seedvr2_ema_7b_fp16.safetensors",
+        "device": "cuda:0",
+        "blocks_to_swap": 35,
+        "swap_io_components": false,
+        "offload_device": "cpu",
+        "cache_model": false,
+        "attention_mode": "sdpa"
+      },
+      "class_type": "SeedVR2LoadDiTModel",
+      "_meta": {
+        "title": "SeedVR2 (Down)Load DiT Model"
+      }
+    },
+    "113": {
+      "inputs": {
+        "min_value": 0,
+        "max_value": 106.69,
+        "seed": 1070092971692626
+      },
+      "class_type": "RandomNumber",
+      "_meta": {
+        "title": "Random Number"
+      }
+    },
+    "117": {
+      "inputs": {
+        "method": "hard",
+        "type": "median",
+        "intensity": 6,
+        "images": [
+          "96",
+          0
+        ]
+      },
+      "class_type": "Image Sharpen FS",
+      "_meta": {
+        "title": "Image Sharpen FS"
+      }
+    },
+    "231": {
+      "inputs": {
+        "method": "mkl",
+        "strength": 1,
+        "multithread": true,
+        "image_ref": [
+          "397",
+          0
+        ],
+        "image_target": [
+          "117",
+          0
+        ]
+      },
+      "class_type": "ColorMatch",
+      "_meta": {
+        "title": "Color Match (Swwan)"
+      }
+    },
+    "244": {
+      "inputs": {
+        "seed": 4105349922,
+        "resolution": 4000,
+        "max_resolution": 4000,
+        "batch_size": 1,
+        "uniform_batch_size": false,
+        "color_correction": "lab",
+        "temporal_overlap": 16,
+        "prepend_frames": 0,
+        "input_noise_scale": 0,
+        "latent_noise_scale": 0,
+        "offload_device": "cpu",
+        "enable_debug": false,
+        "image": [
+          "391",
+          0
+        ],
+        "dit": [
+          "99",
+          0
+        ],
+        "vae": [
+          "97",
+          0
+        ]
+      },
+      "class_type": "SeedVR2VideoUpscaler",
+      "_meta": {
+        "title": "SeedVR2 Video Upscaler (v2.5.24)"
+      }
+    },
+    "245": {
+      "inputs": {
+        "method": "hard",
+        "type": "median",
+        "intensity": 6,
+        "images": [
+          "244",
+          0
+        ]
+      },
+      "class_type": "Image Sharpen FS",
+      "_meta": {
+        "title": "Image Sharpen FS"
+      }
+    },
+    "246": {
+      "inputs": {
+        "method": "mkl",
+        "strength": 1,
+        "multithread": true,
+        "image_ref": [
+          "397",
+          0
+        ],
+        "image_target": [
+          "245",
+          0
+        ]
+      },
+      "class_type": "ColorMatch",
+      "_meta": {
+        "title": "Color Match (Swwan)"
+      }
+    },
+    "247": {
+      "inputs": {
+        "upscale_model": [
+          "248",
+          0
+        ],
+        "image": [
+          "246",
+          0
+        ]
+      },
+      "class_type": "ImageUpscaleWithModel",
+      "_meta": {
+        "title": "Ampliar Imagen (usando Modelo)"
+      }
+    },
+    "248": {
+      "inputs": {
+        "model_name": "RealESRGAN_x2plus.pth"
+      },
+      "class_type": "UpscaleModelLoader",
+      "_meta": {
+        "title": "Cargar Modelo de Escala Superior"
+      }
+    },
+    "254": {
+      "inputs": {
+        "filename_prefix": "4k-V2",
+        "images": [
+          "256",
+          0
+        ]
+      },
+      "class_type": "SaveImage",
+      "_meta": {
+        "title": "Guardar Imagen"
+      }
+    },
+    "256": {
+      "inputs": {
+        "select": [
+          "366",
+          0
+        ],
+        "sel_mode": false,
+        "input1": [
+          "231",
+          0
+        ],
+        "input2": [
+          "247",
+          0
+        ]
+      },
+      "class_type": "ImpactSwitch",
+      "_meta": {
+        "title": "Switch (Any)"
+      }
+    },
+    "267": {
+      "inputs": {
+        "text": ""
+      },
+      "class_type": "Text _O",
+      "_meta": {
+        "title": "Centro"
+      }
+    },
+    "268": {
+      "inputs": {
+        "text": "camera rotated 180 degrees to the left, full back view"
+      },
+      "class_type": "Text _O",
+      "_meta": {
+        "title": "180° (Atrás)"
+      }
+    },
+    "269": {
+      "inputs": {
+        "text": "camera rotated 180 degrees to the right, full back view"
+      },
+      "class_type": "Text _O",
+      "_meta": {
+        "title": "180° (Atrás)"
+      }
+    },
+    "270": {
+      "inputs": {
+        "text": "camera rotated 135 degrees to the left, three-quarter back view"
+      },
+      "class_type": "Text _O",
+      "_meta": {
+        "title": "135° (Atrás-Izq)"
+      }
+    },
+    "271": {
+      "inputs": {
+        "text": "camera rotated 90 degrees to the left, side profile view"
+      },
+      "class_type": "Text _O",
+      "_meta": {
+        "title": "90° (Perfil Izq)"
+      }
+    },
+    "272": {
+      "inputs": {
+        "text": "camera rotated 45 degrees to the left, three-quarter front view"
+      },
+      "class_type": "Text _O",
+      "_meta": {
+        "title": "45° (Frente-Izq)"
+      }
+    },
+    "273": {
+      "inputs": {
+        "text": "camera rotated 45 degrees to the right, three-quarter front view"
+      },
+      "class_type": "Text _O",
+      "_meta": {
+        "title": "45° (Frente-Der)"
+      }
+    },
+    "274": {
+      "inputs": {
+        "text": "camera rotated 90 degrees to the right, side profile view"
+      },
+      "class_type": "Text _O",
+      "_meta": {
+        "title": "90° (Perfil Der)"
+      }
+    },
+    "275": {
+      "inputs": {
+        "text": "camera rotated 135 degrees to the right, three-quarter back view"
+      },
+      "class_type": "Text _O",
+      "_meta": {
+        "title": "135° (Atrás-Der)"
+      }
+    },
+    "276": {
+      "inputs": {
+        "text": "nadir view, camera at floor level looking 90 degrees straight up"
+      },
+      "class_type": "Text _O",
+      "_meta": {
+        "title": "-90° (Suelo)"
+      }
+    },
+    "277": {
+      "inputs": {
+        "text": "extreme low angle, camera tilted 60 degrees up"
+      },
+      "class_type": "Text _O",
+      "_meta": {
+        "title": "-60° (Bajo ext.)"
+      }
+    },
+    "278": {
+      "inputs": {
+        "text": "low angle, camera tilted 45 degrees up"
+      },
+      "class_type": "Text _O",
+      "_meta": {
+        "title": "-45° (Bajo)"
+      }
+    },
+    "279": {
+      "inputs": {
+        "text": "slight low angle, camera tilted 20 degrees up"
+      },
+      "class_type": "Text _O",
+      "_meta": {
+        "title": "-20° (Bajo suave)"
+      }
+    },
+    "280": {
+      "inputs": {
+        "text": "slight high angle, camera tilted 20 degrees down"
+      },
+      "class_type": "Text _O",
+      "_meta": {
+        "title": "20° (Alto suave)"
+      }
+    },
+    "281": {
+      "inputs": {
+        "text": "high angle, camera tilted 45 degrees down"
+      },
+      "class_type": "Text _O",
+      "_meta": {
+        "title": "45° (Alto)"
+      }
+    },
+    "282": {
+      "inputs": {
+        "text": "extreme high angle, camera tilted 60 degrees down"
+      },
+      "class_type": "Text _O",
+      "_meta": {
+        "title": "60° (Alto ext.)"
+      }
+    },
+    "283": {
+      "inputs": {
+        "text": "top-down zenith view, camera 90 degrees overhead looking down"
+      },
+      "class_type": "Text _O",
+      "_meta": {
+        "title": "90° (Techo)"
+      }
+    },
+    "285": {
+      "inputs": {
+        "text": "Keep the exact same model, identical facial features, same clothing, and same pose from the original image. Change only the camera perspective. Keep the lighting and environment consistent."
+      },
+      "class_type": "Text _O",
+      "_meta": {
+        "title": "Text _O"
+      }
+    },
+    "286": {
+      "inputs": {
+        "string_a": [
+          "295",
+          0
+        ],
+        "string_b": [
+          "285",
+          0
+        ],
+        "delimiter": ","
+      },
+      "class_type": "StringConcatenate",
+      "_meta": {
+        "title": "Concatenar"
+      }
+    },
+    "289": {
+      "inputs": {
+        "string_a": [
+          "308",
+          0
+        ],
+        "string_b": [
+          "310",
+          0
+        ],
+        "delimiter": "."
+      },
+      "class_type": "StringConcatenate",
+      "_meta": {
+        "title": "Concatenar"
+      }
+    },
+    "290": {
+      "inputs": {
+        "image": "AnimateDiff_00005.png"
+      },
+      "class_type": "LoadImage",
+      "_meta": {
+        "title": "Cargar Imagen"
+      }
+    },
+    "292": {
+      "inputs": {
+        "text": "very Close up angle camera,"
+      },
+      "class_type": "Text _O",
+      "_meta": {
+        "title": "Text _O"
+      }
+    },
+    "293": {
+      "inputs": {
+        "select": 2,
+        "sel_mode": false,
+        "input1": [
+          "292",
+          0
+        ],
+        "input2": [
+          "294",
+          0
+        ],
+        "input3": [
+          "312",
+          0
+        ]
+      },
+      "class_type": "ImpactSwitch",
+      "_meta": {
+        "title": "zoom"
+      }
+    },
+    "294": {
+      "inputs": {
+        "text": ""
+      },
+      "class_type": "Text _O",
+      "_meta": {
+        "title": "Text _O"
+      }
+    },
+    "295": {
+      "inputs": {
+        "string_a": [
+          "293",
+          0
+        ],
+        "string_b": [
+          "289",
+          0
+        ],
+        "delimiter": ""
+      },
+      "class_type": "StringConcatenate",
+      "_meta": {
+        "title": "Concatenar"
+      }
+    },
+    "308": {
+      "inputs": {
+        "select": 4,
+        "sel_mode": false,
+        "input1": [
+          "268",
+          0
+        ],
+        "input2": [
+          "270",
+          0
+        ],
+        "input3": [
+          "271",
+          0
+        ],
+        "input4": [
+          "272",
+          0
+        ],
+        "input5": [
+          "267",
+          0
+        ],
+        "input6": [
+          "273",
+          0
+        ],
+        "input7": [
+          "274",
+          0
+        ],
+        "input8": [
+          "275",
+          0
+        ],
+        "input9": [
+          "269",
+          0
+        ]
+      },
+      "class_type": "ImpactSwitch",
+      "_meta": {
+        "title": "Horizontal"
+      }
+    },
+    "310": {
+      "inputs": {
+        "select": 5,
+        "sel_mode": false,
+        "input1": [
+          "276",
+          0
+        ],
+        "input2": [
+          "277",
+          0
+        ],
+        "input3": [
+          "278",
+          0
+        ],
+        "input4": [
+          "279",
+          0
+        ],
+        "input5": [
+          "267",
+          0
+        ],
+        "input6": [
+          "280",
+          0
+        ],
+        "input7": [
+          "281",
+          0
+        ],
+        "input8": [
+          "282",
+          0
+        ],
+        "input9": [
+          "283",
+          0
+        ]
+      },
+      "class_type": "ImpactSwitch",
+      "_meta": {
+        "title": "Vertical"
+      }
+    },
+    "312": {
+      "inputs": {
+        "text": "Camera with a very wide angle,"
+      },
+      "class_type": "Text _O",
+      "_meta": {
+        "title": "Text _O"
+      }
+    },
+    "327": {
+      "inputs": {
+        "width": [
+          "336",
+          0
+        ],
+        "height": [
+          "335",
+          0
+        ],
+        "upscale_method": "nearest-exact",
+        "keep_proportion": "pad",
+        "pad_color": "0, 0, 0",
+        "crop_position": "center",
+        "divisible_by": 2,
+        "device": "cpu",
+        "image": [
+          "331",
+          0
+        ]
+      },
+      "class_type": "ImageResizeKJv2",
+      "_meta": {
+        "title": "Image Resize KJ v2 (Swwan)"
+      }
+    },
+    "328": {
+      "inputs": {
+        "pixels": [
+          "327",
+          0
+        ],
+        "vae": [
+          "343",
+          2
+        ]
+      },
+      "class_type": "VAEEncode",
+      "_meta": {
+        "title": "VAE Codificar"
+      }
+    },
+    "331": {
+      "inputs": {
+        "upscale_method": "lanczos",
+        "megapixels": 2,
+        "resolution_steps": 1,
+        "image": [
+          "382",
+          0
+        ]
+      },
+      "class_type": "ImageScaleToTotalPixels",
+      "_meta": {
+        "title": "Escalar Imagen a Total de Pixeles"
+      }
+    },
+    "332": {
+      "inputs": {
+        "seed": 260696020868705,
+        "steps": 30,
+        "cfg": 4.5,
+        "sampler_name": "dpmpp_2m",
+        "scheduler": "karras",
+        "denoise": 0.15,
+        "model": [
+          "343",
+          0
+        ],
+        "positive": [
+          "334",
+          0
+        ],
+        "negative": [
+          "333",
+          0
+        ],
+        "latent_image": [
+          "328",
+          0
+        ]
+      },
+      "class_type": "KSampler",
+      "_meta": {
+        "title": "KSampler"
+      }
+    },
+    "333": {
+      "inputs": {
+        "text": "plastic skin, waxy skin, silicone skin, liquid skin,\ncartoon, anime, 3d render, cgi, painting, illustration,\nsoft focus, blurry,\nover-retouched skin, excessive smoothing,\nmannequin face, doll face,\ndeformed eyes, cross-eyed, extra pupils, distorted iris,\nwarped face,\nlow resolution, watermark, text, signature,\nflat lighting",
+        "clip": [
+          "343",
+          1
+        ]
+      },
+      "class_type": "CLIPTextEncode",
+      "_meta": {
+        "title": "NEGATIVE"
+      }
+    },
+    "334": {
+      "inputs": {
+        "text": "close-up portrait, photographic realism,\nnatural facial proportions,\nnatural skin texture focused on cheeks and nose,\nsubtle pores, light skin imperfections,\nfine vellus hair,\nrealistic skin oiliness,\nsoft skin transitions,\nnatural subsurface scattering,\nsoft natural daylight,\nshot on 85mm lens, f/2.8,\nraw photo look, balanced dynamic range,\n\nnatural eye alignment,\nbalanced gaze,\nrealistic iris detail,\nsharp pupils,\nclean sclera,\nrelaxed eyelids,\nnatural catchlight,\nsubtle facial asymmetry,\nslight head tilt",
+        "clip": [
+          "343",
+          1
+        ]
+      },
+      "class_type": "CLIPTextEncode",
+      "_meta": {
+        "title": "Positivo"
+      }
+    },
+    "335": {
+      "inputs": {
+        "expression": "round(a / 64) * 64",
+        "a": [
+          "337",
+          1
+        ]
+      },
+      "class_type": "MathExpression|pysssss",
+      "_meta": {
+        "title": "Math Expression 🐍"
+      }
+    },
+    "336": {
+      "inputs": {
+        "expression": "round(a / 64) * 64",
+        "a": [
+          "337",
+          2
+        ]
+      },
+      "class_type": "MathExpression|pysssss",
+      "_meta": {
+        "title": "Math Expression 🐍"
+      }
+    },
+    "337": {
+      "inputs": {
+        "ui_widget": {
+          "nodes": [
+            {
+              "icon": "check",
+              "id": 1,
+              "value": "Image 1: True"
+            }
+          ]
+        },
+        "image": [
+          "331",
+          0
+        ]
+      },
+      "class_type": "LF_IsLandscape",
+      "_meta": {
+        "title": "Is image in landscape res.?"
+      }
+    },
+    "343": {
+      "inputs": {
+        "ckpt_name": "enhancer\\enhancor_skin_fix.safetensors"
+      },
+      "class_type": "CheckpointLoaderSimple",
+      "_meta": {
+        "title": "Cargar Punto de Control"
+      }
+    },
+    "344": {
+      "inputs": {
+        "samples": [
+          "332",
+          0
+        ],
+        "vae": [
+          "343",
+          2
+        ]
+      },
+      "class_type": "VAEDecode",
+      "_meta": {
+        "title": "Decodificación VAE"
+      }
+    },
+    "349": {
+      "inputs": {
+        "measurement": "pixels",
+        "width": [
+          "337",
+          2
+        ],
+        "height": [
+          "337",
+          1
+        ],
+        "fit": "crop",
+        "method": "nearest-exact",
+        "image": [
+          "344",
+          0
+        ]
+      },
+      "class_type": "Image Resize (rgthree)",
+      "_meta": {
+        "title": "Image Resize (rgthree)"
+      }
+    },
+    "366": {
+      "inputs": {
+        "value": 1
+      },
+      "class_type": "INTConstant",
+      "_meta": {
+        "title": "1-4k----2-8k"
+      }
+    },
+    "382": {
+      "inputs": {
+        "samples": [
+          "386",
+          0
+        ],
+        "vae": [
+          "384",
+          0
+        ]
+      },
+      "class_type": "VAEDecode",
+      "_meta": {
+        "title": "Decodificación VAE"
+      }
+    },
+    "383": {
+      "inputs": {
+        "text": "plastic skin, waxy skin, silicone skin, liquid skin,\ncartoon, anime, 3d render, cgi, painting, illustration,\nsoft focus, blurry,\nover-retouched skin, excessive smoothing,\nmannequin face, doll face,\ndeformed eyes, cross-eyed, extra pupils, distorted iris,\nwarped face,\nlow resolution, watermark, text, signature,\nflat lighting",
+        "clip": [
+          "385",
+          1
+        ]
+      },
+      "class_type": "CLIPTextEncode",
+      "_meta": {
+        "title": "Negative Prompt"
+      }
+    },
+    "384": {
+      "inputs": {
+        "vae_name": "Sdxl\\sdxl_vae.safetensors"
+      },
+      "class_type": "VAELoader",
+      "_meta": {
+        "title": "Cargar VAE"
+      }
+    },
+    "385": {
+      "inputs": {
+        "ckpt_name": "Sdxl\\intorealismUltra_v90.safetensors"
+      },
+      "class_type": "CheckpointLoaderSimple",
+      "_meta": {
+        "title": "Cargar Punto de Control"
+      }
+    },
+    "386": {
+      "inputs": {
+        "seed": 711505091,
+        "steps": 10,
+        "cfg": 1.2,
+        "sampler_name": "euler_ancestral",
+        "scheduler": "exponential",
+        "denoise": 0.3,
+        "model": [
+          "385",
+          0
+        ],
+        "positive": [
+          "388",
+          0
+        ],
+        "negative": [
+          "383",
+          0
+        ],
+        "latent_image": [
+          "389",
+          0
+        ]
+      },
+      "class_type": "KSampler",
+      "_meta": {
+        "title": "KSampler"
+      }
+    },
+    "388": {
+      "inputs": {
+        "text": "photographic realism,\nmasterpiece,\nrealistic,\nphoto realistic,\nnatural facial proportions,\nnatural skin texture focused on cheeks and nose,\nsubtle pores, light skin imperfections,\nfine vellus hair,\nrealistic skin oiliness,\nsoft skin transitions,\nnatural subsurface scattering,\nsoft natural daylight,\nshot on 85mm lens, f/2.8,\nraw photo look, balanced dynamic range,\n\nnatural eye alignment,\nbalanced gaze,\nrealistic iris detail,\nsharp pupils,\nclean sclera,\nrelaxed eyelids,\nnatural catchlight,\nsubtle facial asymmetry,\nslight head tilt",
+        "clip": [
+          "385",
+          1
+        ]
+      },
+      "class_type": "CLIPTextEncode",
+      "_meta": {
+        "title": "Positive Prompt"
+      }
+    },
+    "389": {
+      "inputs": {
+        "pixels": [
+          "397",
+          0
+        ],
+        "vae": [
+          "385",
+          2
+        ]
+      },
+      "class_type": "VAEEncode",
+      "_meta": {
+        "title": "VAE Codificar"
+      }
+    },
+    "391": {
+      "inputs": {
+        "select": [
+          "366",
+          0
+        ],
+        "sel_mode": false,
+        "input": [
+          "349",
+          0
+        ]
+      },
+      "class_type": "ImpactInversedSwitch",
+      "_meta": {
+        "title": "1-4k----2-8k"
+      }
+    },
+    "397": {
+      "inputs": {
+        "size": 2560,
+        "interpolation_mode": "bicubic",
+        "image": [
+          "362:19",
+          0
+        ]
+      },
+      "class_type": "JWImageResizeByLongerSide",
+      "_meta": {
+        "title": "Image Resize by Longer Side"
+      }
+    },
+    "363:9": {
+      "inputs": {
+        "vae_name": "Qwen\\qwen_image_vae.safetensors"
+      },
+      "class_type": "VAELoader",
+      "_meta": {
+        "title": "Cargar VAE"
+      }
+    },
+    "363:10": {
+      "inputs": {
+        "clip_name": "qwen_2.5_vl_7b_fp8_scaled.safetensors",
+        "type": "qwen_image",
+        "device": "default"
+      },
+      "class_type": "CLIPLoader",
+      "_meta": {
+        "title": "Cargar CLIP"
+      }
+    },
+    "363:12": {
+      "inputs": {
+        "unet_name": "qwen-edit\\qwen_image_edit_2511_bf16.safetensors",
+        "weight_dtype": "default"
+      },
+      "class_type": "UNETLoader",
+      "_meta": {
+        "title": "Cargar Modelo de Difusión"
+      }
+    },
+    "363:20": {
+      "inputs": {
+        "lora_name": "Qwen\\Qwen-Image-Edit-2511-Lightning-4steps-V1.0-bf16.safetensors",
+        "strength_model": 1,
+        "model": [
+          "363:26",
+          0
+        ]
+      },
+      "class_type": "LoraLoaderModelOnly",
+      "_meta": {
+        "title": "CargadorLoRAModeloSolo"
+      }
+    },
+    "363:26": {
+      "inputs": {
+        "lora_name": "Qwen\\qwen-image-edit-2511-multiple-angles-lora.safetensors",
+        "strength_model": 1,
+        "model": [
+          "363:12",
+          0
+        ]
+      },
+      "class_type": "LoraLoaderModelOnly",
+      "_meta": {
+        "title": "CargadorLoRAModeloSolo"
+      }
+    },
+    "362:8": {
+      "inputs": {
+        "strength": 1,
+        "model": [
+          "362:11",
+          0
+        ]
+      },
+      "class_type": "CFGNorm",
+      "_meta": {
+        "title": "CFGNorm"
+      }
+    },
+    "362:11": {
+      "inputs": {
+        "shift": 3,
+        "model": [
+          "363:20",
+          0
+        ]
+      },
+      "class_type": "ModelSamplingAuraFlow",
+      "_meta": {
+        "title": "ModelSamplingAuraFlow"
+      }
+    },
+    "362:13": {
+      "inputs": {
+        "pixels": [
+          "362:28",
+          0
+        ],
+        "vae": [
+          "363:9",
+          0
+        ]
+      },
+      "class_type": "VAEEncode",
+      "_meta": {
+        "title": "VAE Codificar"
+      }
+    },
+    "362:14": {
+      "inputs": {
+        "prompt": "",
+        "clip": [
+          "363:10",
+          0
+        ],
+        "vae": [
+          "363:9",
+          0
+        ],
+        "image1": [
+          "362:28",
+          0
+        ]
+      },
+      "class_type": "TextEncodeQwenImageEditPlus",
+      "_meta": {
+        "title": "TextEncodeQwenImageEditPlus"
+      }
+    },
+    "362:19": {
+      "inputs": {
+        "samples": [
+          "362:21",
+          0
+        ],
+        "vae": [
+          "363:9",
+          0
+        ]
+      },
+      "class_type": "VAEDecode",
+      "_meta": {
+        "title": "Decodificación VAE"
+      }
+    },
+    "362:21": {
+      "inputs": {
+        "seed": 658345505452308,
+        "steps": 4,
+        "cfg": 1,
+        "sampler_name": "euler",
+        "scheduler": "simple",
+        "denoise": 1,
+        "model": [
+          "362:8",
+          0
+        ],
+        "positive": [
+          "362:17",
+          0
+        ],
+        "negative": [
+          "362:14",
+          0
+        ],
+        "latent_image": [
+          "362:13",
+          0
+        ]
+      },
+      "class_type": "KSampler",
+      "_meta": {
+        "title": "KSampler"
+      }
+    },
+    "362:32": {
+      "inputs": {
+        "images": [
+          "362:19",
+          0
+        ]
+      },
+      "class_type": "PreviewImage",
+      "_meta": {
+        "title": "Vista previa de imagen"
+      }
+    },
+    "362:17": {
+      "inputs": {
+        "prompt": [
+          "286",
+          0
+        ],
+        "clip": [
+          "363:10",
+          0
+        ],
+        "vae": [
+          "363:9",
+          0
+        ],
+        "image1": [
+          "362:28",
+          0
+        ]
+      },
+      "class_type": "TextEncodeQwenImageEditPlus",
+      "_meta": {
+        "title": "TextEncodeQwenImageEditPlus"
+      }
+    },
+    "362:28": {
+      "inputs": {
+        "upscale_method": "nearest-exact",
+        "megapixels": 1.25,
+        "resolution_steps": 1,
+        "image": [
+          "290",
+          0
+        ]
+      },
+      "class_type": "ImageScaleToTotalPixels",
+      "_meta": {
+        "title": "Escalar Imagen a Total de Pixeles"
+      }
+    }
+  }
