@@ -67,7 +67,7 @@ NODE_OPTION_SWITCH = "268"   # ImpactSwitch: edad (1-6) / pecas (1-3)
 NODE_MAKEUP_REF = "264"      # LoadImage: makeup reference image
 
 # Orbital workflow node IDs
-ORBITAL_LOAD_IMAGE = "290"   # LoadImage: main input image
+ORBITAL_LOAD_IMAGE = "400"   # LoadImageBASE64: main input image
 ORBITAL_SCALE_SELECTOR = "366"  # INTConstant: 1=4K, 2=8K
 ORBITAL_HORIZONTAL = "308"   # ImpactSwitch: horizontal angle (1-9)
 ORBITAL_VERTICAL = "310"     # ImpactSwitch: vertical angle (1-9)
