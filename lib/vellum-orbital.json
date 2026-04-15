@@ -1174,5 +1174,16 @@
       "_meta": {
         "title": "Escalar Imagen a Total de Pixeles"
       }
+    },
+    "400": {
+      "inputs": {
+        "base64_data": "",
+        "image_output": "Hide",
+        "save_prefix": "ComfyUI"
+      },
+      "class_type": "easy loadImageBase64",
+      "_meta": {
+        "title": "Load Image (Base64)"
+      }
     }
   }

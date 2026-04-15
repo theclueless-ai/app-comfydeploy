@@ -2,9 +2,8 @@
 # Vellum Workflows Docker Image (piel, edad, makeup, pecas, orbital)
 # Optimized for NVIDIA RTX 4090 (24GB VRAM, CUDA 12.x)
 #
-# Build (run from repo root):
-#   docker build -f docker/vellum-workflows/Dockerfile \
-#                -t your-registry/vellum-workflows:latest .
+# Build:
+#   docker build -f docker/vellum-workflows/Dockerfile -t your-registry/vellum-workflows:latest .
 #   docker push your-registry/vellum-workflows:latest
 #
 # RunPod Env Vars required:
@@ -119,13 +118,14 @@ RUN git clone https://github.com/lucafoscili/lf-nodes.git && \
     if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; fi
 
 # 9. JW Various - JWImageResizeByLongerSide
-#    Needs soundfile explicitly (not always in requirements.txt)
+#    comfyui_sound.py imports torchaudio at module level which causes a
+#    circular-import crash at runtime, taking down the entire package and
+#    making JWImageResizeByLongerSide unavailable. Delete it after cloning.
 RUN pip install --no-cache-dir soundfile && \
     git clone https://github.com/jamesWalker55/comfyui-various.git && \
+    rm -f comfyui-various/comfyui_sound.py && \
     cd comfyui-various && \
-    pip install --no-cache-dir einops && \
-    if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; fi && \
-    echo "[install] comfyui-various OK - JWImageResizeByLongerSide available"
+    if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; fi
 
 # 10. RandomNumbers
 RUN git clone https://github.com/ComfyNodePRs/PR-ComfyUI-RandomNumbers-c02289f4.git && \
@@ -175,16 +175,20 @@ RUN pip install --no-cache-dir \
 # =============================================================================
 WORKDIR /
 
-# Copy workflow JSON files directly from lib/ (build context = repo root)
-COPY lib/vellum-piel.json    /workflows/vellum-piel.json
-COPY lib/vellum-edad.json    /workflows/vellum-edad.json
-COPY lib/vellum-makeup.json  /workflows/vellum-makeup.json
-COPY lib/vellum-pecas.json   /workflows/vellum-pecas.json
-COPY lib/vellum-orbital.json /workflows/vellum-orbital.json
+# Copy workflow JSON files
+# Place all these files alongside the Dockerfile before building:
+#   Dockerfile, start.sh, rp_handler.py,
+#   vellum-piel.json, vellum-edad.json, vellum-makeup.json,
+#   vellum-pecas.json, vellum-orbital.json
+COPY vellum-piel.json    /workflows/vellum-piel.json
+COPY vellum-edad.json    /workflows/vellum-edad.json
+COPY vellum-makeup.json  /workflows/vellum-makeup.json
+COPY vellum-pecas.json   /workflows/vellum-pecas.json
+COPY vellum-orbital.json /workflows/vellum-orbital.json
 
 # Copy handler and start script
-COPY docker/vellum-workflows/rp_handler.py /rp_handler.py
-COPY docker/vellum-workflows/start.sh /start.sh
+COPY rp_handler.py /rp_handler.py
+COPY start.sh /start.sh
 RUN dos2unix /start.sh /rp_handler.py \
     && chmod +x /start.sh
 
