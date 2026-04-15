@@ -434,15 +434,6 @@
         "title": "Concatenar"
       }
     },
-    "290": {
-      "inputs": {
-        "image": "AnimateDiff_00005.png"
-      },
-      "class_type": "LoadImage",
-      "_meta": {
-        "title": "Cargar Imagen"
-      }
-    },
     "292": {
       "inputs": {
         "text": "very Close up angle camera,"
@@ -955,6 +946,17 @@
         "title": "Image Resize by Longer Side"
       }
     },
+    "400": {
+      "inputs": {
+        "base64_data": "",
+        "image_output": "Hide",
+        "save_prefix": "ComfyUI"
+      },
+      "class_type": "easy loadImageBase64",
+      "_meta": {
+        "title": "Load Image (Base64)"
+      }
+    },
     "363:9": {
       "inputs": {
         "vae_name": "Qwen/qwen_image_vae.safetensors"
@@ -1164,7 +1166,7 @@
         "megapixels": 1.25,
         "resolution_steps": 1,
         "image": [
-          "290",
+          "400",
           0
         ]
       },
