@@ -3,6 +3,7 @@ set -e
 
 echo "========================================="
 echo " Vellum Workflows Worker (4090 optimized)"
+echo " Workflows: piel, edad, makeup, pecas, orbital"
 echo "========================================="
 
 # =============================================================================
@@ -19,12 +20,16 @@ if [ -d "/runpod-volume" ]; then
     mkdir -p "$MODELS_SRC/checkpoints/Sdxl"
     mkdir -p "$MODELS_SRC/upscale_models"
     mkdir -p "$MODELS_SRC/vae"
+    mkdir -p "$MODELS_SRC/vae/Qwen"
+    mkdir -p "$MODELS_SRC/clip"
+    mkdir -p "$MODELS_SRC/unet/qwen-edit"
+    mkdir -p "$MODELS_SRC/loras/Qwen"
     mkdir -p "$MODELS_SRC/ultralytics/segm"
     mkdir -p "$MODELS_SRC/sams"
     mkdir -p "$MODELS_SRC/seedvr2"
 
     # Symlink each model subdirectory into ComfyUI
-    for subdir in checkpoints upscale_models vae ultralytics sams; do
+    for subdir in checkpoints upscale_models vae ultralytics sams clip unet loras; do
         target="$COMFYUI_DIR/models/$subdir"
         source="$MODELS_SRC/$subdir"
         if [ -d "$source" ]; then
@@ -65,6 +70,7 @@ check_model() {
     fi
 }
 
+# Shared models (piel / edad / makeup / pecas / orbital)
 check_model "$COMFYUI_DIR/models/checkpoints/enhancer/enhancor_skin_fix.safetensors" "Skin Fix Checkpoint"
 check_model "$COMFYUI_DIR/models/checkpoints/Sdxl/intorealismUltra_v90.safetensors" "IntoRealism XL Checkpoint"
 check_model "$COMFYUI_DIR/models/upscale_models/RealESRGAN_x2plus.pth" "RealESRGAN x2plus"
@@ -72,6 +78,13 @@ check_model "$COMFYUI_DIR/models/ultralytics/segm/PitEyeDetailer-v2-seg.pt" "Pit
 check_model "$COMFYUI_DIR/models/sams/sam_vit_b_01ec64.pth" "SAM ViT-B"
 check_model "$COMFYUI_DIR/models/SEEDVR2/seedvr2_ema_7b_fp16.safetensors" "SeedVR2 DiT (15G)"
 check_model "$COMFYUI_DIR/models/SEEDVR2/ema_vae_fp16.safetensors" "SeedVR2 VAE"
+
+# Orbital-specific models (Qwen Image Edit)
+check_model "$COMFYUI_DIR/models/vae/Qwen/qwen_image_vae.safetensors" "Qwen Image VAE"
+check_model "$COMFYUI_DIR/models/clip/qwen_2.5_vl_7b_fp8_scaled.safetensors" "Qwen 2.5 VL 7B CLIP"
+check_model "$COMFYUI_DIR/models/unet/qwen-edit/qwen_image_edit_2511_bf16.safetensors" "Qwen Image Edit UNet"
+check_model "$COMFYUI_DIR/models/loras/Qwen/qwen-image-edit-2511-multiple-angles-lora.safetensors" "Qwen Multi-Angle LoRA"
+check_model "$COMFYUI_DIR/models/loras/Qwen/Qwen-Image-Edit-2511-Lightning-4steps-V1.0-bf16.safetensors" "Qwen Lightning LoRA"
 
 echo ""
 

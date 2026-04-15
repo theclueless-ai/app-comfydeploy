@@ -1,10 +1,15 @@
 """
-RunPod Serverless Handler for Vellum Workflows (piel, edad, makeup, pecas).
+RunPod Serverless Handler for Vellum Workflows (piel, edad, makeup, pecas, orbital).
 
 Receives a job with:
   - image: raw base64 string (no data URI prefix)
   - scaleFactor: 1 (4K) or 2 (8K)
-  - workflow_type: "piel" | "edad" | "makeup" | "pecas"
+  - workflow_type: "piel" | "edad" | "makeup" | "pecas" | "orbital"
+
+  Orbital-specific extra fields:
+  - horizontal_select: 1-9 (camera horizontal angle)
+  - vertical_select:   1-9 (camera vertical tilt)
+  - zoom_select:       1-3 (close-up / normal / wide)
 
 Injects parameters into the ComfyUI workflow, executes it,
 uploads the output image to S3, and returns a presigned URL.
@@ -372,7 +377,7 @@ def handler(job):
     {
         "image": "<raw base64 string>",
         "scaleFactor": 1 or 2,
-        "workflow_type": "piel" | "edad" | "makeup" | "pecas"
+        "workflow_type": "piel" | "edad" | "makeup" | "pecas" | "orbital"
     }
 
     Returns:
@@ -384,6 +389,9 @@ def handler(job):
     """
     start_time = time.time()
     job_input = job.get("input", {})
+    # Pre-initialize so finally block is always safe
+    image_filename = None
+    extra_params = {}
 
     # --- Validate inputs ---
     image_b64 = job_input.get("image")
@@ -421,8 +429,7 @@ def handler(job):
         image_filename = f"input_{uuid.uuid4().hex[:8]}.png"
         save_image_to_input(image_b64, image_filename)
 
-        # 2b. Save makeup reference image if present
-        extra_params = {}
+        # 2b. Build extra params per workflow type
         if workflow_type == "makeup":
             makeup_b64 = job_input.get("makeup_ref")
             if not makeup_b64:
@@ -482,7 +489,8 @@ def handler(job):
         traceback.print_exc()
         return {"error": str(e)}
     finally:
-        # Cleanup input images
+        # Cleanup input images (image_filename / makeup_filename may be None if
+        # the job failed before they were created — guard against that here)
         for fname in [image_filename, extra_params.get("makeup_filename")]:
             try:
                 if fname:

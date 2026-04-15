@@ -1,5 +1,5 @@
 # =============================================================================
-# Vellum Workflows Docker Image (piel, edad, makeup, pecas)
+# Vellum Workflows Docker Image (piel, edad, makeup, pecas, orbital)
 # Optimized for NVIDIA RTX 4090 (24GB VRAM, CUDA 12.x)
 #
 # Build:
@@ -11,6 +11,13 @@
 #   AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_S3_ENDPOINT_URL (optional)
 #
 # Attach a Network Volume at /runpod-volume for model persistence
+#
+# Network volume layout expected (new dirs for orbital):
+#   models/vae/Qwen/qwen_image_vae.safetensors
+#   models/clip/qwen_2.5_vl_7b_fp8_scaled.safetensors
+#   models/unet/qwen-edit/qwen_image_edit_2511_bf16.safetensors
+#   models/loras/Qwen/qwen-image-edit-2511-multiple-angles-lora.safetensors
+#   models/loras/Qwen/Qwen-Image-Edit-2511-Lightning-4steps-V1.0-bf16.safetensors
 # =============================================================================
 
 FROM nvidia/cuda:12.1.1-cudnn8-devel-ubuntu22.04
@@ -168,7 +175,8 @@ WORKDIR /
 # Copy workflow JSON files
 # Place all these files alongside the Dockerfile before building:
 #   Dockerfile, start.sh, rp_handler.py,
-#   vellum-piel.json, vellum-edad.json, vellum-makeup.json, vellum-pecas.json
+#   vellum-piel.json, vellum-edad.json, vellum-makeup.json,
+#   vellum-pecas.json, vellum-orbital.json
 COPY vellum-piel.json    /workflows/vellum-piel.json
 COPY vellum-edad.json    /workflows/vellum-edad.json
 COPY vellum-makeup.json  /workflows/vellum-makeup.json
