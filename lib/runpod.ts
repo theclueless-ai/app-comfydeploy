@@ -730,6 +730,15 @@ export interface VellumPeloWorkflowInput {
   scale_by: number;       // 1 for 4K, 2 for 8K
 }
 
+export interface VellumOrbitalWorkflowInput {
+  workflow: any;
+  input_image: string;      // Base64 data URI
+  scale_by: number;         // 1 for 4K, 2 for 8K (node 366)
+  horizontal_select: number; // 1-9 (node 308 ImpactSwitch)
+  vertical_select: number;   // 1-9 (node 310 ImpactSwitch)
+  zoom_select: number;       // 1-3 (node 293 ImpactSwitch)
+}
+
 /**
  * Build the workflow payload for Vellum Piel
  * Sends image + scale value (1=4K, 2=8K) for node 261
@@ -1022,6 +1031,67 @@ export async function runVellumPeloWorkflowAsync(
 
   const result: RunPodJobResponse = await response.json();
   console.log("Vellum Pelo job started with ID:", result.id);
+
+  return { jobId: result.id };
+}
+
+/**
+ * Build the workflow payload for Vellum Orbital
+ * Sends image + scale + horizontal/vertical/zoom selects
+ */
+function buildVellumOrbitalWorkflowPayload(input: VellumOrbitalWorkflowInput) {
+  let imageBase64 = input.input_image;
+  if (imageBase64.includes(',')) {
+    imageBase64 = imageBase64.split(',')[1];
+  }
+
+  return {
+    input: {
+      image: imageBase64,
+      scaleFactor: input.scale_by,
+      horizontal_select: input.horizontal_select,
+      vertical_select: input.vertical_select,
+      zoom_select: input.zoom_select,
+      workflow_type: "orbital",
+    },
+  };
+}
+
+/**
+ * Run Vellum Orbital workflow on RunPod (async)
+ */
+export async function runVellumOrbitalWorkflowAsync(
+  input: VellumOrbitalWorkflowInput
+): Promise<{ jobId: string }> {
+  const { apiKey, endpointId, baseUrl } = getRunPodVellumWorkflowsConfig();
+  const url = `${baseUrl}/${endpointId}/run`;
+
+  const payload = buildVellumOrbitalWorkflowPayload(input);
+
+  console.log("=== RunPod Vellum Orbital API Call (async) ===");
+  console.log("URL:", url);
+  console.log("Scale Factor:", input.scale_by);
+  console.log("Horizontal Select:", input.horizontal_select);
+  console.log("Vertical Select:", input.vertical_select);
+  console.log("Zoom Select:", input.zoom_select);
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("RunPod Vellum Orbital API Error:", errorText);
+    throw new Error(`RunPod API error: ${response.status} - ${errorText}`);
+  }
+
+  const result: RunPodJobResponse = await response.json();
+  console.log("Vellum Orbital job started with ID:", result.id);
 
   return { jobId: result.id };
 }

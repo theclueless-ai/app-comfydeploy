@@ -8,7 +8,7 @@ import { PosesForm } from "@/components/poses-form";
 import { ResultDisplay } from "@/components/result-display";
 import { Gallery } from "@/components/gallery";
 import { WorkflowTabs, WorkflowTab } from "@/components/workflow-tabs";
-import { getDefaultWorkflow, getVellumWorkflow, getVellum20Workflow, getVellumPielWorkflow, getVellumEdadWorkflow, getVellumMakeupWorkflow, getVellumPeloWorkflow, getVellumPecasWorkflow, getAiTalkWorkflow } from "@/lib/workflows";
+import { getDefaultWorkflow, getVellumWorkflow, getVellum20Workflow, getVellumPielWorkflow, getVellumEdadWorkflow, getVellumMakeupWorkflow, getVellumPeloWorkflow, getVellumPecasWorkflow, getVellumOrbitalWorkflow, getAiTalkWorkflow } from "@/lib/workflows";
 import { cn, compressImage } from "@/lib/utils";
 import { sanitizeErrorMessage } from "@/lib/error-messages";
 import { useHistory } from "@/hooks/use-history";
@@ -40,6 +40,7 @@ export default function Home() {
   const vellumMakeupWorkflow = getVellumMakeupWorkflow();
   const vellumPeloWorkflow = getVellumPeloWorkflow();
   const vellumPecasWorkflow = getVellumPecasWorkflow();
+  const vellumOrbitalWorkflow = getVellumOrbitalWorkflow();
   const aiTalkWorkflow = getAiTalkWorkflow();
   const avatarInfo = { name: "Avatar Generator", description: "Generate unique character portraits with customizable features, powered by RunPod serverless." };
   const posesInfo = { name: "Poses", description: "Generate 9 different head poses from a single portrait, powered by RunPod serverless." };
@@ -59,9 +60,11 @@ export default function Home() {
                 ? vellumPeloWorkflow
                 : activeTab === "vellumPecas"
                   ? vellumPecasWorkflow
-                  : activeTab === "aiTalk"
-                    ? aiTalkWorkflow
-                    : null;
+                  : activeTab === "vellumOrbital"
+                    ? vellumOrbitalWorkflow
+                    : activeTab === "aiTalk"
+                      ? aiTalkWorkflow
+                      : null;
   const activeWorkflowName = activeTab === "poses" ? posesInfo.name : (workflow?.name ?? avatarInfo.name);
   const activeWorkflowDescription = activeTab === "poses" ? posesInfo.description : (workflow?.description ?? avatarInfo.description);
 
@@ -363,6 +366,40 @@ export default function Home() {
     return () => clearInterval(pollInterval);
   }, [runId, status, activeTab]);
 
+  // Poll for RunPod status (Vellum Orbital workflow)
+  useEffect(() => {
+    if (!runId || status === "completed" || status === "failed" || activeTab !== "vellumOrbital") {
+      return;
+    }
+
+    const pollInterval = setInterval(async () => {
+      try {
+        const response = await fetch(`/api/vellum-workflows-status?jobId=${runId}`);
+        const data = await response.json();
+
+        if (data.status === "completed") {
+          setStatus("completed");
+          if (data.images && data.images.length > 0) {
+            setResultImages(data.images);
+          }
+          clearInterval(pollInterval);
+          setIsLoading(false);
+        } else if (data.status === "failed") {
+          setStatus("failed");
+          setError(data.error || "Workflow failed");
+          clearInterval(pollInterval);
+          setIsLoading(false);
+        } else if (data.status === "running") {
+          setStatus("running");
+        }
+      } catch (error) {
+        console.error("vellum orbital polling error:", error);
+      }
+    }, 3000);
+
+    return () => clearInterval(pollInterval);
+  }, [runId, status, activeTab]);
+
   // Poll for AI Talk status
   useEffect(() => {
     if (!runId || status === "completed" || status === "failed" || activeTab !== "aiTalk") {
@@ -593,6 +630,8 @@ export default function Home() {
                     ? "/api/run-vellum-pelo"
                     : activeTab === "vellumPecas"
                     ? "/api/run-vellum-pecas"
+                    : activeTab === "vellumOrbital"
+                    ? "/api/run-vellum-orbital"
                     : activeTab === "aiTalk"
                       ? "/api/run-ai-talk"
                       : activeTab === "poses"
@@ -668,7 +707,9 @@ export default function Home() {
                             ? "Hair Transfer"
                             : activeTab === "vellumPecas"
                             ? "Freckle Generation"
-                            : activeTab === "aiTalk"
+                            : activeTab === "vellumOrbital"
+                              ? "Orbital Camera"
+                              : activeTab === "aiTalk"
                               ? "Generate Talking Video"
                               : activeTab === "poses"
                                 ? "Upload Portrait"
