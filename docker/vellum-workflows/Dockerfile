@@ -162,6 +162,15 @@ RUN git clone https://github.com/yolain/ComfyUI-Easy-Use.git && \
 RUN pip install --no-cache-dir "transformers>=4.40,<4.46"
 
 # =============================================================================
+# REMOVE torchaudio — ComfyUI's requirements.txt installs it, but the version
+# it picks needs libcudart.so.13 (CUDA 13) which doesn't exist in this image
+# (CUDA 12.1). ComfyUI handles missing torchaudio gracefully ("torchaudio
+# missing, ACE model will be broken" — harmless for image-only workflows).
+# Also remove any xformers that may have been pulled back in by other deps.
+# =============================================================================
+RUN pip uninstall -y torchaudio xformers 2>/dev/null; true
+
+# =============================================================================
 # RUNPOD + S3 DEPENDENCIES
 # =============================================================================
 RUN pip install --no-cache-dir \
