@@ -90,7 +90,10 @@ RUN git clone https://github.com/ltdrdata/ComfyUI-Impact-Subpack.git && \
 
 # 3. SeedVR2 VideoUpscaler
 #    Install diffusers with --no-deps to avoid pulling in xformers/flash_attn.
-RUN pip install --no-cache-dir "transformers>=4.40,<4.46" && \
+#    transformers >= 4.46 required: diffusers 0.30+ uses Dinov2WithRegistersConfig
+#    which was added in transformers 4.46. The old <4.46 pin was only needed to
+#    avoid a flash_attn chain through xformers — xformers is now removed entirely.
+RUN pip install --no-cache-dir "transformers>=4.46" && \
     pip install --no-cache-dir --no-deps "diffusers>=0.28,<0.31" && \
     git clone https://github.com/numz/ComfyUI-SeedVR2_VideoUpscaler.git && \
     cd ComfyUI-SeedVR2_VideoUpscaler && \
@@ -160,9 +163,11 @@ RUN git clone https://github.com/yolain/ComfyUI-Easy-Use.git && \
 
 # =============================================================================
 # FIX: Re-pin transformers after all custom nodes (they may upgrade it).
-# Do NOT reinstall diffusers with deps here — that would re-pull xformers.
+# >= 4.46 required for diffusers 0.30+ (Dinov2WithRegistersConfig).
+# No upper bound needed — xformers is removed so the old flash_attn
+# chain that required <4.46 no longer applies.
 # =============================================================================
-RUN pip install --no-cache-dir "transformers>=4.40,<4.46"
+RUN pip install --no-cache-dir "transformers>=4.46"
 
 # =============================================================================
 # REMOVE torchaudio — ComfyUI's requirements.txt installs it, but the version
