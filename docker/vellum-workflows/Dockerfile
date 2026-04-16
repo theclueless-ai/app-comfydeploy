@@ -46,15 +46,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && ln -sf /usr/bin/python3.10 /usr/bin/python
 
 # =============================================================================
-# PYTHON / PYTORCH (CUDA 12.8, optimized for 4090 Ada Lovelace)
+# PYTHON / PYTORCH (CUDA 12.1, optimized for 4090 Ada Lovelace)
+# torchaudio deliberately excluded — not needed for image workflows and it
+# triggers a circular-import crash with this CUDA/PyTorch combination.
+# xFormers also excluded — ComfyUI uses --use-pytorch-cross-attention instead.
 # =============================================================================
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
     pip install --no-cache-dir \
-        torch torchvision torchaudio \
+        torch torchvision \
         --index-url https://download.pytorch.org/whl/cu121
-
-# xFormers for efficient attention on 4090
-RUN pip install --no-cache-dir xformers
 
 # =============================================================================
 # COMFYUI
@@ -86,12 +86,9 @@ RUN git clone https://github.com/ltdrdata/ComfyUI-Impact-Subpack.git && \
     if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; fi
 
 # 3. SeedVR2 VideoUpscaler
-#    Install transformers/diffusers with --no-deps to avoid pulling in xformers,
-#    which conflicts with our PyTorch version (xformers chain → flash_attn missing).
-#    ComfyUI uses --use-pytorch-cross-attention so xformers is not needed.
+#    Install diffusers with --no-deps to avoid pulling in xformers/flash_attn.
 RUN pip install --no-cache-dir "transformers>=4.40,<4.46" && \
     pip install --no-cache-dir --no-deps "diffusers>=0.28,<0.31" && \
-    pip uninstall -y xformers 2>/dev/null || true && \
     git clone https://github.com/numz/ComfyUI-SeedVR2_VideoUpscaler.git && \
     cd ComfyUI-SeedVR2_VideoUpscaler && \
     if [ -f requirements.txt ]; then pip install --no-cache-dir --no-deps -r requirements.txt; fi
