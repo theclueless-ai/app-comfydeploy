@@ -86,8 +86,12 @@ RUN git clone https://github.com/ltdrdata/ComfyUI-Impact-Subpack.git && \
     if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; fi
 
 # 3. SeedVR2 VideoUpscaler
-#    Pin transformers/diffusers to avoid flash_attn KeyError on import
-RUN pip install --no-cache-dir "transformers>=4.40,<4.46" "diffusers>=0.28,<0.31" && \
+#    Install transformers/diffusers with --no-deps to avoid pulling in xformers,
+#    which conflicts with our PyTorch version (xformers chain → flash_attn missing).
+#    ComfyUI uses --use-pytorch-cross-attention so xformers is not needed.
+RUN pip install --no-cache-dir "transformers>=4.40,<4.46" && \
+    pip install --no-cache-dir --no-deps "diffusers>=0.28,<0.31" && \
+    pip uninstall -y xformers 2>/dev/null || true && \
     git clone https://github.com/numz/ComfyUI-SeedVR2_VideoUpscaler.git && \
     cd ComfyUI-SeedVR2_VideoUpscaler && \
     if [ -f requirements.txt ]; then pip install --no-cache-dir --no-deps -r requirements.txt; fi
@@ -118,12 +122,12 @@ RUN git clone https://github.com/lucafoscili/lf-nodes.git && \
     if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; fi
 
 # 9. JW Various - JWImageResizeByLongerSide
-#    comfyui_sound.py imports torchaudio at module level which causes a
-#    circular-import crash at runtime, taking down the entire package and
-#    making JWImageResizeByLongerSide unavailable. Delete it after cloning.
+#    comfyui_sound.py causes a torchaudio circular-import crash. The __init__.py
+#    has a hardcoded module list — deleting the file leaves a ModuleNotFoundError.
+#    Fix: remove the "comfyui_sound" entry from __init__.py's module list with sed.
 RUN pip install --no-cache-dir soundfile && \
     git clone https://github.com/jamesWalker55/comfyui-various.git && \
-    rm -f comfyui-various/comfyui_sound.py && \
+    sed -i '/comfyui_sound/d' comfyui-various/__init__.py && \
     cd comfyui-various && \
     if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; fi
 
@@ -155,10 +159,10 @@ RUN git clone https://github.com/yolain/ComfyUI-Easy-Use.git && \
 # 15. ByteDanceSeedreamNode is part of ComfyUI core - no separate install needed
 
 # =============================================================================
-# FIX: Re-pin transformers to avoid flash_attn KeyError (newer versions break)
-# This MUST come after all custom nodes since they may upgrade transformers
+# FIX: Re-pin transformers after all custom nodes (they may upgrade it).
+# Do NOT reinstall diffusers with deps here — that would re-pull xformers.
 # =============================================================================
-RUN pip install --no-cache-dir "transformers>=4.40,<4.46" "diffusers>=0.28,<0.31"
+RUN pip install --no-cache-dir "transformers>=4.40,<4.46"
 
 # =============================================================================
 # RUNPOD + S3 DEPENDENCIES
