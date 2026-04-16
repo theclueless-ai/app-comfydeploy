@@ -61,7 +61,10 @@ RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
 # =============================================================================
 RUN git clone https://github.com/comfyanonymous/ComfyUI.git ${COMFYUI_DIR} && \
     cd ${COMFYUI_DIR} && \
-    pip install --no-cache-dir -r requirements.txt
+    pip install --no-cache-dir -r requirements.txt && \
+    rm -f comfy_extras/nodes_audio.py \
+          comfy_extras/nodes_lt_audio.py \
+          comfy_extras/nodes_audio_encoder.py
 
 # =============================================================================
 # CUSTOM NODES
