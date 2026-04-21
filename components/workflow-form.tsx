@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { ImageUpload } from "./image-upload";
 import { AudioUpload } from "./audio-upload";
+import { VideoUpload } from "./video-upload";
 import { SelectInput } from "./select-input";
 import { BuilderInput } from "./builder-input";
 import { SliderInput } from "./slider-input";
@@ -57,7 +58,7 @@ export function WorkflowForm({
       for (const [key, value] of Object.entries(reusedParameters)) {
         // Only apply params that match workflow input IDs (skip file-type inputs)
         const matchingInput = workflow.inputs.find((i) => i.id === key);
-        if (matchingInput && matchingInput.type !== "image" && matchingInput.type !== "audio") {
+        if (matchingInput && matchingInput.type !== "image" && matchingInput.type !== "audio" && matchingInput.type !== "video") {
           updated[key] = value;
         }
         // Also apply input_text for audio-mode workflows
@@ -148,6 +149,22 @@ export function WorkflowForm({
           if (input.type === "audio") {
             return (
               <AudioUpload
+                key={input.id}
+                label={input.label}
+                description={input.description}
+                value={(inputs[input.id] as File) || null}
+                onChange={(file) =>
+                  setInputs((prev) => ({ ...prev, [input.id]: file }))
+                }
+                accept={input.accept}
+                required={input.required}
+              />
+            );
+          }
+
+          if (input.type === "video") {
+            return (
+              <VideoUpload
                 key={input.id}
                 label={input.label}
                 description={input.description}

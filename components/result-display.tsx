@@ -27,6 +27,13 @@ export function ResultDisplay({ status, images, error, onGeneratePoses }: Result
     return lower.endsWith(".mp4") || lower.endsWith(".webm") || lower.endsWith(".mov") || url.includes("ai-talk-video");
   };
 
+  const isAudioFile = (filename: string, url: string) => {
+    const lowerName = (filename || "").toLowerCase();
+    const lowerUrl = (url || "").toLowerCase();
+    const audioExts = [".flac", ".wav", ".mp3", ".ogg", ".m4a"];
+    return audioExts.some((ext) => lowerName.endsWith(ext) || lowerUrl.includes(ext));
+  };
+
   const handleDownload = async (imageUrl: string, filename: string, index: number) => {
     setDownloadingIndex(index);
     try {
@@ -36,7 +43,11 @@ export function ResultDisplay({ status, images, error, onGeneratePoses }: Result
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      const ext = isVideoFile(filename, imageUrl) ? ".mp4" : ".png";
+      const ext = isVideoFile(filename, imageUrl)
+        ? ".mp4"
+        : isAudioFile(filename, imageUrl)
+          ? ".flac"
+          : ".png";
       a.download = filename || `theclueless-result-${index + 1}${ext}`;
       document.body.appendChild(a);
       a.click();
@@ -115,6 +126,15 @@ export function ResultDisplay({ status, images, error, onGeneratePoses }: Result
                         onError={(e) => console.error("[ResultDisplay] Video load error:", e)}
                       />
                     </div>
+                  ) : isAudioFile(image.filename, image.url) ? (
+                    <div className="w-full rounded-lg border border-[rgb(var(--border))] p-4 bg-[rgb(var(--background))]">
+                      <audio
+                        src={image.url}
+                        controls
+                        className="w-full"
+                        onError={(e) => console.error("[ResultDisplay] Audio load error:", e)}
+                      />
+                    </div>
                   ) : (
                     <div className="relative aspect-square w-full overflow-hidden rounded-lg border border-[rgb(var(--border))]">
                       <Image
@@ -145,7 +165,7 @@ export function ResultDisplay({ status, images, error, onGeneratePoses }: Result
                       )}
                       Download {images.length > 1 ? `#${index + 1}` : ''}
                     </button>
-                    {onGeneratePoses && !isVideoFile(image.filename, image.url) && (
+                    {onGeneratePoses && !isVideoFile(image.filename, image.url) && !isAudioFile(image.filename, image.url) && (
                       <button
                         onClick={() => onGeneratePoses(image.url)}
                         className={cn(

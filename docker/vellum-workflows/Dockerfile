@@ -162,6 +162,46 @@ RUN git clone https://github.com/yolain/ComfyUI-Easy-Use.git && \
 # 15. ByteDanceSeedreamNode is part of ComfyUI core - no separate install needed
 
 # =============================================================================
+# VIDEO TRANSLATE CUSTOM NODES
+# Used by the video-translate workflow (input: mp4 -> output: audio)
+#   - VideoHelperSuite: VHS_LoadVideo, VHS_BatchManager
+#   - AlekPet nodes: DeepTranslatorTextNode
+#   - Whisper-Translator: Apply WhisperX
+#   - ElevenLabs integration: ElevenlabsTextToSpeech, SaveAudio
+# torchaudio is reinstalled further down (after the existing uninstall step)
+# pinned to the CUDA 12.1 build so WhisperX has a working audio backend.
+# =============================================================================
+
+# 16. VideoHelperSuite (Kosinkadink) - VHS_LoadVideo, VHS_BatchManager
+RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg \
+    && rm -rf /var/lib/apt/lists/* \
+    && git clone https://github.com/Kosinkadink/ComfyUI-VideoHelperSuite.git && \
+    cd ComfyUI-VideoHelperSuite && \
+    if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; fi
+
+# 17. AlekPet Custom Nodes - DeepTranslatorTextNode and friends
+RUN git clone https://github.com/AlekPet/ComfyUI_Custom_Nodes_AlekPet.git && \
+    cd ComfyUI_Custom_Nodes_AlekPet && \
+    if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; fi && \
+    pip install --no-cache-dir deep-translator googletrans==4.0.0rc1 || true
+
+# 18. Whisper-Translator (civen-cn) - "Apply WhisperX"
+#    Pulls in whisperx, faster-whisper, etc.
+RUN git clone https://github.com/civen-cn/ComfyUI-Whisper-Translator.git && \
+    cd ComfyUI-Whisper-Translator && \
+    if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; fi
+
+# 19. ElevenLabs Integration (sysL-padawan) - ElevenlabsTextToSpeech
+RUN git clone https://github.com/sysL-padawan/comfyui-elevenlabs-integration.git && \
+    cd comfyui-elevenlabs-integration && \
+    if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; fi
+
+# NOTE: FancyTimerNode (node 73 "Execution Timer") is a tiny stats node.
+# If this node fails to resolve at runtime it will be a hard error — in that
+# case, delete node 73 from video-translate.json or install the provider
+# package. Leaving it in the workflow as delivered by the user.
+
+# =============================================================================
 # FIX: Re-pin transformers after all custom nodes (they may upgrade it).
 # >= 4.46 required for diffusers 0.30+ (Dinov2WithRegistersConfig).
 # No upper bound needed — xformers is removed so the old flash_attn
@@ -177,6 +217,15 @@ RUN pip install --no-cache-dir "transformers>=4.46"
 # Also remove any xformers that may have been pulled back in by other deps.
 # =============================================================================
 RUN pip uninstall -y torchaudio xformers 2>/dev/null; true
+
+# =============================================================================
+# REINSTALL torchaudio pinned to CUDA 12.1 — required by WhisperX for the
+# video-translate workflow. Must come AFTER the uninstall above or it gets
+# wiped out. The pinned version matches the torch 2.5.x line installed earlier.
+# =============================================================================
+RUN pip install --no-cache-dir \
+        torchaudio==2.5.1 \
+        --index-url https://download.pytorch.org/whl/cu121
 
 # =============================================================================
 # RUNPOD + S3 DEPENDENCIES
@@ -197,12 +246,13 @@ WORKDIR /
 # Place all these files alongside the Dockerfile before building:
 #   Dockerfile, start.sh, rp_handler.py,
 #   vellum-piel.json, vellum-edad.json, vellum-makeup.json,
-#   vellum-pecas.json, vellum-orbital.json
-COPY vellum-piel.json    /workflows/vellum-piel.json
-COPY vellum-edad.json    /workflows/vellum-edad.json
-COPY vellum-makeup.json  /workflows/vellum-makeup.json
-COPY vellum-pecas.json   /workflows/vellum-pecas.json
-COPY vellum-orbital.json /workflows/vellum-orbital.json
+#   vellum-pecas.json, vellum-orbital.json, video-translate.json
+COPY vellum-piel.json     /workflows/vellum-piel.json
+COPY vellum-edad.json     /workflows/vellum-edad.json
+COPY vellum-makeup.json   /workflows/vellum-makeup.json
+COPY vellum-pecas.json    /workflows/vellum-pecas.json
+COPY vellum-orbital.json  /workflows/vellum-orbital.json
+COPY video-translate.json /workflows/video-translate.json
 
 # Copy handler and start script
 COPY rp_handler.py /rp_handler.py

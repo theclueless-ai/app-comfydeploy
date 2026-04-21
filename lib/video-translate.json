@@ -1,0 +1,124 @@
+{
+  "5": {
+    "inputs": {
+      "model": "large",
+      "if_translate": true,
+      "translator": "google",
+      "to_language": "en",
+      "audio": [
+        "82",
+        2
+      ]
+    },
+    "class_type": "Apply WhisperX",
+    "_meta": {
+      "title": "Apply WhisperX"
+    }
+  },
+  "9": {
+    "inputs": {
+      "text_0": "",
+      "text": [
+        "40",
+        0
+      ]
+    },
+    "class_type": "ShowText|pysssss",
+    "_meta": {
+      "title": "DEBUG — Transcripcion ES"
+    }
+  },
+  "11": {
+    "inputs": {
+      "text": [
+        "9",
+        0
+      ],
+      "api_key": "sk_ec3166ef20f7738664793d70153011954e10ebc78838e1af",
+      "voice_id": "ji8lGJ0ZLrpJ5KY4NwOd",
+      "model_id": "eleven_multilingual_v2",
+      "seed": "",
+      "apply_text_normalization": "auto",
+      "voice_settings_stability": 0.31,
+      "voice_settings_use_speaker_boost": true,
+      "voice_settings_similarity_boost": 0.8,
+      "voice_settings_style": 0,
+      "voice_settings_speed": 1
+    },
+    "class_type": "ElevenlabsTextToSpeech",
+    "_meta": {
+      "title": "ElevenlabsTextToSpeech"
+    }
+  },
+  "33": {
+    "inputs": {
+      "filename_prefix": "audio/ComfyUI",
+      "audioUI": "",
+      "audio": [
+        "11",
+        0
+      ]
+    },
+    "class_type": "SaveAudio",
+    "_meta": {
+      "title": "GuardarAudio"
+    }
+  },
+  "40": {
+    "inputs": {
+      "from_translate": "auto",
+      "to_translate": "english",
+      "add_proxies": true,
+      "proxies": "",
+      "auth_data": "",
+      "service": "GoogleTranslator",
+      "text": [
+        "5",
+        0
+      ],
+      "Show proxy": "proxy_hide",
+      "Show authorization": "authorization_hide"
+    },
+    "class_type": "DeepTranslatorTextNode",
+    "_meta": {
+      "title": "Deep Translator Text Node"
+    }
+  },
+  "73": {
+    "inputs": {},
+    "class_type": "FancyTimerNode",
+    "_meta": {
+      "title": "Execution Timer"
+    }
+  },
+  "82": {
+    "inputs": {
+      "video": "output.mp4",
+      "force_rate": 0,
+      "custom_width": 0,
+      "custom_height": 0,
+      "frame_load_cap": 0,
+      "skip_first_frames": 0,
+      "select_every_nth": 1,
+      "format": "AnimateDiff",
+      "meta_batch": [
+        "87",
+        0
+      ]
+    },
+    "class_type": "VHS_LoadVideo",
+    "_meta": {
+      "title": "Load Video (Upload) 🎥🅥🅗🅢"
+    }
+  },
+  "87": {
+    "inputs": {
+      "frames_per_batch": 250,
+      "count": 1
+    },
+    "class_type": "VHS_BatchManager",
+    "_meta": {
+      "title": "Meta Batch Manager 🎥🅥🅗🅢"
+    }
+  }
+}

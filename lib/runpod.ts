@@ -739,6 +739,11 @@ export interface VellumOrbitalWorkflowInput {
   zoom_select: number;       // 1-3 (node 293 ImpactSwitch)
 }
 
+export interface VideoTranslateWorkflowInput {
+  workflow: any;
+  input_video: string; // Base64 data URI (.mp4)
+}
+
 /**
  * Build the workflow payload for Vellum Piel
  * Sends image + scale value (1=4K, 2=8K) for node 261
@@ -1094,6 +1099,126 @@ export async function runVellumOrbitalWorkflowAsync(
   console.log("Vellum Orbital job started with ID:", result.id);
 
   return { jobId: result.id };
+}
+
+/**
+ * Build the workflow payload for Video Translate.
+ * The handler decodes the base64 video, saves it to ComfyUI's input dir,
+ * and injects the filename into node 82 (VHS_LoadVideo).
+ */
+function buildVideoTranslateWorkflowPayload(input: VideoTranslateWorkflowInput) {
+  let videoBase64 = input.input_video;
+  if (videoBase64.includes(",")) {
+    videoBase64 = videoBase64.split(",")[1];
+  }
+
+  return {
+    input: {
+      video: videoBase64,
+      workflow_type: "video-translate",
+    },
+  };
+}
+
+/**
+ * Run Video Translate workflow on RunPod (async)
+ */
+export async function runVideoTranslateWorkflowAsync(
+  input: VideoTranslateWorkflowInput
+): Promise<{ jobId: string }> {
+  const { apiKey, endpointId, baseUrl } = getRunPodVellumWorkflowsConfig();
+  const url = `${baseUrl}/${endpointId}/run`;
+
+  const payload = buildVideoTranslateWorkflowPayload(input);
+
+  console.log("=== RunPod Video Translate API Call (async) ===");
+  console.log("URL:", url);
+  console.log("Endpoint ID:", endpointId);
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("RunPod Video Translate API Error:", errorText);
+    throw new Error(`RunPod API error: ${response.status} - ${errorText}`);
+  }
+
+  const result: RunPodJobResponse = await response.json();
+  console.log("Video Translate job started with ID:", result.id);
+
+  return { jobId: result.id };
+}
+
+/**
+ * Extract the audio result from a Video Translate RunPod output.
+ * The handler uploads a single audio file (flac/wav/mp3) to S3 and returns a presigned URL.
+ */
+export function extractAudioFromOutput(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  output: any
+): Array<{ url: string; filename: string }> {
+  if (!output) return [];
+
+  const audios: Array<{ url: string; filename: string }> = [];
+  const isAudioish = (value: string) => {
+    const lower = value.toLowerCase();
+    return (
+      lower.includes(".flac") ||
+      lower.includes(".wav") ||
+      lower.includes(".mp3") ||
+      lower.includes(".ogg") ||
+      lower.includes(".m4a")
+    );
+  };
+
+  // Format 0: nested output (RunPod sometimes wraps handler output)
+  const nested = output.output ?? output;
+
+  // Format 1: { audios: [...] }
+  if (Array.isArray(nested.audios)) {
+    for (const a of nested.audios) {
+      if (a?.url) {
+        audios.push({ url: a.url, filename: a.filename || extractFilenameFromUrl(a.url) });
+      }
+    }
+  }
+
+  // Format 2: { audio_url: "..." }
+  if (typeof nested.audio_url === "string") {
+    audios.push({
+      url: nested.audio_url,
+      filename: nested.filename || extractFilenameFromUrl(nested.audio_url),
+    });
+  }
+
+  // Format 3: { url: "..." } if it looks like an audio URL
+  if (typeof nested.url === "string" && isAudioish(nested.url)) {
+    audios.push({ url: nested.url, filename: extractFilenameFromUrl(nested.url) });
+  }
+
+  // Format 4: generic scan for audio-looking S3 URLs in any string field
+  if (audios.length === 0) {
+    const scan = (obj: Record<string, unknown>) => {
+      for (const [, value] of Object.entries(obj)) {
+        if (typeof value === "string" && isAudioish(value)) {
+          audios.push({ url: value, filename: extractFilenameFromUrl(value) });
+        }
+      }
+    };
+    if (output && typeof output === "object") scan(output as Record<string, unknown>);
+    if (nested && typeof nested === "object" && nested !== output) {
+      scan(nested as Record<string, unknown>);
+    }
+  }
+
+  return audios;
 }
 
 /**

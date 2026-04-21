@@ -37,11 +37,12 @@ COMFYUI_OUTPUT_DIR = "/comfyui/output"
 
 WORKFLOWS_DIR = "/workflows"
 WORKFLOW_FILES = {
-    "piel":    os.path.join(WORKFLOWS_DIR, "vellum-piel.json"),
-    "edad":    os.path.join(WORKFLOWS_DIR, "vellum-edad.json"),
-    "makeup":  os.path.join(WORKFLOWS_DIR, "vellum-makeup.json"),
-    "pecas":   os.path.join(WORKFLOWS_DIR, "vellum-pecas.json"),
-    "orbital": os.path.join(WORKFLOWS_DIR, "vellum-orbital.json"),
+    "piel":            os.path.join(WORKFLOWS_DIR, "vellum-piel.json"),
+    "edad":            os.path.join(WORKFLOWS_DIR, "vellum-edad.json"),
+    "makeup":          os.path.join(WORKFLOWS_DIR, "vellum-makeup.json"),
+    "pecas":           os.path.join(WORKFLOWS_DIR, "vellum-pecas.json"),
+    "orbital":         os.path.join(WORKFLOWS_DIR, "vellum-orbital.json"),
+    "video-translate": os.path.join(WORKFLOWS_DIR, "video-translate.json"),
 }
 
 # S3 configuration (from RunPod env vars)
@@ -72,6 +73,13 @@ ORBITAL_SCALE_SELECTOR = "366"  # INTConstant: 1=4K, 2=8K
 ORBITAL_HORIZONTAL = "308"      # ImpactSwitch: horizontal angle (1-9)
 ORBITAL_VERTICAL = "310"        # ImpactSwitch: vertical angle (1-9)
 ORBITAL_ZOOM = "293"            # ImpactSwitch: zoom level (1-3)
+
+# Video Translate workflow node IDs
+VIDEO_TRANSLATE_LOAD_VIDEO = "82"  # VHS_LoadVideo: video filename in ComfyUI input dir
+VIDEO_TRANSLATE_SAVE_AUDIO = "33"  # SaveAudio: output audio node (filename_prefix="audio/ComfyUI")
+
+# Audio file extensions we may get from SaveAudio (ComfyUI defaults to .flac)
+AUDIO_EXTS = (".flac", ".wav", ".mp3", ".ogg", ".m4a")
 
 
 # =============================================================================
@@ -119,6 +127,19 @@ def save_image_to_input(image_base64: str, filename: str) -> str:
     return filename
 
 
+def save_video_to_input(video_base64: str, filename: str) -> str:
+    """
+    Decode a base64 video and save it to the ComfyUI input directory.
+    Returns the filename (not the full path) for use in VHS_LoadVideo node.
+    """
+    video_data = base64.b64decode(video_base64)
+    filepath = os.path.join(COMFYUI_INPUT_DIR, filename)
+    with open(filepath, "wb") as f:
+        f.write(video_data)
+    print(f"[handler] Saved input video: {filepath} ({len(video_data)} bytes)")
+    return filename
+
+
 def prepare_workflow(
     workflow: dict,
     image_filename: str,
@@ -142,6 +163,20 @@ def prepare_workflow(
       - Node 310 (ImpactSwitch): vertical angle (1-9)
       - Node 293 (ImpactSwitch): zoom level (1-3)
     """
+    if workflow_type == "video-translate":
+        # Video Translate uses VHS_LoadVideo (node 82) — inject filename.
+        video_filename = extra_params.get("video_filename")
+        if not video_filename:
+            raise ValueError("video-translate workflow requires a video filename")
+        if VIDEO_TRANSLATE_LOAD_VIDEO in workflow:
+            workflow[VIDEO_TRANSLATE_LOAD_VIDEO]["inputs"]["video"] = video_filename
+            print(f"[handler] Injected video '{video_filename}' into node {VIDEO_TRANSLATE_LOAD_VIDEO}")
+        else:
+            raise ValueError(
+                f"Node {VIDEO_TRANSLATE_LOAD_VIDEO} (VHS_LoadVideo) not found in video-translate workflow"
+            )
+        return workflow
+
     if workflow_type == "orbital":
         # Orbital uses "easy loadImageBase64" (node 400) — inject raw base64
         # directly into base64_data; no file path needed.
@@ -331,6 +366,97 @@ def find_output_images(history_entry: dict) -> list:
     return images
 
 
+def find_output_audios(history_entry: dict) -> list:
+    """
+    Extract output audio filepaths from a ComfyUI history entry.
+    SaveAudio emits 'audio' entries (sometimes 'gifs' or 'audios' depending
+    on the implementation); fall back to scanning the output dir for the
+    newest audio file matching AUDIO_EXTS.
+    """
+    outputs = history_entry.get("outputs", {})
+    audios = []
+
+    def _collect(entries):
+        for entry in entries:
+            filename = entry.get("filename")
+            subfolder = entry.get("subfolder", "")
+            if not filename:
+                continue
+            if subfolder:
+                audios.append(os.path.join(COMFYUI_OUTPUT_DIR, subfolder, filename))
+            else:
+                audios.append(os.path.join(COMFYUI_OUTPUT_DIR, filename))
+
+    if VIDEO_TRANSLATE_SAVE_AUDIO in outputs:
+        node_output = outputs[VIDEO_TRANSLATE_SAVE_AUDIO]
+        for key in ("audio", "audios", "ui"):
+            if key in node_output and isinstance(node_output[key], list):
+                _collect(node_output[key])
+
+    if not audios:
+        for _, node_output in outputs.items():
+            for key in ("audio", "audios"):
+                if key in node_output and isinstance(node_output[key], list):
+                    _collect(node_output[key])
+
+    if not audios:
+        print("[handler] No audio in history, scanning output directory...")
+        all_audio = []
+        for ext in AUDIO_EXTS:
+            pattern = os.path.join(COMFYUI_OUTPUT_DIR, "**", f"*{ext}")
+            all_audio.extend(glob_module.glob(pattern, recursive=True))
+        all_audio = sorted(all_audio, key=os.path.getmtime, reverse=True)
+        if all_audio:
+            audios.append(all_audio[0])
+
+    print(f"[handler] Found {len(audios)} output audio file(s)")
+    return audios
+
+
+def upload_audio_to_s3(filepath: str, workflow_type: str) -> dict:
+    """
+    Upload an audio file to S3 and return info with a presigned URL.
+    """
+    if not S3_BUCKET or not S3_ACCESS_KEY:
+        raise RuntimeError("S3 credentials not configured. "
+                           "Set AWS_S3_BUCKET, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY")
+
+    s3 = get_s3_client()
+    filename = os.path.basename(filepath)
+    ext = os.path.splitext(filename)[1].lower() or ".flac"
+    content_types = {
+        ".flac": "audio/flac",
+        ".wav":  "audio/wav",
+        ".mp3":  "audio/mpeg",
+        ".ogg":  "audio/ogg",
+        ".m4a":  "audio/mp4",
+    }
+    content_type = content_types.get(ext, "audio/flac")
+    s3_key = f"{workflow_type}/{uuid.uuid4().hex[:8]}_{filename}"
+    file_size = os.path.getsize(filepath)
+
+    print(f"[handler] Uploading audio to S3: {s3_key} ({file_size / 1024 / 1024:.2f} MB)")
+
+    with open(filepath, "rb") as f:
+        s3.upload_fileobj(
+            f, S3_BUCKET, s3_key,
+            ExtraArgs={"ContentType": content_type}
+        )
+
+    url = s3.generate_presigned_url(
+        "get_object",
+        Params={"Bucket": S3_BUCKET, "Key": s3_key},
+        ExpiresIn=7 * 24 * 3600,
+    )
+
+    print(f"[handler] Upload complete: {s3_key}")
+    return {
+        "url": url,
+        "filename": filename,
+        "file_size_mb": round(file_size / 1024 / 1024, 2),
+    }
+
+
 def upload_to_s3(filepath: str, workflow_type: str) -> dict:
     """
     Upload an image file to S3 and return info with a presigned URL.
@@ -375,27 +501,42 @@ def handler(job):
     """
     RunPod serverless handler.
 
-    Expected input:
+    Image-based workflows (piel/edad/makeup/pecas/orbital):
     {
         "image": "<raw base64 string>",
         "scaleFactor": 1 or 2,
         "workflow_type": "piel" | "edad" | "makeup" | "pecas" | "orbital"
     }
 
-    Returns:
+    Video Translate workflow:
     {
-        "status": "COMPLETED",
-        "images": [{ "url": "...", "filename": "...", "file_size_mb": ... }],
-        "execution_time_s": 123.4
+        "video": "<raw base64 string of .mp4>",
+        "workflow_type": "video-translate"
     }
+
+    Image workflows return: { status, images: [...], execution_time_s }
+    Video Translate returns: { status, audios: [...], execution_time_s }
     """
     start_time = time.time()
     job_input = job.get("input", {})
-    # Pre-initialize so finally block is always safe
-    image_filename = None
-    extra_params = {}
+    workflow_type = job_input.get("workflow_type", "piel")
 
-    # --- Validate inputs ---
+    if workflow_type not in WORKFLOW_FILES:
+        return {"error": f"Unknown workflow_type: {workflow_type}. "
+                         f"Valid: {list(WORKFLOW_FILES.keys())}"}
+
+    # Video Translate has a completely different IO shape (video in, audio out)
+    if workflow_type == "video-translate":
+        return _handle_video_translate(job_input, start_time)
+
+    return _handle_image_workflow(job_input, workflow_type, start_time)
+
+
+def _handle_image_workflow(job_input: dict, workflow_type: str, start_time: float) -> dict:
+    """Run an image-in / image-out workflow (piel, edad, makeup, pecas, orbital)."""
+    image_filename = None
+    extra_params: dict = {}
+
     image_b64 = job_input.get("image")
     if not image_b64:
         return {"error": "Missing required field: image (base64)"}
@@ -403,11 +544,6 @@ def handler(job):
     scale_factor = job_input.get("scaleFactor", 1)
     if scale_factor not in (1, 2):
         return {"error": f"scaleFactor must be 1 (4K) or 2 (8K), got: {scale_factor}"}
-
-    workflow_type = job_input.get("workflow_type", "piel")
-    if workflow_type not in WORKFLOW_FILES:
-        return {"error": f"Unknown workflow_type: {workflow_type}. "
-                         f"Valid: {list(WORKFLOW_FILES.keys())}"}
 
     if workflow_type == "orbital":
         horizontal_select = job_input.get("horizontal_select")
@@ -424,14 +560,11 @@ def handler(job):
     print(f"[handler] Job started: workflow={workflow_type}, scale={scale_factor}")
 
     try:
-        # 1. Load the workflow
         workflow = load_workflow(workflow_type)
 
-        # 2. Save input image to ComfyUI input dir
         image_filename = f"input_{uuid.uuid4().hex[:8]}.png"
         save_image_to_input(image_b64, image_filename)
 
-        # 2b. Build extra params per workflow type
         if workflow_type == "makeup":
             makeup_b64 = job_input.get("makeup_ref")
             if not makeup_b64:
@@ -447,29 +580,21 @@ def handler(job):
             extra_params["horizontal_select"] = int(job_input.get("horizontal_select", 5))
             extra_params["vertical_select"] = int(job_input.get("vertical_select", 5))
             extra_params["zoom_select"] = int(job_input.get("zoom_select", 2))
-            # Pass raw base64 so prepare_workflow can inject it into node 400
             extra_params["image_base64"] = image_b64
 
-        # 3. Inject parameters into workflow
         prepare_workflow(workflow, image_filename, scale_factor, workflow_type, extra_params)
 
-        # 4. Submit to ComfyUI
         prompt_id = queue_prompt(workflow)
-
-        # 5. Wait for completion
         history_entry = poll_until_complete(prompt_id)
 
-        # 6. Find output images
         output_images = find_output_images(history_entry)
         if not output_images:
             return {"error": "Workflow completed but no output images found"}
 
-        # 7. Upload to S3
         uploaded = []
         for img_path in output_images:
             if os.path.exists(img_path):
-                result = upload_to_s3(img_path, workflow_type)
-                uploaded.append(result)
+                uploaded.append(upload_to_s3(img_path, workflow_type))
             else:
                 print(f"[handler] WARNING: Image file not found: {img_path}")
 
@@ -493,8 +618,6 @@ def handler(job):
         traceback.print_exc()
         return {"error": str(e)}
     finally:
-        # Cleanup input images (image_filename / makeup_filename may be None if
-        # the job failed before they were created — guard against that here)
         for fname in [image_filename, extra_params.get("makeup_filename")]:
             try:
                 if fname:
@@ -503,6 +626,73 @@ def handler(job):
                         os.remove(fpath)
             except Exception:
                 pass
+
+
+def _handle_video_translate(job_input: dict, start_time: float) -> dict:
+    """Run the video-translate workflow: video -> translated audio."""
+    video_filename = None
+
+    video_b64 = job_input.get("video")
+    if not video_b64:
+        return {"error": "Missing required field: video (base64)"}
+
+    print(f"[handler] Job started: workflow=video-translate")
+
+    try:
+        workflow = load_workflow("video-translate")
+
+        video_filename = f"input_{uuid.uuid4().hex[:8]}.mp4"
+        save_video_to_input(video_b64, video_filename)
+
+        prepare_workflow(
+            workflow,
+            image_filename="",  # unused for video-translate
+            scale_factor=0,     # unused for video-translate
+            workflow_type="video-translate",
+            extra_params={"video_filename": video_filename},
+        )
+
+        prompt_id = queue_prompt(workflow)
+        history_entry = poll_until_complete(prompt_id)
+
+        output_audios = find_output_audios(history_entry)
+        if not output_audios:
+            return {"error": "Workflow completed but no output audio found"}
+
+        uploaded = []
+        for audio_path in output_audios:
+            if os.path.exists(audio_path):
+                uploaded.append(upload_audio_to_s3(audio_path, "video-translate"))
+            else:
+                print(f"[handler] WARNING: Audio file not found: {audio_path}")
+
+        if not uploaded:
+            return {"error": "Failed to upload any output audio to S3"}
+
+        elapsed = round(time.time() - start_time, 1)
+        print(f"[handler] Job complete in {elapsed}s, {len(uploaded)} audio file(s) uploaded")
+
+        return {
+            "status": "COMPLETED",
+            "audios": uploaded,
+            "execution_time_s": elapsed,
+        }
+
+    except TimeoutError as e:
+        return {"error": str(e)}
+    except Exception as e:
+        print(f"[handler] ERROR: {e}")
+        import traceback
+        traceback.print_exc()
+        return {"error": str(e)}
+    finally:
+        try:
+            if video_filename:
+                fpath = os.path.join(COMFYUI_INPUT_DIR, video_filename)
+                if os.path.exists(fpath):
+                    os.remove(fpath)
+        except Exception:
+            pass
 
 
 # =============================================================================

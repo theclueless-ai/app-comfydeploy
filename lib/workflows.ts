@@ -2,6 +2,7 @@ import { WorkflowConfig } from "./types";
 import workflow_vellum from "./vellum-upscale.json";
 import workflow_vellum_v20 from "./vellum-upscale-v20.json";
 import workflow_ai_talk from "./ai-talk-workflow.json";
+import workflow_video_translate from "./video-translate.json";
 
 /**
  * Workflow configurations
@@ -415,6 +416,24 @@ export const workflows: WorkflowConfig[] = [
     ],
   },
   {
+    id: "video-translate",
+    name: "Video Translate",
+    description: "Transcribe un vídeo, traduce al inglés y genera una nueva pista de audio con ElevenLabs.",
+    deploymentId: "",
+    backend: "runpod",
+    inputs: [
+      {
+        id: "input_video",
+        name: "input_video",
+        type: "video",
+        label: "Input Video",
+        description: "Sube un vídeo .mp4 — se extraerá el audio, se transcribirá y se traducirá a inglés",
+        required: true,
+        accept: "video/mp4",
+      },
+    ],
+  },
+  {
     id: "ai-talk",
     name: "AI Talk",
     description: "Generate talking head videos with AI-powered lip sync and voice synthesis.",
@@ -512,4 +531,8 @@ export function getVellumPeloWorkflow(): WorkflowConfig {
 
 export function getVellumOrbitalWorkflow(): WorkflowConfig {
   return workflows.find((w) => w.id === "vellum-orbital")!;
+}
+
+export function getVideoTranslateWorkflow(): WorkflowConfig {
+  return workflows.find((w) => w.id === "video-translate")!;
 }
