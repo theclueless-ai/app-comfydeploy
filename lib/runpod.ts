@@ -1312,16 +1312,17 @@ export async function getVellum20JobStatus(jobId: string): Promise<RunPodStatusR
 // =============================================================================
 
 /**
- * AI Talk workflow inputs sent to the RunPod handler (LTX-2.3 workflow).
- * The handler injects these into the ComfyUI workflow nodes.
+ * AI Talk workflow inputs sent to the RunPod handler (Seedance 1.5 workflow).
+ * Audio must last at least 90 s; the handler slices it into 9 consecutive 10 s
+ * segments (nodes 110/115/187/188/295/296/297/298/305).
  */
 export interface AiTalkWorkflowInput {
-  input_image: string;          // Base64 data URI of the character image (node 167)
-  input_audio: string;          // Base64 data URI of the audio (node 372) — always required
-  positive_prompt: string;      // Scene/motion description (node 352)
-  voice_id?: string;            // ElevenLabs voice ID for node 408 (Voice Changer)
-  use_elevenlabs_vc?: boolean;  // true (default) = audio through ElevenLabs Voice Changer
-                                // false = audio bypasses Voice Changer (pre-generated audio)
+  input_image: string;          // Base64 data URI of the character image (node 19)
+  input_audio: string;          // Base64 data URI of the audio (node 21)
+  prompt_prefix?: string;       // Woman prompt prefix (node 100 text)
+  prompt_prefix_man?: string;   // Man prompt prefix (node 309 string_a)
+  resolution?: string;          // Seedance resolution (nodes 318-327), e.g. "480p" | "720p" | "1080p"
+  model?: string;               // Seedance model id (nodes 318-327)
 }
 
 /**
@@ -1350,21 +1351,22 @@ export async function runAiTalkWorkflowAsync(
   const { apiKey, endpointId, baseUrl } = getRunPodAiTalkConfig();
   const url = `${baseUrl}/${endpointId}/run`;
 
-  const payload = {
+  const payload: { input: Record<string, string> } = {
     input: {
       input_image: input.input_image,
       input_audio: input.input_audio,
-      positive_prompt: input.positive_prompt,
-      voice_id: input.voice_id || "JBFqnCBsd6RMkjVDRZzb",
-      use_elevenlabs_vc: input.use_elevenlabs_vc !== false, // default true
     },
   };
+  if (input.prompt_prefix) payload.input.prompt_prefix = input.prompt_prefix;
+  if (input.prompt_prefix_man) payload.input.prompt_prefix_man = input.prompt_prefix_man;
+  if (input.resolution) payload.input.resolution = input.resolution;
+  if (input.model) payload.input.model = input.model;
 
   console.log("=== RunPod AI Talk API Call (async) ===");
   console.log("URL:", url);
   console.log("Endpoint ID:", endpointId);
-  console.log("Voice ID:", input.voice_id);
-  console.log("Use ElevenLabs VC:", input.use_elevenlabs_vc !== false);
+  console.log("Resolution:", input.resolution || "default");
+  console.log("Model:", input.model || "default");
   console.log("Has image:", !!input.input_image);
   console.log("Has audio:", !!input.input_audio);
 

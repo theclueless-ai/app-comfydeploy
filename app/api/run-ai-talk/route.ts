@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   fileToBase64 as runpodFileToBase64,
   runAiTalkWorkflowAsync,
+  AiTalkWorkflowInput,
 } from "@/lib/runpod";
 import { sanitizeErrorMessage } from "@/lib/error-messages";
 
@@ -18,7 +19,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get the image file
     const imageFile = formData.get("input_image");
     if (!imageFile || !(imageFile instanceof File) || imageFile.size === 0) {
       return NextResponse.json(
@@ -27,7 +27,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get the audio file (always required in new workflow)
     const audioFile = formData.get("input_audio");
     if (!audioFile || !(audioFile instanceof File) || audioFile.size === 0) {
       return NextResponse.json(
@@ -36,46 +35,40 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get the positive prompt
-    const positivePrompt = formData.get("positive_prompt");
-    if (!positivePrompt || typeof positivePrompt !== "string" || positivePrompt.trim() === "") {
-      return NextResponse.json(
-        { error: "Positive prompt is required" },
-        { status: 400 }
-      );
-    }
+    const readOptionalString = (key: string): string | undefined => {
+      const raw = formData.get(key);
+      if (typeof raw !== "string") return undefined;
+      const trimmed = raw.trim();
+      return trimmed === "" ? undefined : trimmed;
+    };
 
-    // Get voice ID
-    const voiceId = formData.get("voice_id");
-    const selectedVoiceId = voiceId && typeof voiceId === "string" && voiceId.trim() !== ""
-      ? voiceId.trim()
-      : "JBFqnCBsd6RMkjVDRZzb"; // Default voice ID
-
-    // Whether to run audio through ElevenLabs Voice Changer
-    // "No" = bypass (pre-generated ElevenLabs audio); anything else = use Voice Changer
-    const useElevenLabsVC = formData.get("use_elevenlabs_vc") !== "No";
+    const promptPrefix = readOptionalString("prompt_prefix");
+    const promptPrefixMan = readOptionalString("prompt_prefix_man");
+    const resolution = readOptionalString("resolution");
+    const model = readOptionalString("model");
 
     console.log("=== AI Talk RunPod Request ===");
     console.log("Image:", imageFile.name, imageFile.type, imageFile.size);
     console.log("Audio:", audioFile.name, audioFile.type, audioFile.size);
-    console.log("Positive Prompt:", positivePrompt.substring(0, 100) + "...");
-    console.log("Voice ID:", selectedVoiceId);
-    console.log("Use ElevenLabs VC:", useElevenLabsVC);
+    console.log("Resolution:", resolution || "default");
+    console.log("Model:", model || "default");
 
-    // Convert files to base64
     const imageBase64 = await runpodFileToBase64(imageFile);
     const audioBase64 = await runpodFileToBase64(audioFile);
 
     console.log("Running AI Talk workflow via RunPod:");
     console.log("- Endpoint ID:", endpointId);
 
-    const result = await runAiTalkWorkflowAsync({
+    const payload: AiTalkWorkflowInput = {
       input_image: imageBase64,
       input_audio: audioBase64,
-      positive_prompt: positivePrompt.trim(),
-      voice_id: selectedVoiceId,
-      use_elevenlabs_vc: useElevenLabsVC,
-    });
+    };
+    if (promptPrefix) payload.prompt_prefix = promptPrefix;
+    if (promptPrefixMan) payload.prompt_prefix_man = promptPrefixMan;
+    if (resolution) payload.resolution = resolution;
+    if (model) payload.model = model;
+
+    const result = await runAiTalkWorkflowAsync(payload);
 
     return NextResponse.json({
       success: true,

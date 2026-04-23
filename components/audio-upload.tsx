@@ -11,6 +11,24 @@ interface AudioUploadProps {
   onChange: (file: File | null) => void;
   accept?: string;
   required?: boolean;
+  minDuration?: number;
+}
+
+function probeAudioDuration(file: File): Promise<number> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const audio = new Audio();
+    audio.preload = "metadata";
+    audio.onloadedmetadata = () => {
+      URL.revokeObjectURL(url);
+      resolve(audio.duration);
+    };
+    audio.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("Could not read audio metadata"));
+    };
+    audio.src = url;
+  });
 }
 
 export function AudioUpload({
@@ -20,11 +38,12 @@ export function AudioUpload({
   onChange,
   accept = "audio/*",
   required = false,
+  minDuration,
 }: AudioUploadProps) {
   const [dragActive, setDragActive] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleFile = (file: File | null) => {
+  const handleFile = async (file: File | null) => {
     if (!file) {
       onChange(null);
       return;
@@ -39,6 +58,21 @@ export function AudioUpload({
     if (file.size > maxSize) {
       alert(`File is too large (${formatBytes(file.size)}). Please use an audio file smaller than 50MB.`);
       return;
+    }
+
+    if (minDuration && minDuration > 0) {
+      try {
+        const duration = await probeAudioDuration(file);
+        if (duration < minDuration) {
+          alert(
+            `Audio is ${duration.toFixed(1)}s but this workflow requires at least ${minDuration}s.`
+          );
+          return;
+        }
+      } catch {
+        alert("Could not read the audio duration. Please try a different file.");
+        return;
+      }
     }
 
     onChange(file);

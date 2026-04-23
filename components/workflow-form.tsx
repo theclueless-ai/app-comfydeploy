@@ -158,6 +158,7 @@ export function WorkflowForm({
                 }
                 accept={input.accept}
                 required={input.required}
+                minDuration={input.minDuration}
               />
             );
           }

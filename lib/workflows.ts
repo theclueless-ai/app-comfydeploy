@@ -1,7 +1,6 @@
 import { WorkflowConfig } from "./types";
 import workflow_vellum from "./vellum-upscale.json";
 import workflow_vellum_v20 from "./vellum-upscale-v20.json";
-import workflow_ai_talk from "./ai-talk-workflow.json";
 import workflow_video_translate from "./video-translate.json";
 
 /**
@@ -436,8 +435,9 @@ export const workflows: WorkflowConfig[] = [
   {
     id: "ai-talk",
     name: "AI Talk",
-    description: "Generate talking head videos with AI-powered lip sync and voice synthesis.",
-    deploymentId: "", // Will use COMFYDEPLOY_AITALK_DEPLOYMENT_ID from env
+    description: "Generate a 9-segment talking video via the Seedance API. Audio must be at least 90 seconds long.",
+    deploymentId: "",
+    backend: "runpod",
     inputs: [
       {
         id: "input_image",
@@ -452,38 +452,48 @@ export const workflows: WorkflowConfig[] = [
         id: "input_audio",
         name: "input_audio",
         type: "audio",
-        label: "Audio",
-        description: "Upload the audio that will drive the video",
+        label: "Audio (>= 90 s)",
+        description: "Audio must last at least 90 seconds. The workflow slices it into 9 consecutive 10 s segments.",
         required: true,
         accept: "audio/*",
+        minDuration: 90,
       },
       {
-        id: "use_elevenlabs_vc",
-        name: "use_elevenlabs_vc",
-        type: "button-group",
-        label: "ElevenLabs Voice Changer",
-        description: "Yes: audio will be processed through ElevenLabs Voice Changer. No: use audio as-is (e.g. already generated with ElevenLabs)",
-        required: false,
-        defaultValue: "Yes",
-        options: ["Yes", "No"],
-      },
-      {
-        id: "voice_id",
-        name: "voice_id",
-        type: "voice-select",
-        label: "Select Voice",
-        description: "ElevenLabs voice to use when Voice Changer is enabled",
-        required: false,
-        showWhen: { field: "use_elevenlabs_vc", value: "Yes" },
-      },
-      {
-        id: "positive_prompt",
-        name: "positive_prompt",
+        id: "prompt_prefix",
+        name: "prompt_prefix",
         type: "text",
-        label: "Positive Prompt",
-        description: "Describe the scene, motion and expressions for the talking video",
-        required: true,
-        placeholder: "woman speak to the camera, static camera,",
+        label: "Prompt Prefix (woman)",
+        description: "Prefix prepended to every woman-voice segment before the transcribed text.",
+        required: false,
+        placeholder: "The woman looks at the camera and says:",
+      },
+      {
+        id: "prompt_prefix_man",
+        name: "prompt_prefix_man",
+        type: "text",
+        label: "Prompt Prefix (man)",
+        description: "Prefix prepended to the man-voice segment (node 309) before the transcribed text.",
+        required: false,
+        placeholder: "The man looks at the camera and says:",
+      },
+      {
+        id: "resolution",
+        name: "resolution",
+        type: "button-group",
+        label: "Resolution",
+        description: "Resolution sent to every Seedance call.",
+        required: false,
+        defaultValue: "1080p",
+        options: ["480p", "720p", "1080p"],
+      },
+      {
+        id: "model",
+        name: "model",
+        type: "text",
+        label: "Seedance Model",
+        description: "Seedance model identifier used by all 9 generation calls.",
+        required: false,
+        placeholder: "seedance-1-5-pro-251215",
       },
     ],
   },
