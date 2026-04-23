@@ -205,7 +205,16 @@ def prepare_workflow(workflow: dict, inputs: dict) -> dict:
 # ---------------------------------------------------------------------------
 def queue_prompt(workflow: dict) -> str:
     resp = requests.post(f"{COMFYUI_URL}/prompt", json={"prompt": workflow})
-    resp.raise_for_status()
+    if not resp.ok:
+        # ComfyUI returns a JSON body describing which nodes / inputs failed
+        # validation. Surface it verbatim so the caller can diagnose.
+        try:
+            detail = json.dumps(resp.json(), indent=2, ensure_ascii=False)
+        except ValueError:
+            detail = resp.text
+        raise RuntimeError(
+            f"ComfyUI rejected the prompt ({resp.status_code}):\n{detail}"
+        )
     prompt_id = resp.json()["prompt_id"]
     print(f"[ComfyUI] Queued prompt: {prompt_id}")
     return prompt_id
@@ -361,6 +370,40 @@ def handler(job: dict) -> dict:
         raise
 
 
+def verify_custom_nodes_loaded() -> None:
+    """
+    Query /object_info and log which node types required by the workflow
+    are missing. Missing types == a custom node that failed to load.
+    """
+    try:
+        resp = requests.get(f"{COMFYUI_URL}/object_info", timeout=30)
+        resp.raise_for_status()
+        known = set(resp.json().keys())
+    except Exception as e:
+        print(f"[Startup] Could not fetch /object_info: {e}")
+        return
+
+    try:
+        with open(WORKFLOW_PATH, "r") as f:
+            wf = json.load(f)
+    except Exception as e:
+        print(f"[Startup] Could not read workflow: {e}")
+        return
+
+    required = {node["class_type"] for node in wf.values() if "class_type" in node}
+    missing = sorted(required - known)
+    if missing:
+        print("=" * 60)
+        print("  [Startup] WARNING - custom nodes not registered in ComfyUI:")
+        for cls in missing:
+            print(f"    - {cls}")
+        print("  Jobs using these nodes will fail with a 400 response.")
+        print("=" * 60)
+    else:
+        print(f"[Startup] OK - all {len(required)} node types from workflow are registered")
+
+
 if __name__ == "__main__":
     print("Starting AI Talk RunPod handler (Seedance 1.5)...")
+    verify_custom_nodes_loaded()
     runpod.serverless.start({"handler": handler})
