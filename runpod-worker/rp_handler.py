@@ -1,19 +1,18 @@
 """
-RunPod Serverless Handler - AI Talk (ComfyUI LTX-2.3)
+RunPod Serverless Handler - AI Talk (ComfyUI + Seedance 1.5 API)
 
-Accepts audio input with two routing options:
-  - use_elevenlabs_vc=True (default): audio -> ElevenLabsVoiceChanger (node 408) -> video
-  - use_elevenlabs_vc=False: audio bypasses Voice Changer -> goes directly into pipeline
+All video generation runs through the Seedance external API. The local
+ComfyUI graph only orchestrates: AudioCrop (9 x 10 s slices) ->
+WhisperX transcription/translation -> 9 chained Seedance calls ->
+VideoConcat -> SaveVideo.
 
-Node mapping (LTX-2.3 workflow):
-  - Node 167 (LoadImage): input character image
-  - Node 352 (PrimitiveStringMultiline): positive prompt
-  - Node 372 (LoadAudio): input audio file
-  - Node 408 (ElevenLabsVoiceChanger): voice conversion (optional, controlled by node 420)
-  - Node 445 (ComfySwitchNode): bypass switch for ElevenLabs Voice Changer
-      switch=True  -> on_true  -> uses node 408 output (ElevenLabs)
-      switch=False -> on_false -> uses node 372 output (direct audio)
-  - Node 140 (VHS_VideoCombine): video output
+Node mapping (new workflow):
+  - Node 19  (LoadImage)                 : input character image
+  - Node 21  (VHS_LoadAudioUpload)        : input audio (must be >= 90 s)
+  - Node 100 (Text _O)                   : woman prompt prefix
+  - Node 309 (StringConcatenate)         : man prompt prefix (hardcoded string_a)
+  - Nodes 318-327 (SeedanceVideoGenerator): Seedance API calls (chained)
+  - Node 237 (SaveVideo)                 : final output (filename_prefix "video/prueba final")
 """
 
 import runpod
@@ -23,6 +22,7 @@ import time
 import uuid
 import base64
 import glob
+import subprocess
 import requests
 import boto3
 
@@ -39,9 +39,15 @@ S3_ENDPOINT_URL = os.environ.get("AWS_S3_ENDPOINT_URL", None)
 S3_ACCESS_KEY = os.environ.get("AWS_ACCESS_KEY_ID", "")
 S3_SECRET_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY", "")
 
-ELEVENLABS_API_KEY = os.environ.get("ELEVENLABS_API_KEY", "")
+SEEDANCE_API_KEY = os.environ.get("SEEDANCE_API_KEY", "")
 
-MAX_EXECUTION_TIME = 3600  # 30 minutes
+# The workflow is cabled for exactly 9 x 10 s crops (0:00 -> 1:30).
+MIN_AUDIO_DURATION_S = 90.0
+
+# 9 Seedance calls x up to 600 s each + WhisperX + concat.
+MAX_EXECUTION_TIME = 6000
+
+SEEDANCE_NODE_IDS = ["318", "320", "321", "322", "323", "324", "325", "326", "327"]
 
 
 # ---------------------------------------------------------------------------
@@ -81,40 +87,48 @@ def upload_to_s3(file_path: str, content_type: str = "video/mp4") -> str:
 # ---------------------------------------------------------------------------
 # File helpers
 # ---------------------------------------------------------------------------
-def save_image_to_comfyui_input(image_b64: str, filename: str) -> str:
-    """Decode base64 image and save to ComfyUI input directory."""
-    image_data = image_b64
-    if "," in image_data:
-        image_data = image_data.split(",", 1)[1]
-    image_bytes = base64.b64decode(image_data)
+def _strip_data_url_prefix(b64: str) -> str:
+    return b64.split(",", 1)[1] if "," in b64 else b64
 
+
+def save_image_to_comfyui_input(image_b64: str, filename: str) -> str:
+    image_bytes = base64.b64decode(_strip_data_url_prefix(image_b64))
     input_dir = os.path.join(COMFYUI_DIR, "input")
     os.makedirs(input_dir, exist_ok=True)
     filepath = os.path.join(input_dir, filename)
     with open(filepath, "wb") as f:
         f.write(image_bytes)
     print(f"[Image] Saved {len(image_bytes)} bytes to {filepath}")
-    return filename
+    return filepath
 
 
 def save_audio_to_comfyui_input(audio_b64: str, filename: str) -> str:
-    """Decode base64 audio and save to ComfyUI input directory."""
-    audio_data = audio_b64
-    if "," in audio_data:
-        audio_data = audio_data.split(",", 1)[1]
-    audio_bytes = base64.b64decode(audio_data)
-
+    audio_bytes = base64.b64decode(_strip_data_url_prefix(audio_b64))
     input_dir = os.path.join(COMFYUI_DIR, "input")
     os.makedirs(input_dir, exist_ok=True)
     filepath = os.path.join(input_dir, filename)
     with open(filepath, "wb") as f:
         f.write(audio_bytes)
     print(f"[Audio] Saved {len(audio_bytes)} bytes to {filepath}")
-    return filename
+    return filepath
+
+
+def probe_audio_duration(filepath: str) -> float:
+    """Return duration in seconds using ffprobe (bundled with ffmpeg)."""
+    result = subprocess.run(
+        [
+            "ffprobe", "-v", "error",
+            "-show_entries", "format=duration",
+            "-of", "default=noprint_wrappers=1:nokey=1",
+            filepath,
+        ],
+        capture_output=True, text=True, check=True,
+    )
+    return float(result.stdout.strip())
 
 
 # ---------------------------------------------------------------------------
-# Workflow loading + conditional routing
+# Workflow preparation
 # ---------------------------------------------------------------------------
 def load_workflow() -> dict:
     with open(WORKFLOW_PATH, "r") as f:
@@ -123,62 +137,70 @@ def load_workflow() -> dict:
 
 def prepare_workflow(workflow: dict, inputs: dict) -> dict:
     """
-    Inject user inputs into the LTX-2.3 workflow.
+    Inject user inputs into the Seedance workflow.
 
-    Parameters:
-      - input_image: base64 image for node 167 (LoadImage)
-      - input_audio: base64 audio for node 372 (LoadAudio) — required
-      - positive_prompt: text for node 352 (PrimitiveStringMultiline)
-      - voice_id: ElevenLabs voice ID for node 408 (only used when use_elevenlabs_vc=True)
-      - use_elevenlabs_vc: bool (default True)
-          True  -> node 445 switch=True  -> audio goes through ElevenLabs Voice Changer (408)
-          False -> node 445 switch=False -> audio bypasses Voice Changer, goes directly
+    Required:
+      - input_image (base64)   -> node 19
+      - input_audio (base64)   -> node 21  (audio must last at least 90 s)
+
+    Optional:
+      - prompt_prefix (str)    -> node 100 text (woman, default in JSON)
+      - prompt_prefix_man (str) -> node 309 string_a (man, default in JSON)
+      - resolution (str)       -> nodes 318-327 resolution (default "1080p")
+      - model (str)            -> nodes 318-327 model (default "seedance-1-5-pro-251215")
     """
-    use_elevenlabs_vc = inputs.get("use_elevenlabs_vc", True)
+    if not SEEDANCE_API_KEY:
+        raise ValueError("SEEDANCE_API_KEY environment variable is not set")
 
-    # Remove _comment keys (not valid ComfyUI nodes)
-    comment_keys = [k for k in workflow if k.startswith("_comment")]
-    for k in comment_keys:
-        del workflow[k]
+    # --- Image (node 19) ---
+    image_b64 = inputs.get("input_image", "")
+    if not image_b64:
+        raise ValueError("input_image is required")
+    image_filename = f"input_{uuid.uuid4().hex[:8]}.png"
+    save_image_to_comfyui_input(image_b64, image_filename)
+    workflow["19"]["inputs"]["image"] = image_filename
 
-    # --- Input image (Node 167 - LoadImage) ---
-    if inputs.get("input_image"):
-        image_filename = f"input_{uuid.uuid4().hex[:8]}.png"
-        save_image_to_comfyui_input(inputs["input_image"], image_filename)
-        workflow["167"]["inputs"]["image"] = image_filename
-
-    # --- Input audio (Node 372 - LoadAudio) ---
+    # --- Audio (node 21) + duration validation ---
     audio_b64 = inputs.get("input_audio", "")
     if not audio_b64:
         raise ValueError("input_audio is required")
-
     audio_filename = f"audio_{uuid.uuid4().hex[:8]}.mp3"
-    save_audio_to_comfyui_input(audio_b64, audio_filename)
-    workflow["372"]["inputs"]["audio"] = audio_filename
-    workflow["372"]["inputs"]["audioUI"] = (
-        f"/api/view?filename={audio_filename}&type=input&subfolder=&rand=0.5"
+    audio_path = save_audio_to_comfyui_input(audio_b64, audio_filename)
+
+    duration = probe_audio_duration(audio_path)
+    print(f"[Audio] Duration: {duration:.2f}s")
+    if duration < MIN_AUDIO_DURATION_S:
+        raise ValueError(
+            f"input_audio must be at least {MIN_AUDIO_DURATION_S:.0f}s long "
+            f"(received {duration:.2f}s). The workflow is cabled for 9 "
+            f"consecutive 10s segments (0:00 -> 1:30)."
+        )
+    workflow["21"]["inputs"]["audio"] = audio_filename
+
+    # --- Prompt prefixes ---
+    if "prompt_prefix" in inputs:
+        workflow["100"]["inputs"]["text"] = inputs["prompt_prefix"]
+
+    if "prompt_prefix_man" in inputs:
+        workflow["309"]["inputs"]["string_a"] = inputs["prompt_prefix_man"]
+
+    # --- Seedance nodes: inject API key + optional overrides ---
+    resolution = inputs.get("resolution")
+    model = inputs.get("model")
+
+    for node_id in SEEDANCE_NODE_IDS:
+        node_inputs = workflow[node_id]["inputs"]
+        node_inputs["api_key"] = SEEDANCE_API_KEY
+        if resolution:
+            node_inputs["resolution"] = resolution
+        if model:
+            node_inputs["model"] = model
+
+    print(
+        f"[Workflow] Prepared | image={image_filename} audio={audio_filename} "
+        f"duration={duration:.1f}s resolution={resolution or 'default'} "
+        f"model={model or 'default'}"
     )
-
-    # --- Positive prompt (Node 352 - PrimitiveStringMultiline) ---
-    if inputs.get("positive_prompt"):
-        workflow["352"]["inputs"]["value"] = inputs["positive_prompt"]
-
-    # --- ElevenLabs Voice Changer (Node 408) ---
-    voice_id = inputs.get("voice_id", "JBFqnCBsd6RMkjVDRZzb")
-    workflow["408"]["inputs"]["voice_id"] = voice_id
-    if ELEVENLABS_API_KEY:
-        workflow["408"]["inputs"]["api_key"] = ELEVENLABS_API_KEY
-
-    # --- ElevenLabs bypass switch (Node 445) ---
-    # switch=True  -> on_true  -> node 408 (ElevenLabs Voice Changer)
-    # switch=False -> on_false -> node 372 (direct audio, bypass ElevenLabs)
-    workflow["445"]["inputs"]["switch"] = bool(use_elevenlabs_vc)
-
-    if use_elevenlabs_vc:
-        print(f"[Workflow] Audio -> ElevenLabs Voice Changer (voice_id={voice_id}) -> pipeline")
-    else:
-        print("[Workflow] Audio -> direct (bypassing ElevenLabs Voice Changer) -> pipeline")
-
     return workflow
 
 
@@ -186,11 +208,9 @@ def prepare_workflow(workflow: dict, inputs: dict) -> dict:
 # ComfyUI interaction
 # ---------------------------------------------------------------------------
 def queue_prompt(workflow: dict) -> str:
-    payload = {"prompt": workflow}
-    resp = requests.post(f"{COMFYUI_URL}/prompt", json=payload)
+    resp = requests.post(f"{COMFYUI_URL}/prompt", json={"prompt": workflow})
     resp.raise_for_status()
-    data = resp.json()
-    prompt_id = data["prompt_id"]
+    prompt_id = resp.json()["prompt_id"]
     print(f"[ComfyUI] Queued prompt: {prompt_id}")
     return prompt_id
 
@@ -235,39 +255,38 @@ def poll_until_complete(prompt_id: str) -> dict:
 
 
 def find_output_video(history_entry: dict) -> str | None:
+    """
+    Locate the final video produced by node 237 (SaveVideo,
+    filename_prefix 'video/prueba final').
+    """
     outputs = history_entry.get("outputs", {})
 
-    # Check node 140 first (VHS_VideoCombine - LTX-2.3 workflow)
-    for node_id in ["140", "338", "238"]:
-        if node_id in outputs:
-            node_output = outputs[node_id]
-            for key in ["gifs", "videos"]:
-                if key in node_output:
-                    for item in node_output[key]:
-                        filename = item.get("filename", "")
-                        subfolder = item.get("subfolder", "")
-                        file_type = item.get("type", "output")
+    # Primary: node 237 SaveVideo
+    if "237" in outputs:
+        node_output = outputs["237"]
+        for key in ["videos", "gifs"]:
+            for item in node_output.get(key, []):
+                filename = item.get("filename", "")
+                subfolder = item.get("subfolder", "")
+                file_type = item.get("type", "output")
+                base = "temp" if file_type == "temp" else "output"
+                video_path = os.path.join(COMFYUI_DIR, base, subfolder, filename)
+                if os.path.exists(video_path):
+                    print(f"[Output] Found video: {video_path}")
+                    return video_path
 
-                        base = "temp" if file_type == "temp" else "output"
-                        video_path = os.path.join(COMFYUI_DIR, base, subfolder, filename)
-
-                        if os.path.exists(video_path):
-                            print(f"[Output] Found video: {video_path}")
-                            return video_path
-
-    # Fallback: search all outputs
+    # Fallback: any video output in history
     for node_id, node_output in outputs.items():
-        for key in ["gifs", "videos"]:
-            if key in node_output:
-                for item in node_output[key]:
-                    filename = item.get("filename", "")
-                    subfolder = item.get("subfolder", "")
-                    video_path = os.path.join(COMFYUI_DIR, "output", subfolder, filename)
-                    if os.path.exists(video_path):
-                        print(f"[Output] Found video (fallback): {video_path}")
-                        return video_path
+        for key in ["videos", "gifs"]:
+            for item in node_output.get(key, []):
+                filename = item.get("filename", "")
+                subfolder = item.get("subfolder", "")
+                video_path = os.path.join(COMFYUI_DIR, "output", subfolder, filename)
+                if os.path.exists(video_path):
+                    print(f"[Output] Found video (fallback): {video_path}")
+                    return video_path
 
-    # Last resort: most recent mp4
+    # Last resort: most recent mp4 under output/video
     mp4_files = glob.glob(os.path.join(COMFYUI_DIR, "output", "**/*.mp4"), recursive=True)
     if mp4_files:
         latest = max(mp4_files, key=os.path.getmtime)
@@ -286,55 +305,46 @@ def handler(job: dict) -> dict:
 
     Input:
     {
-        "input_image": "base64",          -- required: character image
-        "input_audio": "base64",          -- required: audio to drive the video
-        "positive_prompt": "text",        -- required: scene/motion description
-        "voice_id": "elevenlabs_voice_id",-- optional: ElevenLabs voice (default: JBFqnCBsd6RMkjVDRZzb)
-        "use_elevenlabs_vc": true/false   -- optional (default true):
-                                             true  = audio goes through ElevenLabs Voice Changer
-                                             false = audio bypasses Voice Changer (pre-generated audio)
+        "input_image": "base64",          -- required: character face
+        "input_audio": "base64",          -- required: audio >= 90s (mp3/wav)
+        "prompt_prefix": "text",          -- optional: node 100 woman prefix
+        "prompt_prefix_man": "text",      -- optional: node 309 man prefix
+        "resolution": "1080p",            -- optional: Seedance resolution
+        "model": "seedance-1-5-pro-251215" -- optional: Seedance model
     }
     """
     start_time = time.time()
     job_input = job.get("input", {})
-    use_elevenlabs_vc = job_input.get("use_elevenlabs_vc", True)
 
     print("=" * 60)
-    print("  AI Talk Handler - New Job (LTX-2.3)")
+    print("  AI Talk Handler - New Job (Seedance 1.5)")
     print("=" * 60)
-    print(f"  ElevenLabs VC: {use_elevenlabs_vc}")
-    print(f"  Voice ID: {job_input.get('voice_id', 'default')}")
     print(f"  Has image: {bool(job_input.get('input_image'))}")
     print(f"  Has audio: {bool(job_input.get('input_audio'))}")
-    print(f"  Prompt: {str(job_input.get('positive_prompt', ''))[:100]}...")
+    print(f"  Resolution override: {job_input.get('resolution', '-')}")
+    print(f"  Model override: {job_input.get('model', '-')}")
 
     try:
-        # 1. Load and prepare workflow
         print("\n[Step 1] Loading workflow...")
         workflow = load_workflow()
 
         print("[Step 2] Preparing workflow...")
         workflow = prepare_workflow(workflow, job_input)
 
-        # 3. Queue prompt
         print("[Step 3] Queueing prompt in ComfyUI...")
         prompt_id = queue_prompt(workflow)
 
-        # 4. Wait for completion
         print("[Step 4] Waiting for execution...")
         history_entry = poll_until_complete(prompt_id)
 
-        # 5. Find output video
         print("[Step 5] Locating output video...")
         video_path = find_output_video(history_entry)
-
         if not video_path:
             raise RuntimeError("No video output found in ComfyUI results")
 
         file_size_mb = os.path.getsize(video_path) / (1024 * 1024)
         print(f"  Video: {video_path} ({file_size_mb:.1f} MB)")
 
-        # 6. Upload to S3
         print("[Step 6] Uploading to S3...")
         video_url = upload_to_s3(video_path, content_type="video/mp4")
 
@@ -359,5 +369,5 @@ def handler(job: dict) -> dict:
 
 
 if __name__ == "__main__":
-    print("Starting AI Talk RunPod handler...")
+    print("Starting AI Talk RunPod handler (Seedance 1.5)...")
     runpod.serverless.start({"handler": handler})
