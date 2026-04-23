@@ -51,6 +51,7 @@ WORKDIR ${COMFYUI_DIR}
 #   - theclueless-ai/video_concat_node            (VideoConcat)
 #   - theclueless-ai/comfyui-seedance-nodes       (SeedanceVideoGenerator)
 #   - theclueless-ai/comfyui-seed-1.5-utilidades  (Seed15_DurationGateVideo)
+#   - theclueless-ai/ComfyUI-AudioDuration         (AudioDuration)
 # =============================================================================
 RUN cd ${COMFYUI_DIR}/custom_nodes \
     && git clone --depth 1 https://github.com/pythongosssss/ComfyUI-Custom-Scripts.git \
@@ -61,12 +62,14 @@ RUN cd ${COMFYUI_DIR}/custom_nodes \
     && git clone --depth 1 https://github.com/civen-cn/ComfyUI-Whisper-Translator.git \
     && git clone --depth 1 https://github.com/theclueless-ai/video_concat_node.git \
     && git clone --depth 1 https://github.com/theclueless-ai/comfyui-seedance-nodes.git \
-    && git clone --depth 1 https://github.com/theclueless-ai/comfyui-seed-1.5-utilidades.git
+    && git clone --depth 1 https://github.com/theclueless-ai/comfyui-seed-1.5-utilidades.git \
+    && git clone --depth 1 https://github.com/theclueless-ai/ComfyUI-AudioDuration.git
 
 RUN for dir in ComfyUI-Custom-Scripts ComfyUI-Easy-Use ComfyUI-VideoHelperSuite \
     audio-separation-nodes-comfyui ComfyUI-QualityOfLifeSuit_Omar92 \
     ComfyUI-Whisper-Translator video_concat_node \
-    comfyui-seedance-nodes comfyui-seed-1.5-utilidades; do \
+    comfyui-seedance-nodes comfyui-seed-1.5-utilidades \
+    ComfyUI-AudioDuration; do \
     if [ -f "${COMFYUI_DIR}/custom_nodes/$dir/requirements.txt" ]; then \
         pip install --no-cache-dir -r "${COMFYUI_DIR}/custom_nodes/$dir/requirements.txt" 2>/dev/null || true; \
     fi; \
