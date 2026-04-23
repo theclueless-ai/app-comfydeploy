@@ -1319,10 +1319,8 @@ export async function getVellum20JobStatus(jobId: string): Promise<RunPodStatusR
 export interface AiTalkWorkflowInput {
   input_image: string;          // Base64 data URI of the character image (node 19)
   input_audio: string;          // Base64 data URI of the audio (node 21)
-  prompt_prefix?: string;       // Woman prompt prefix (node 100 text)
-  prompt_prefix_man?: string;   // Man prompt prefix (node 309 string_a)
+  prompt_prefix?: string;       // Prefix applied to BOTH node 100 text and node 309 string_a
   resolution?: string;          // Seedance resolution (nodes 318-327), e.g. "480p" | "720p" | "1080p"
-  model?: string;               // Seedance model id (nodes 318-327)
 }
 
 /**
@@ -1358,15 +1356,12 @@ export async function runAiTalkWorkflowAsync(
     },
   };
   if (input.prompt_prefix) payload.input.prompt_prefix = input.prompt_prefix;
-  if (input.prompt_prefix_man) payload.input.prompt_prefix_man = input.prompt_prefix_man;
   if (input.resolution) payload.input.resolution = input.resolution;
-  if (input.model) payload.input.model = input.model;
 
   console.log("=== RunPod AI Talk API Call (async) ===");
   console.log("URL:", url);
   console.log("Endpoint ID:", endpointId);
   console.log("Resolution:", input.resolution || "default");
-  console.log("Model:", input.model || "default");
   console.log("Has image:", !!input.input_image);
   console.log("Has audio:", !!input.input_audio);
 

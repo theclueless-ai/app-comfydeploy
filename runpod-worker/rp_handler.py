@@ -2,17 +2,19 @@
 RunPod Serverless Handler - AI Talk (ComfyUI + Seedance 1.5 API)
 
 All video generation runs through the Seedance external API. The local
-ComfyUI graph only orchestrates: AudioCrop (9 x 10 s slices) ->
-WhisperX transcription/translation -> 9 chained Seedance calls ->
-VideoConcat -> SaveVideo.
+ComfyUI graph only orchestrates: AudioCrop (up to 9 x 10 s slices) ->
+WhisperX transcription/translation -> up to 9 chained Seedance calls ->
+VideoConcat -> SaveVideo. Segments shorter than 4 s are skipped by the
+Seed15_DurationGateVideo node, so any audio duration is accepted
+(audio longer than 90 s is truncated by the crop window).
 
-Node mapping (new workflow):
+Node mapping:
   - Node 19  (LoadImage)                 : input character image
-  - Node 21  (VHS_LoadAudioUpload)        : input audio (must be >= 90 s)
-  - Node 100 (Text _O)                   : woman prompt prefix
-  - Node 309 (StringConcatenate)         : man prompt prefix (hardcoded string_a)
+  - Node 21  (VHS_LoadAudioUpload)        : input audio
+  - Node 100 (Text _O)                   : prompt prefix (woman)
+  - Node 309 (StringConcatenate)         : prompt prefix (man)
   - Nodes 318-327 (SeedanceVideoGenerator): Seedance API calls (chained)
-  - Node 237 (SaveVideo)                 : final output (filename_prefix "video/prueba final")
+  - Node 237 (SaveVideo)                 : final output
 """
 
 import runpod
@@ -41,8 +43,9 @@ S3_SECRET_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY", "")
 
 SEEDANCE_API_KEY = os.environ.get("SEEDANCE_API_KEY", "")
 
-# The workflow is cabled for exactly 9 x 10 s crops (0:00 -> 1:30).
-MIN_AUDIO_DURATION_S = 90.0
+# The crop window in workflow_api.json ends at 1:30, so any extra audio
+# is wasted Seedance generation. Reject longer clips up-front.
+MAX_AUDIO_DURATION_S = 90.0
 
 # 9 Seedance calls x up to 600 s each + WhisperX + concat.
 MAX_EXECUTION_TIME = 6000
@@ -141,13 +144,13 @@ def prepare_workflow(workflow: dict, inputs: dict) -> dict:
 
     Required:
       - input_image (base64)   -> node 19
-      - input_audio (base64)   -> node 21  (audio must last at least 90 s)
+      - input_audio (base64)   -> node 21
 
     Optional:
-      - prompt_prefix (str)    -> node 100 text (woman, default in JSON)
-      - prompt_prefix_man (str) -> node 309 string_a (man, default in JSON)
+      - prompt_prefix (str)    -> applied to BOTH node 100 (text) and node
+                                  309 (string_a). Falls back to the values
+                                  baked into the workflow JSON.
       - resolution (str)       -> nodes 318-327 resolution (default "1080p")
-      - model (str)            -> nodes 318-327 model (default "seedance-1-5-pro-251215")
     """
     if not SEEDANCE_API_KEY:
         raise ValueError("SEEDANCE_API_KEY environment variable is not set")
@@ -160,7 +163,7 @@ def prepare_workflow(workflow: dict, inputs: dict) -> dict:
     save_image_to_comfyui_input(image_b64, image_filename)
     workflow["19"]["inputs"]["image"] = image_filename
 
-    # --- Audio (node 21) + duration validation ---
+    # --- Audio (node 21) + max-duration validation ---
     audio_b64 = inputs.get("input_audio", "")
     if not audio_b64:
         raise ValueError("input_audio is required")
@@ -169,37 +172,30 @@ def prepare_workflow(workflow: dict, inputs: dict) -> dict:
 
     duration = probe_audio_duration(audio_path)
     print(f"[Audio] Duration: {duration:.2f}s")
-    if duration < MIN_AUDIO_DURATION_S:
+    if duration > MAX_AUDIO_DURATION_S:
         raise ValueError(
-            f"input_audio must be at least {MIN_AUDIO_DURATION_S:.0f}s long "
-            f"(received {duration:.2f}s). The workflow is cabled for 9 "
-            f"consecutive 10s segments (0:00 -> 1:30)."
+            f"input_audio is {duration:.2f}s but the workflow accepts at "
+            f"most {MAX_AUDIO_DURATION_S:.0f}s."
         )
     workflow["21"]["inputs"]["audio"] = audio_filename
 
-    # --- Prompt prefixes ---
+    # --- Single prompt prefix applied to both nodes ---
     if "prompt_prefix" in inputs:
-        workflow["100"]["inputs"]["text"] = inputs["prompt_prefix"]
+        prefix = inputs["prompt_prefix"]
+        workflow["100"]["inputs"]["text"] = prefix
+        workflow["309"]["inputs"]["string_a"] = prefix
 
-    if "prompt_prefix_man" in inputs:
-        workflow["309"]["inputs"]["string_a"] = inputs["prompt_prefix_man"]
-
-    # --- Seedance nodes: inject API key + optional overrides ---
+    # --- Seedance nodes: inject API key + optional resolution override ---
     resolution = inputs.get("resolution")
-    model = inputs.get("model")
-
     for node_id in SEEDANCE_NODE_IDS:
         node_inputs = workflow[node_id]["inputs"]
         node_inputs["api_key"] = SEEDANCE_API_KEY
         if resolution:
             node_inputs["resolution"] = resolution
-        if model:
-            node_inputs["model"] = model
 
     print(
         f"[Workflow] Prepared | image={image_filename} audio={audio_filename} "
-        f"duration={duration:.1f}s resolution={resolution or 'default'} "
-        f"model={model or 'default'}"
+        f"resolution={resolution or 'default'}"
     )
     return workflow
 
@@ -305,12 +301,10 @@ def handler(job: dict) -> dict:
 
     Input:
     {
-        "input_image": "base64",          -- required: character face
-        "input_audio": "base64",          -- required: audio >= 90s (mp3/wav)
-        "prompt_prefix": "text",          -- optional: node 100 woman prefix
-        "prompt_prefix_man": "text",      -- optional: node 309 man prefix
-        "resolution": "1080p",            -- optional: Seedance resolution
-        "model": "seedance-1-5-pro-251215" -- optional: Seedance model
+        "input_image": "base64",     -- required: character face
+        "input_audio": "base64",     -- required: audio (mp3/wav)
+        "prompt_prefix": "text",     -- optional: applied to both nodes 100 and 309
+        "resolution": "1080p"        -- optional: Seedance resolution
     }
     """
     start_time = time.time()
@@ -322,7 +316,6 @@ def handler(job: dict) -> dict:
     print(f"  Has image: {bool(job_input.get('input_image'))}")
     print(f"  Has audio: {bool(job_input.get('input_audio'))}")
     print(f"  Resolution override: {job_input.get('resolution', '-')}")
-    print(f"  Model override: {job_input.get('model', '-')}")
 
     try:
         print("\n[Step 1] Loading workflow...")

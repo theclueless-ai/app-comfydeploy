@@ -12,6 +12,7 @@ interface AudioUploadProps {
   accept?: string;
   required?: boolean;
   minDuration?: number;
+  maxDuration?: number;
 }
 
 function probeAudioDuration(file: File): Promise<number> {
@@ -39,6 +40,7 @@ export function AudioUpload({
   accept = "audio/*",
   required = false,
   minDuration,
+  maxDuration,
 }: AudioUploadProps) {
   const [dragActive, setDragActive] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -60,12 +62,18 @@ export function AudioUpload({
       return;
     }
 
-    if (minDuration && minDuration > 0) {
+    if ((minDuration && minDuration > 0) || (maxDuration && maxDuration > 0)) {
       try {
         const duration = await probeAudioDuration(file);
-        if (duration < minDuration) {
+        if (minDuration && duration < minDuration) {
           alert(
             `Audio is ${duration.toFixed(1)}s but this workflow requires at least ${minDuration}s.`
+          );
+          return;
+        }
+        if (maxDuration && duration > maxDuration) {
+          alert(
+            `Audio is ${duration.toFixed(1)}s but this workflow accepts at most ${maxDuration}s.`
           );
           return;
         }

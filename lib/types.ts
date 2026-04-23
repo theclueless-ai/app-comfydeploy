@@ -24,8 +24,9 @@ export interface WorkflowInput {
   step?: number;
   suffix?: string;
   decimals?: number;
-  // Audio specific: minimum accepted duration in seconds (validated client-side)
+  // Audio specific: duration bounds in seconds (validated client-side)
   minDuration?: number;
+  maxDuration?: number;
   // Conditional visibility: only render this input when another field has a specific value
   showWhen?: { field: string; value: string };
 }
