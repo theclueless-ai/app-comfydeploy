@@ -11,6 +11,7 @@ import { WorkflowTabs, WorkflowTab } from "@/components/workflow-tabs";
 import { getDefaultWorkflow, getVellumWorkflow, getVellum20Workflow, getVellumPielWorkflow, getVellumEdadWorkflow, getVellumMakeupWorkflow, getVellumPeloWorkflow, getVellumPecasWorkflow, getVellumOrbitalWorkflow, getVideoTranslateWorkflow, getAiTalkWorkflow } from "@/lib/workflows";
 import { cn, compressImage } from "@/lib/utils";
 import { sanitizeErrorMessage } from "@/lib/error-messages";
+import { uploadVideoTranslateFile } from "@/lib/multipart-upload";
 import { useHistory } from "@/hooks/use-history";
 import { useAuth } from "@/components/auth-provider";
 import { History } from "lucide-react";
@@ -627,6 +628,9 @@ export default function Home() {
 
   const [reusedParameters, setReusedParameters] = useState<Record<string, string | number> | null>(null);
   const [pendingPosesImage, setPendingPosesImage] = useState<File | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<
+    { inputId: string; progress: number } | null
+  >(null);
 
   const handleSubmit = async (inputs: Record<string, File | string | number>) => {
     setIsLoading(true);
@@ -644,6 +648,60 @@ export default function Home() {
     lastSubmittedParams.current = params;
 
     try {
+      // Video Translate uses S3 multipart upload so the (potentially 10 GB)
+      // input file never streams through the Next.js server. Once the upload
+      // finishes we kick off the RunPod job with just the s3_key.
+      if (activeTab === "videoTranslate") {
+        const mediaType = inputs["media_type"] === "audio" ? "audio" : "video";
+        const fileInputId = mediaType === "audio" ? "input_audio" : "input_video";
+        const file = inputs[fileInputId];
+        if (!(file instanceof File)) {
+          throw new Error(
+            mediaType === "audio" ? "Input audio is required" : "Input video is required"
+          );
+        }
+
+        setUploadProgress({ inputId: fileInputId, progress: 0 });
+        let uploadResult: { key: string };
+        try {
+          uploadResult = await uploadVideoTranslateFile({
+            file,
+            onProgress: ({ uploadedBytes, totalBytes }) => {
+              setUploadProgress({
+                inputId: fileInputId,
+                progress: totalBytes ? uploadedBytes / totalBytes : 0,
+              });
+            },
+          });
+        } finally {
+          setUploadProgress(null);
+        }
+
+        const audioExtension =
+          mediaType === "audio"
+            ? (file.name.includes(".") ? file.name.split(".").pop()!.toLowerCase() : "mp3")
+            : undefined;
+
+        const response = await fetch("/api/run-video-translate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            s3_key: uploadResult.key,
+            media_type: mediaType,
+            audio_extension: audioExtension,
+          }),
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || "Failed to run workflow");
+        }
+
+        setRunId(data.jobId);
+        setStatus("running");
+        return;
+      }
+
       const formData = new FormData();
       // Add all inputs (files, text values, and numbers)
       Object.entries(inputs).forEach(([key, value]) => {
@@ -673,8 +731,6 @@ export default function Home() {
                     ? "/api/run-vellum-pecas"
                     : activeTab === "vellumOrbital"
                     ? "/api/run-vellum-orbital"
-                    : activeTab === "videoTranslate"
-                    ? "/api/run-video-translate"
                     : activeTab === "aiTalk"
                       ? "/api/run-ai-talk"
                       : activeTab === "poses"
@@ -781,6 +837,7 @@ export default function Home() {
                   isLoading={isLoading}
                   reusedParameters={reusedParameters}
                   onParametersApplied={() => setReusedParameters(null)}
+                  uploadProgress={uploadProgress}
                 />
               ) : null}
             </div>

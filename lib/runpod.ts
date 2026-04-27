@@ -742,9 +742,12 @@ export interface VellumOrbitalWorkflowInput {
 export interface VideoTranslateWorkflowInput {
   workflow: any;
   media_type: "video" | "audio";
-  input_video?: string; // Base64 data URI (.mp4) — when media_type === "video"
-  input_audio?: string; // Base64 data URI (audio file) — when media_type === "audio"
-  audio_extension?: string; // e.g. "mp3", "wav", "flac" — only used when media_type === "audio"
+  // Key of the file already uploaded to S3 via the multipart upload API.
+  // The worker downloads from this key and deletes it after the run.
+  s3_key: string;
+  // Only meaningful when media_type === "audio". Picked from the filename
+  // when the client doesn't send one explicitly.
+  audio_extension?: string;
 }
 
 /**
@@ -1106,20 +1109,21 @@ export async function runVellumOrbitalWorkflowAsync(
 
 /**
  * Build the workflow payload for Video Translate.
- * The handler decodes the base64 media, saves it to ComfyUI's input dir,
- * and injects the filename into node 82 (VHS_LoadVideo) or node 89
- * (LoadAudio), and toggles the ComfySwitchNode (node 88) accordingly.
+ *
+ * The browser uploaded the source file directly to S3 via multipart upload;
+ * we only forward the s3_key. The handler downloads the object, saves it to
+ * ComfyUI's input dir, and injects the filename into node 82 (VHS_LoadVideo)
+ * or node 89 (LoadAudio), toggling node 88 (ComfySwitchNode) accordingly.
  */
 function buildVideoTranslateWorkflowPayload(input: VideoTranslateWorkflowInput) {
-  const stripDataUri = (b64: string) => (b64.includes(",") ? b64.split(",")[1] : b64);
+  if (!input.s3_key) {
+    throw new Error("s3_key is required");
+  }
 
   if (input.media_type === "audio") {
-    if (!input.input_audio) {
-      throw new Error("input_audio is required when media_type is 'audio'");
-    }
     return {
       input: {
-        audio: stripDataUri(input.input_audio),
+        s3_key: input.s3_key,
         audio_extension: input.audio_extension || "mp3",
         media_type: "audio",
         workflow_type: "video-translate",
@@ -1127,12 +1131,9 @@ function buildVideoTranslateWorkflowPayload(input: VideoTranslateWorkflowInput) 
     };
   }
 
-  if (!input.input_video) {
-    throw new Error("input_video is required when media_type is 'video'");
-  }
   return {
     input: {
-      video: stripDataUri(input.input_video),
+      s3_key: input.s3_key,
       media_type: "video",
       workflow_type: "video-translate",
     },

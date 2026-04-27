@@ -20,6 +20,9 @@ interface WorkflowFormProps {
   isLoading: boolean;
   reusedParameters?: Record<string, string | number> | null;
   onParametersApplied?: () => void;
+  // Live upload progress (0-1) for a specific input id. Used by Video
+  // Translate to render a progress bar while the file streams to S3.
+  uploadProgress?: { inputId: string; progress: number } | null;
 }
 
 export function WorkflowForm({
@@ -28,6 +31,7 @@ export function WorkflowForm({
   isLoading,
   reusedParameters,
   onParametersApplied,
+  uploadProgress,
 }: WorkflowFormProps) {
   const [inputs, setInputs] = useState<Record<string, File | string | number | null>>({});
   const [audioMode, setAudioMode] = useState<"tts" | "sts">("tts");
@@ -188,6 +192,10 @@ export function WorkflowForm({
                 required={input.required}
                 minDuration={input.minDuration}
                 maxDuration={input.maxDuration}
+                maxSizeMB={input.maxSizeMB}
+                uploadProgress={
+                  uploadProgress?.inputId === input.id ? uploadProgress.progress : null
+                }
               />
             );
           }
@@ -204,6 +212,10 @@ export function WorkflowForm({
                 }
                 accept={input.accept}
                 required={input.required}
+                maxSizeMB={input.maxSizeMB}
+                uploadProgress={
+                  uploadProgress?.inputId === input.id ? uploadProgress.progress : null
+                }
               />
             );
           }

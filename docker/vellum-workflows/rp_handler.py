@@ -129,30 +129,36 @@ def save_image_to_input(image_base64: str, filename: str) -> str:
     return filename
 
 
-def save_video_to_input(video_base64: str, filename: str) -> str:
+def download_s3_key_to_input(s3_key: str, filename: str) -> str:
     """
-    Decode a base64 video and save it to the ComfyUI input directory.
-    Returns the filename (not the full path) for use in VHS_LoadVideo node.
+    Stream an object from S3 directly into the ComfyUI input directory.
+    Used by video-translate so the browser can upload large files (up to
+    10 GB) directly to S3 instead of going through the Next.js server.
+    Returns the filename (not the full path) for the LoadVideo / LoadAudio node.
     """
-    video_data = base64.b64decode(video_base64)
+    if not S3_BUCKET or not S3_ACCESS_KEY:
+        raise RuntimeError(
+            "S3 credentials not configured. "
+            "Set AWS_S3_BUCKET, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY"
+        )
+
+    s3 = get_s3_client()
     filepath = os.path.join(COMFYUI_INPUT_DIR, filename)
-    with open(filepath, "wb") as f:
-        f.write(video_data)
-    print(f"[handler] Saved input video: {filepath} ({len(video_data)} bytes)")
+    print(f"[handler] Downloading s3://{S3_BUCKET}/{s3_key} -> {filepath}")
+    s3.download_file(S3_BUCKET, s3_key, filepath)
+    size = os.path.getsize(filepath)
+    print(f"[handler] Download complete: {filepath} ({size / 1024 / 1024:.1f} MB)")
     return filename
 
 
-def save_audio_to_input(audio_base64: str, filename: str) -> str:
-    """
-    Decode a base64 audio file and save it to the ComfyUI input directory.
-    Returns the filename (not the full path) for use in LoadAudio node.
-    """
-    audio_data = base64.b64decode(audio_base64)
-    filepath = os.path.join(COMFYUI_INPUT_DIR, filename)
-    with open(filepath, "wb") as f:
-        f.write(audio_data)
-    print(f"[handler] Saved input audio: {filepath} ({len(audio_data)} bytes)")
-    return filename
+def delete_s3_key(s3_key: str) -> None:
+    """Best-effort delete of an upload object after the worker is done with it."""
+    try:
+        s3 = get_s3_client()
+        s3.delete_object(Bucket=S3_BUCKET, Key=s3_key)
+        print(f"[handler] Deleted input object: s3://{S3_BUCKET}/{s3_key}")
+    except Exception as e:
+        print(f"[handler] WARNING: failed to delete input object {s3_key}: {e}")
 
 
 def prepare_workflow(
@@ -547,14 +553,14 @@ def handler(job):
 
     Video Translate workflow (video input):
     {
-        "video": "<raw base64 string of .mp4>",
+        "s3_key": "video-translate-uploads/<...>",
         "media_type": "video",
         "workflow_type": "video-translate"
     }
 
     Video Translate workflow (audio input):
     {
-        "audio": "<raw base64 string of audio file>",
+        "s3_key": "video-translate-uploads/<...>",
         "audio_extension": "mp3" | "wav" | "flac" | "m4a" | "ogg",
         "media_type": "audio",
         "workflow_type": "video-translate"
@@ -675,8 +681,19 @@ def _handle_image_workflow(job_input: dict, workflow_type: str, start_time: floa
 
 
 def _handle_video_translate(job_input: dict, start_time: float) -> dict:
-    """Run the video-translate workflow: video or audio -> translated audio."""
+    """
+    Run the video-translate workflow: video or audio -> translated audio.
+
+    The browser uploads the source file directly to S3 via the multipart
+    upload API (`/api/video-translate-upload`) and forwards only the S3 key
+    in `s3_key`. Base64 input is no longer accepted because it does not
+    scale to 10 GB videos.
+    """
     saved_filename = None
+    s3_key = job_input.get("s3_key")
+
+    if not s3_key or not isinstance(s3_key, str):
+        return {"error": "Missing required field: s3_key"}
 
     media_type = (job_input.get("media_type") or "video").lower()
     if media_type not in ("video", "audio"):
@@ -685,29 +702,28 @@ def _handle_video_translate(job_input: dict, start_time: float) -> dict:
     extra_params: dict = {"media_type": media_type}
 
     if media_type == "audio":
-        audio_b64 = job_input.get("audio")
-        if not audio_b64:
-            return {"error": "Missing required field: audio (base64)"}
         ext = (job_input.get("audio_extension") or "mp3").lower().lstrip(".")
         if ext not in ("mp3", "wav", "flac", "m4a", "ogg"):
             ext = "mp3"
         saved_filename = f"input_{uuid.uuid4().hex[:8]}.{ext}"
-        print(f"[handler] Job started: workflow=video-translate, media_type=audio, ext={ext}")
+        print(
+            f"[handler] Job started: workflow=video-translate, "
+            f"media_type=audio, ext={ext}, s3_key={s3_key}"
+        )
     else:
-        video_b64 = job_input.get("video")
-        if not video_b64:
-            return {"error": "Missing required field: video (base64)"}
         saved_filename = f"input_{uuid.uuid4().hex[:8]}.mp4"
-        print(f"[handler] Job started: workflow=video-translate, media_type=video")
+        print(
+            f"[handler] Job started: workflow=video-translate, "
+            f"media_type=video, s3_key={s3_key}"
+        )
 
     try:
         workflow = load_workflow("video-translate")
 
+        download_s3_key_to_input(s3_key, saved_filename)
         if media_type == "audio":
-            save_audio_to_input(job_input["audio"], saved_filename)
             extra_params["audio_filename"] = saved_filename
         else:
-            save_video_to_input(job_input["video"], saved_filename)
             extra_params["video_filename"] = saved_filename
 
         prepare_workflow(
@@ -759,6 +775,11 @@ def _handle_video_translate(job_input: dict, start_time: float) -> dict:
                     os.remove(fpath)
         except Exception:
             pass
+        # Always remove the upload object so abandoned/failed jobs don't
+        # accumulate. Bucket lifecycle rules should also be configured as
+        # a safety net (e.g. expire video-translate-uploads/ after 48h).
+        if s3_key:
+            delete_s3_key(s3_key)
 
 
 # =============================================================================

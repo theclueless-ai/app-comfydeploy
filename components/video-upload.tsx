@@ -12,6 +12,8 @@ interface VideoUploadProps {
   accept?: string;
   required?: boolean;
   maxSizeMB?: number;
+  // Optional upload progress (0-1). When provided, the picker shows a bar.
+  uploadProgress?: number | null;
 }
 
 export function VideoUpload({
@@ -21,7 +23,8 @@ export function VideoUpload({
   onChange,
   accept = "video/mp4",
   required = false,
-  maxSizeMB = 100,
+  maxSizeMB = 10240,
+  uploadProgress,
 }: VideoUploadProps) {
   const [dragActive, setDragActive] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -115,26 +118,42 @@ export function VideoUpload({
         />
 
         {value ? (
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              <Film className="w-4 h-4 text-brand-pink flex-shrink-0" />
-              <div className="min-w-0">
-                <p className="text-xs font-medium text-[rgb(var(--foreground))] truncate">
-                  {value.name}
-                </p>
-                <p className="text-xs text-[rgb(var(--muted-foreground))]">
-                  {formatBytes(value.size)}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <Film className="w-4 h-4 text-brand-pink flex-shrink-0" />
+                <div className="min-w-0">
+                  <p className="text-xs font-medium text-[rgb(var(--foreground))] truncate">
+                    {value.name}
+                  </p>
+                  <p className="text-xs text-[rgb(var(--muted-foreground))]">
+                    {formatBytes(value.size)}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={clearFile}
+                disabled={typeof uploadProgress === "number"}
+                className="flex-shrink-0 p-1 rounded-md bg-[rgb(var(--secondary))] hover:bg-[rgb(var(--accent))] text-[rgb(var(--foreground))] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                type="button"
+                title="Remove file"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+            {typeof uploadProgress === "number" && (
+              <div>
+                <div className="h-1 w-full overflow-hidden rounded bg-[rgb(var(--secondary))]">
+                  <div
+                    className="h-full bg-brand-pink transition-[width] duration-150 ease-linear"
+                    style={{ width: `${Math.min(100, Math.max(0, uploadProgress * 100))}%` }}
+                  />
+                </div>
+                <p className="mt-1 text-xs text-[rgb(var(--muted-foreground))]">
+                  Subiendo a S3... {Math.round(Math.min(1, Math.max(0, uploadProgress)) * 100)}%
                 </p>
               </div>
-            </div>
-            <button
-              onClick={clearFile}
-              className="flex-shrink-0 p-1 rounded-md bg-[rgb(var(--secondary))] hover:bg-[rgb(var(--accent))] text-[rgb(var(--foreground))] transition-colors"
-              type="button"
-              title="Remove file"
-            >
-              <X className="w-3 h-3" />
-            </button>
+            )}
           </div>
         ) : (
           <label

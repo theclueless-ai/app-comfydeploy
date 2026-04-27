@@ -27,6 +27,9 @@ export interface WorkflowInput {
   // Audio specific: duration bounds in seconds (validated client-side)
   minDuration?: number;
   maxDuration?: number;
+  // Video / audio specific: per-file size cap (megabytes). Defaults differ
+  // per component (10240 for video, 50 for audio).
+  maxSizeMB?: number;
   // Conditional visibility: only render this input when another field has a specific value
   showWhen?: { field: string; value: string };
 }
