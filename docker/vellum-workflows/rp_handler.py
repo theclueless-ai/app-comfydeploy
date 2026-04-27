@@ -76,6 +76,8 @@ ORBITAL_ZOOM = "293"            # ImpactSwitch: zoom level (1-3)
 
 # Video Translate workflow node IDs
 VIDEO_TRANSLATE_LOAD_VIDEO = "82"  # VHS_LoadVideo: video filename in ComfyUI input dir
+VIDEO_TRANSLATE_LOAD_AUDIO = "89"  # LoadAudio: audio filename in ComfyUI input dir
+VIDEO_TRANSLATE_SWITCH = "88"      # ComfySwitchNode: false=video (82), true=audio (89)
 VIDEO_TRANSLATE_SAVE_AUDIO = "33"  # SaveAudio: output audio node (filename_prefix="audio/ComfyUI")
 
 # Audio file extensions we may get from SaveAudio (ComfyUI defaults to .flac)
@@ -140,6 +142,19 @@ def save_video_to_input(video_base64: str, filename: str) -> str:
     return filename
 
 
+def save_audio_to_input(audio_base64: str, filename: str) -> str:
+    """
+    Decode a base64 audio file and save it to the ComfyUI input directory.
+    Returns the filename (not the full path) for use in LoadAudio node.
+    """
+    audio_data = base64.b64decode(audio_base64)
+    filepath = os.path.join(COMFYUI_INPUT_DIR, filename)
+    with open(filepath, "wb") as f:
+        f.write(audio_data)
+    print(f"[handler] Saved input audio: {filepath} ({len(audio_data)} bytes)")
+    return filename
+
+
 def prepare_workflow(
     workflow: dict,
     image_filename: str,
@@ -164,17 +179,39 @@ def prepare_workflow(
       - Node 293 (ImpactSwitch): zoom level (1-3)
     """
     if workflow_type == "video-translate":
-        # Video Translate uses VHS_LoadVideo (node 82) — inject filename.
-        video_filename = extra_params.get("video_filename")
-        if not video_filename:
-            raise ValueError("video-translate workflow requires a video filename")
-        if VIDEO_TRANSLATE_LOAD_VIDEO in workflow:
-            workflow[VIDEO_TRANSLATE_LOAD_VIDEO]["inputs"]["video"] = video_filename
-            print(f"[handler] Injected video '{video_filename}' into node {VIDEO_TRANSLATE_LOAD_VIDEO}")
-        else:
+        # Video Translate routes the audio source through ComfySwitchNode (node 88):
+        #   switch=False -> uses VHS_LoadVideo (node 82) audio output
+        #   switch=True  -> uses LoadAudio (node 89) audio output
+        media_type = extra_params.get("media_type", "video")
+
+        if VIDEO_TRANSLATE_SWITCH not in workflow:
             raise ValueError(
-                f"Node {VIDEO_TRANSLATE_LOAD_VIDEO} (VHS_LoadVideo) not found in video-translate workflow"
+                f"Node {VIDEO_TRANSLATE_SWITCH} (ComfySwitchNode) not found in video-translate workflow"
             )
+
+        if media_type == "audio":
+            audio_filename = extra_params.get("audio_filename")
+            if not audio_filename:
+                raise ValueError("video-translate (audio) workflow requires an audio filename")
+            if VIDEO_TRANSLATE_LOAD_AUDIO not in workflow:
+                raise ValueError(
+                    f"Node {VIDEO_TRANSLATE_LOAD_AUDIO} (LoadAudio) not found in video-translate workflow"
+                )
+            workflow[VIDEO_TRANSLATE_LOAD_AUDIO]["inputs"]["audio"] = audio_filename
+            workflow[VIDEO_TRANSLATE_SWITCH]["inputs"]["switch"] = True
+            print(f"[handler] Injected audio '{audio_filename}' into node {VIDEO_TRANSLATE_LOAD_AUDIO}, switch=True")
+        else:
+            video_filename = extra_params.get("video_filename")
+            if not video_filename:
+                raise ValueError("video-translate (video) workflow requires a video filename")
+            if VIDEO_TRANSLATE_LOAD_VIDEO not in workflow:
+                raise ValueError(
+                    f"Node {VIDEO_TRANSLATE_LOAD_VIDEO} (VHS_LoadVideo) not found in video-translate workflow"
+                )
+            workflow[VIDEO_TRANSLATE_LOAD_VIDEO]["inputs"]["video"] = video_filename
+            workflow[VIDEO_TRANSLATE_SWITCH]["inputs"]["switch"] = False
+            print(f"[handler] Injected video '{video_filename}' into node {VIDEO_TRANSLATE_LOAD_VIDEO}, switch=False")
+
         return workflow
 
     if workflow_type == "orbital":
@@ -508,9 +545,18 @@ def handler(job):
         "workflow_type": "piel" | "edad" | "makeup" | "pecas" | "orbital"
     }
 
-    Video Translate workflow:
+    Video Translate workflow (video input):
     {
         "video": "<raw base64 string of .mp4>",
+        "media_type": "video",
+        "workflow_type": "video-translate"
+    }
+
+    Video Translate workflow (audio input):
+    {
+        "audio": "<raw base64 string of audio file>",
+        "audio_extension": "mp3" | "wav" | "flac" | "m4a" | "ogg",
+        "media_type": "audio",
         "workflow_type": "video-translate"
     }
 
@@ -629,27 +675,47 @@ def _handle_image_workflow(job_input: dict, workflow_type: str, start_time: floa
 
 
 def _handle_video_translate(job_input: dict, start_time: float) -> dict:
-    """Run the video-translate workflow: video -> translated audio."""
-    video_filename = None
+    """Run the video-translate workflow: video or audio -> translated audio."""
+    saved_filename = None
 
-    video_b64 = job_input.get("video")
-    if not video_b64:
-        return {"error": "Missing required field: video (base64)"}
+    media_type = (job_input.get("media_type") or "video").lower()
+    if media_type not in ("video", "audio"):
+        return {"error": f"media_type must be 'video' or 'audio', got: {media_type}"}
 
-    print(f"[handler] Job started: workflow=video-translate")
+    extra_params: dict = {"media_type": media_type}
+
+    if media_type == "audio":
+        audio_b64 = job_input.get("audio")
+        if not audio_b64:
+            return {"error": "Missing required field: audio (base64)"}
+        ext = (job_input.get("audio_extension") or "mp3").lower().lstrip(".")
+        if ext not in ("mp3", "wav", "flac", "m4a", "ogg"):
+            ext = "mp3"
+        saved_filename = f"input_{uuid.uuid4().hex[:8]}.{ext}"
+        print(f"[handler] Job started: workflow=video-translate, media_type=audio, ext={ext}")
+    else:
+        video_b64 = job_input.get("video")
+        if not video_b64:
+            return {"error": "Missing required field: video (base64)"}
+        saved_filename = f"input_{uuid.uuid4().hex[:8]}.mp4"
+        print(f"[handler] Job started: workflow=video-translate, media_type=video")
 
     try:
         workflow = load_workflow("video-translate")
 
-        video_filename = f"input_{uuid.uuid4().hex[:8]}.mp4"
-        save_video_to_input(video_b64, video_filename)
+        if media_type == "audio":
+            save_audio_to_input(job_input["audio"], saved_filename)
+            extra_params["audio_filename"] = saved_filename
+        else:
+            save_video_to_input(job_input["video"], saved_filename)
+            extra_params["video_filename"] = saved_filename
 
         prepare_workflow(
             workflow,
             image_filename="",  # unused for video-translate
             scale_factor=0,     # unused for video-translate
             workflow_type="video-translate",
-            extra_params={"video_filename": video_filename},
+            extra_params=extra_params,
         )
 
         prompt_id = queue_prompt(workflow)
@@ -687,8 +753,8 @@ def _handle_video_translate(job_input: dict, start_time: float) -> dict:
         return {"error": str(e)}
     finally:
         try:
-            if video_filename:
-                fpath = os.path.join(COMFYUI_INPUT_DIR, video_filename)
+            if saved_filename:
+                fpath = os.path.join(COMFYUI_INPUT_DIR, saved_filename)
                 if os.path.exists(fpath):
                     os.remove(fpath)
         except Exception:

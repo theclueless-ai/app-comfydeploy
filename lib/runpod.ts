@@ -741,7 +741,10 @@ export interface VellumOrbitalWorkflowInput {
 
 export interface VideoTranslateWorkflowInput {
   workflow: any;
-  input_video: string; // Base64 data URI (.mp4)
+  media_type: "video" | "audio";
+  input_video?: string; // Base64 data URI (.mp4) — when media_type === "video"
+  input_audio?: string; // Base64 data URI (audio file) — when media_type === "audio"
+  audio_extension?: string; // e.g. "mp3", "wav", "flac" — only used when media_type === "audio"
 }
 
 /**
@@ -1103,18 +1106,34 @@ export async function runVellumOrbitalWorkflowAsync(
 
 /**
  * Build the workflow payload for Video Translate.
- * The handler decodes the base64 video, saves it to ComfyUI's input dir,
- * and injects the filename into node 82 (VHS_LoadVideo).
+ * The handler decodes the base64 media, saves it to ComfyUI's input dir,
+ * and injects the filename into node 82 (VHS_LoadVideo) or node 89
+ * (LoadAudio), and toggles the ComfySwitchNode (node 88) accordingly.
  */
 function buildVideoTranslateWorkflowPayload(input: VideoTranslateWorkflowInput) {
-  let videoBase64 = input.input_video;
-  if (videoBase64.includes(",")) {
-    videoBase64 = videoBase64.split(",")[1];
+  const stripDataUri = (b64: string) => (b64.includes(",") ? b64.split(",")[1] : b64);
+
+  if (input.media_type === "audio") {
+    if (!input.input_audio) {
+      throw new Error("input_audio is required when media_type is 'audio'");
+    }
+    return {
+      input: {
+        audio: stripDataUri(input.input_audio),
+        audio_extension: input.audio_extension || "mp3",
+        media_type: "audio",
+        workflow_type: "video-translate",
+      },
+    };
   }
 
+  if (!input.input_video) {
+    throw new Error("input_video is required when media_type is 'video'");
+  }
   return {
     input: {
-      video: videoBase64,
+      video: stripDataUri(input.input_video),
+      media_type: "video",
       workflow_type: "video-translate",
     },
   };

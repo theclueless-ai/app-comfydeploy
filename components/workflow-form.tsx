@@ -81,6 +81,16 @@ export function WorkflowForm({
     // Validate required inputs
     const missingInputs = workflow.inputs
       .filter((input) => {
+        // Skip inputs that are hidden by showWhen — they aren't being collected
+        if (input.showWhen) {
+          const currentValue = inputs[input.showWhen.field];
+          const defaultValue = workflow.inputs.find(
+            (i) => i.id === input.showWhen!.field
+          )?.defaultValue;
+          const resolvedValue = currentValue ?? defaultValue;
+          if (resolvedValue !== input.showWhen.value) return false;
+        }
+
         if (input.type === "audio-mode") {
           // For audio-mode, validate based on current mode
           if (audioMode === "tts") {
@@ -104,10 +114,28 @@ export function WorkflowForm({
       return;
     }
 
+    // Determine which inputs are currently hidden by showWhen so we don't
+    // submit stale values from a previously-visible field.
+    const hiddenInputIds = new Set(
+      workflow.inputs
+        .filter((input) => {
+          if (!input.showWhen) return false;
+          const currentValue = inputs[input.showWhen.field];
+          const defaultValue = workflow.inputs.find(
+            (i) => i.id === input.showWhen!.field
+          )?.defaultValue;
+          const resolvedValue = currentValue ?? defaultValue;
+          return resolvedValue !== input.showWhen.value;
+        })
+        .map((input) => input.id)
+    );
+
     // Filter out null values and add mode
     const validInputs = Object.entries(inputs).reduce(
       (acc, [key, value]) => {
-        if (value !== null && value !== undefined) acc[key] = value;
+        if (value === null || value === undefined) return acc;
+        if (hiddenInputIds.has(key)) return acc;
+        acc[key] = value;
         return acc;
       },
       {} as Record<string, File | string | number>

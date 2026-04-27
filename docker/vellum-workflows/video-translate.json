@@ -6,8 +6,8 @@
       "translator": "google",
       "to_language": "en",
       "audio": [
-        "82",
-        2
+        "88",
+        0
       ]
     },
     "class_type": "Apply WhisperX",
@@ -17,7 +17,6 @@
   },
   "9": {
     "inputs": {
-      "text_0": "",
       "text": [
         "40",
         0
@@ -119,6 +118,33 @@
     "class_type": "VHS_BatchManager",
     "_meta": {
       "title": "Meta Batch Manager 🎥🅥🅗🅢"
+    }
+  },
+  "88": {
+    "inputs": {
+      "switch": false,
+      "on_false": [
+        "82",
+        2
+      ],
+      "on_true": [
+        "89",
+        0
+      ]
+    },
+    "class_type": "ComfySwitchNode",
+    "_meta": {
+      "title": "Interruptor"
+    }
+  },
+  "89": {
+    "inputs": {
+      "audio": "10.mp3",
+      "audioUI": "/api/view?filename=10.mp3&type=input&subfolder=&rand=0.3381209228784836"
+    },
+    "class_type": "LoadAudio",
+    "_meta": {
+      "title": "CargarAudio"
     }
   }
 }
