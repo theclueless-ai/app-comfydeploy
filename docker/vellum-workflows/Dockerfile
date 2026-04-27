@@ -47,9 +47,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # =============================================================================
 # PYTHON / PYTORCH (CUDA 12.1, optimized for 4090 Ada Lovelace)
-# torchaudio deliberately excluded — not needed for image workflows and it
-# triggers a circular-import crash with this CUDA/PyTorch combination.
-# xFormers also excluded — ComfyUI uses --use-pytorch-cross-attention instead.
+# torchaudio is installed later (pinned to the CUDA 12.1 build) — required by
+# WhisperX and by ComfyUI's nodes_audio (LoadAudio / SaveAudio) for the
+# video-translate workflow.
+# xFormers is excluded — ComfyUI uses --use-pytorch-cross-attention instead.
 # =============================================================================
 RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
     pip install --no-cache-dir \
@@ -62,8 +63,7 @@ RUN pip install --no-cache-dir --upgrade pip setuptools wheel && \
 RUN git clone https://github.com/comfyanonymous/ComfyUI.git ${COMFYUI_DIR} && \
     cd ${COMFYUI_DIR} && \
     pip install --no-cache-dir -r requirements.txt && \
-    rm -f comfy_extras/nodes_audio.py \
-          comfy_extras/nodes_lt_audio.py \
+    rm -f comfy_extras/nodes_lt_audio.py \
           comfy_extras/nodes_audio_encoder.py
 
 # =============================================================================
@@ -167,7 +167,9 @@ RUN git clone https://github.com/yolain/ComfyUI-Easy-Use.git && \
 #   - VideoHelperSuite: VHS_LoadVideo, VHS_BatchManager
 #   - AlekPet nodes: DeepTranslatorTextNode
 #   - Whisper-Translator: Apply WhisperX
-#   - ElevenLabs integration: ElevenlabsTextToSpeech, SaveAudio
+#   - ElevenLabs integration: ElevenlabsTextToSpeech
+# (LoadAudio / SaveAudio come from ComfyUI core's comfy_extras/nodes_audio.py,
+#  which we deliberately KEEP — see the ComfyUI clone step above.)
 # torchaudio is reinstalled further down (after the existing uninstall step)
 # pinned to the CUDA 12.1 build so WhisperX has a working audio backend.
 # =============================================================================
