@@ -1,10 +1,16 @@
 """
-RunPod Serverless Handler for Vellum Workflows (piel, edad, makeup, pecas, orbital).
+RunPod Serverless Handler for Vellum Workflows (piel, edad, makeup, pecas, pelo, orbital).
 
 Receives a job with:
   - image: raw base64 string (no data URI prefix)
   - scaleFactor: 1 (4K) or 2 (8K)
-  - workflow_type: "piel" | "edad" | "makeup" | "pecas" | "orbital"
+  - workflow_type: "piel" | "edad" | "makeup" | "pecas" | "pelo" | "orbital"
+
+  Makeup-specific extra fields:
+  - makeup_ref: raw base64 string (makeup reference image)
+
+  Pelo-specific extra fields:
+  - pelo_ref: raw base64 string (hair reference image)
 
   Orbital-specific extra fields:
   - horizontal_select: 1-9 (camera horizontal angle)
@@ -41,6 +47,7 @@ WORKFLOW_FILES = {
     "edad":            os.path.join(WORKFLOWS_DIR, "vellum-edad.json"),
     "makeup":          os.path.join(WORKFLOWS_DIR, "vellum-makeup.json"),
     "pecas":           os.path.join(WORKFLOWS_DIR, "vellum-pecas.json"),
+    "pelo":            os.path.join(WORKFLOWS_DIR, "vellum-pelo.json"),
     "orbital":         os.path.join(WORKFLOWS_DIR, "vellum-orbital.json"),
     "video-translate": os.path.join(WORKFLOWS_DIR, "video-translate.json"),
 }
@@ -63,9 +70,10 @@ NODE_LOAD_IMAGE = "32"       # LoadImage node (main image)
 NODE_SCALE_SELECTOR = "261"  # INTConstant: 1=4K, 2=8K
 NODE_SAVE_IMAGE = "254"      # SaveImage output node
 
-# Workflow-specific node IDs (piel/edad/makeup/pecas)
+# Workflow-specific node IDs (piel/edad/makeup/pecas/pelo)
 NODE_OPTION_SWITCH = "268"   # ImpactSwitch: edad (1-6) / pecas (1-3)
 NODE_MAKEUP_REF = "264"      # LoadImage: makeup reference image
+NODE_PELO_REF = "264"        # LoadImage: hair reference image (same node ID as makeup)
 
 # Orbital workflow node IDs
 ORBITAL_LOAD_IMAGE_B64 = "400"  # easy loadImageBase64: injects raw base64 directly
@@ -171,11 +179,11 @@ def prepare_workflow(
     """
     Inject user inputs into the workflow.
 
-    For piel/edad/makeup/pecas:
+    For piel/edad/makeup/pecas/pelo:
       - Node 32  (LoadImage):   image filename
       - Node 261 (INTConstant): scale value (1=4K, 2=8K)
       - Node 268 (ImpactSwitch): edad (1-6) / pecas (1-3)
-      - Node 264 (LoadImage):   makeup reference filename
+      - Node 264 (LoadImage):   makeup or hair (pelo) reference filename
 
     For orbital:
       - Node 400 (easy loadImageBase64): raw base64 injected into base64_data
@@ -263,7 +271,7 @@ def prepare_workflow(
 
         return workflow
 
-    # --- piel / edad / makeup / pecas ---
+    # --- piel / edad / makeup / pecas / pelo ---
 
     # Inject main image
     if NODE_LOAD_IMAGE in workflow:
@@ -303,6 +311,14 @@ def prepare_workflow(
             print(f"[handler] Injected freckle_select={freckle_select} into node {NODE_OPTION_SWITCH}")
         else:
             raise ValueError(f"Node {NODE_OPTION_SWITCH} (ImpactSwitch) not found in pecas workflow")
+
+    elif workflow_type == "pelo":
+        pelo_filename = extra_params.get("pelo_filename")
+        if pelo_filename and NODE_PELO_REF in workflow:
+            workflow[NODE_PELO_REF]["inputs"]["image"] = pelo_filename
+            print(f"[handler] Injected pelo ref '{pelo_filename}' into node {NODE_PELO_REF}")
+        elif NODE_PELO_REF not in workflow:
+            raise ValueError(f"Node {NODE_PELO_REF} (LoadImage) not found in pelo workflow")
 
     return workflow
 
@@ -544,11 +560,11 @@ def handler(job):
     """
     RunPod serverless handler.
 
-    Image-based workflows (piel/edad/makeup/pecas/orbital):
+    Image-based workflows (piel/edad/makeup/pecas/pelo/orbital):
     {
         "image": "<raw base64 string>",
         "scaleFactor": 1 or 2,
-        "workflow_type": "piel" | "edad" | "makeup" | "pecas" | "orbital"
+        "workflow_type": "piel" | "edad" | "makeup" | "pecas" | "pelo" | "orbital"
     }
 
     Video Translate workflow (video input):
@@ -585,7 +601,7 @@ def handler(job):
 
 
 def _handle_image_workflow(job_input: dict, workflow_type: str, start_time: float) -> dict:
-    """Run an image-in / image-out workflow (piel, edad, makeup, pecas, orbital)."""
+    """Run an image-in / image-out workflow (piel, edad, makeup, pecas, pelo, orbital)."""
     image_filename = None
     extra_params: dict = {}
 
@@ -624,6 +640,13 @@ def _handle_image_workflow(job_input: dict, workflow_type: str, start_time: floa
             makeup_filename = f"makeup_{uuid.uuid4().hex[:8]}.png"
             save_image_to_input(makeup_b64, makeup_filename)
             extra_params["makeup_filename"] = makeup_filename
+        elif workflow_type == "pelo":
+            pelo_b64 = job_input.get("pelo_ref")
+            if not pelo_b64:
+                return {"error": "Missing required field: pelo_ref (base64)"}
+            pelo_filename = f"pelo_{uuid.uuid4().hex[:8]}.png"
+            save_image_to_input(pelo_b64, pelo_filename)
+            extra_params["pelo_filename"] = pelo_filename
         elif workflow_type == "edad":
             extra_params["age_select"] = job_input.get("age_select", 3)
         elif workflow_type == "pecas":
@@ -670,7 +693,7 @@ def _handle_image_workflow(job_input: dict, workflow_type: str, start_time: floa
         traceback.print_exc()
         return {"error": str(e)}
     finally:
-        for fname in [image_filename, extra_params.get("makeup_filename")]:
+        for fname in [image_filename, extra_params.get("makeup_filename"), extra_params.get("pelo_filename")]:
             try:
                 if fname:
                     fpath = os.path.join(COMFYUI_INPUT_DIR, fname)

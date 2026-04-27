@@ -1,5 +1,5 @@
 # =============================================================================
-# Vellum Workflows Docker Image (piel, edad, makeup, pecas, orbital)
+# Vellum Workflows Docker Image (piel, edad, makeup, pecas, pelo, orbital)
 # Optimized for NVIDIA RTX 4090 (24GB VRAM, CUDA 12.x)
 #
 # Build:
@@ -246,11 +246,12 @@ WORKDIR /
 # Place all these files alongside the Dockerfile before building:
 #   Dockerfile, start.sh, rp_handler.py,
 #   vellum-piel.json, vellum-edad.json, vellum-makeup.json,
-#   vellum-pecas.json, vellum-orbital.json, video-translate.json
+#   vellum-pecas.json, vellum-pelo.json, vellum-orbital.json, video-translate.json
 COPY vellum-piel.json     /workflows/vellum-piel.json
 COPY vellum-edad.json     /workflows/vellum-edad.json
 COPY vellum-makeup.json   /workflows/vellum-makeup.json
 COPY vellum-pecas.json    /workflows/vellum-pecas.json
+COPY vellum-pelo.json     /workflows/vellum-pelo.json
 COPY vellum-orbital.json  /workflows/vellum-orbital.json
 COPY video-translate.json /workflows/video-translate.json
 
