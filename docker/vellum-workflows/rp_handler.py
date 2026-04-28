@@ -30,6 +30,7 @@ import base64
 import glob as glob_module
 import requests
 import boto3
+import subprocess
 from botocore.config import Config
 from io import BytesIO
 
@@ -164,6 +165,40 @@ def download_s3_key_to_input(s3_key: str, filename: str) -> str:
     size = os.path.getsize(filepath)
     print(f"[handler] Download complete: {filepath} ({size / 1024 / 1024:.1f} MB)")
     return filename
+
+
+def extract_audio_from_video(video_filename: str, audio_filename: str) -> str:
+    """
+    Extract a video's audio track to a standalone mp3 in the ComfyUI input dir.
+
+    VHS_LoadVideo's audio extraction uses ffmpeg's native AAC decoder, which
+    chokes on AAC streams produced by some Adobe / Mainconcept encoders
+    (errors like "Gain control is not implemented" / "channel element X.Y is
+    not allocated"). Re-encoding to mp3 with libmp3lame avoids the buggy AAC
+    path entirely; -err_detect ignore_err swallows decoder hiccups so the
+    extraction completes even when the source has a few bad frames.
+    """
+    video_path = os.path.join(COMFYUI_INPUT_DIR, video_filename)
+    audio_path = os.path.join(COMFYUI_INPUT_DIR, audio_filename)
+    cmd = [
+        "ffmpeg", "-hide_banner", "-loglevel", "error", "-y",
+        "-err_detect", "ignore_err",
+        "-i", video_path,
+        "-vn",
+        "-acodec", "libmp3lame", "-q:a", "4",
+        audio_path,
+    ]
+    print(f"[handler] Extracting audio: {video_filename} -> {audio_filename}")
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    if result.returncode != 0 or not os.path.exists(audio_path) or os.path.getsize(audio_path) == 0:
+        stderr = (result.stderr or "").strip()
+        raise RuntimeError(
+            f"ffmpeg failed to extract audio from {video_filename} "
+            f"(rc={result.returncode}): {stderr[:500]}"
+        )
+    size = os.path.getsize(audio_path)
+    print(f"[handler] Audio extracted: {audio_path} ({size / 1024:.1f} KB)")
+    return audio_filename
 
 
 def delete_s3_key(s3_key: str) -> None:
@@ -727,6 +762,7 @@ def _handle_video_translate(job_input: dict, start_time: float) -> dict:
     scale to 10 GB videos.
     """
     saved_filename = None
+    extracted_audio_filename = None
     s3_key = job_input.get("s3_key")
 
     if not s3_key or not isinstance(s3_key, str):
@@ -736,7 +772,10 @@ def _handle_video_translate(job_input: dict, start_time: float) -> dict:
     if media_type not in ("video", "audio"):
         return {"error": f"media_type must be 'video' or 'audio', got: {media_type}"}
 
-    extra_params: dict = {"media_type": media_type}
+    # The workflow only consumes the audio track of the source. We always
+    # route through LoadAudio (node 89) — for videos we extract the audio
+    # ourselves with ffmpeg to bypass VHS_LoadVideo's brittle AAC decoder.
+    extra_params: dict = {"media_type": "audio"}
 
     if media_type == "audio":
         ext = (job_input.get("audio_extension") or "mp3").lower().lstrip(".")
@@ -758,10 +797,13 @@ def _handle_video_translate(job_input: dict, start_time: float) -> dict:
         workflow = load_workflow("video-translate")
 
         download_s3_key_to_input(s3_key, saved_filename)
+
         if media_type == "audio":
             extra_params["audio_filename"] = saved_filename
         else:
-            extra_params["video_filename"] = saved_filename
+            extracted_audio_filename = f"input_{uuid.uuid4().hex[:8]}.mp3"
+            extract_audio_from_video(saved_filename, extracted_audio_filename)
+            extra_params["audio_filename"] = extracted_audio_filename
 
         prepare_workflow(
             workflow,
@@ -805,13 +847,15 @@ def _handle_video_translate(job_input: dict, start_time: float) -> dict:
         traceback.print_exc()
         return {"error": str(e)}
     finally:
-        try:
-            if saved_filename:
-                fpath = os.path.join(COMFYUI_INPUT_DIR, saved_filename)
+        for fname in (saved_filename, extracted_audio_filename):
+            if not fname:
+                continue
+            try:
+                fpath = os.path.join(COMFYUI_INPUT_DIR, fname)
                 if os.path.exists(fpath):
                     os.remove(fpath)
-        except Exception:
-            pass
+            except Exception:
+                pass
         # Always remove the upload object so abandoned/failed jobs don't
         # accumulate. Bucket lifecycle rules should also be configured as
         # a safety net (e.g. expire video-translate-uploads/ after 48h).
