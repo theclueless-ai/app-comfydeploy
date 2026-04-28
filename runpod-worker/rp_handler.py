@@ -25,8 +25,10 @@ import uuid
 import base64
 import glob
 import subprocess
+import threading
 import requests
 import boto3
+import websocket  # from websocket-client
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -51,6 +53,10 @@ MAX_AUDIO_DURATION_S = 90.0
 MAX_EXECUTION_TIME = 6000
 
 SEEDANCE_NODE_IDS = ["318", "320", "321", "322", "323", "324", "325", "326", "327"]
+
+# Stable per-process client id, used both when queueing prompts and when
+# subscribing to /ws so the WebSocket events line up with our prompts.
+CLIENT_ID = uuid.uuid4().hex
 
 
 # ---------------------------------------------------------------------------
@@ -204,7 +210,10 @@ def prepare_workflow(workflow: dict, inputs: dict) -> dict:
 # ComfyUI interaction
 # ---------------------------------------------------------------------------
 def queue_prompt(workflow: dict) -> str:
-    resp = requests.post(f"{COMFYUI_URL}/prompt", json={"prompt": workflow})
+    resp = requests.post(
+        f"{COMFYUI_URL}/prompt",
+        json={"prompt": workflow, "client_id": CLIENT_ID},
+    )
     if not resp.ok:
         # ComfyUI returns a JSON body describing which nodes / inputs failed
         # validation. Surface it verbatim so the caller can diagnose.
@@ -218,6 +227,116 @@ def queue_prompt(workflow: dict) -> str:
     prompt_id = resp.json()["prompt_id"]
     print(f"[ComfyUI] Queued prompt: {prompt_id}")
     return prompt_id
+
+
+class WorkflowProgressLogger:
+    """
+    Subscribe to ComfyUI's WebSocket and stream real per-node progress to
+    stdout (which RunPod captures as worker logs).
+
+    Without this, the worker only prints "Still running... (Ns elapsed)" every
+    30s because it polls /history. Inside long Seedance API calls, ComfyUI
+    itself doesn't print anything. With the WS feed we instead get
+    "[ComfyUI] Executing node 320 (SeedanceVideoGenerator)" and progress
+    percentages as they happen.
+    """
+
+    def __init__(self, prompt_id: str, node_class_by_id: dict):
+        self.prompt_id = prompt_id
+        self.node_class_by_id = node_class_by_id
+        self.current_node = None
+        self.current_node_started_at = None
+        self._stop = threading.Event()
+        self._thread = threading.Thread(target=self._run, daemon=True)
+
+    def start(self):
+        self._thread.start()
+
+    def stop(self):
+        self._stop.set()
+
+    def heartbeat_suffix(self) -> str:
+        if self.current_node is not None and self.current_node_started_at:
+            cls = self.node_class_by_id.get(str(self.current_node), "?")
+            node_elapsed = time.time() - self.current_node_started_at
+            return f"on node {self.current_node} ({cls}) for {node_elapsed:.0f}s"
+        return ""
+
+    def _run(self):
+        ws_url = (
+            COMFYUI_URL.replace("http://", "ws://").replace("https://", "wss://")
+            + f"/ws?clientId={CLIENT_ID}"
+        )
+        try:
+            ws = websocket.create_connection(ws_url, timeout=5)
+            ws.settimeout(1.0)
+        except Exception as e:
+            print(f"[ComfyUI/ws] Could not connect: {e}")
+            return
+
+        last_pct_node = None
+        last_pct = -1
+        try:
+            while not self._stop.is_set():
+                try:
+                    raw = ws.recv()
+                except websocket.WebSocketTimeoutException:
+                    continue
+                except Exception as e:
+                    print(f"[ComfyUI/ws] Connection lost: {e}")
+                    break
+                if not isinstance(raw, str):
+                    continue
+                try:
+                    msg = json.loads(raw)
+                except ValueError:
+                    continue
+
+                mtype = msg.get("type")
+                data = msg.get("data") or {}
+                if data.get("prompt_id") and data["prompt_id"] != self.prompt_id:
+                    continue
+
+                if mtype == "executing":
+                    node = data.get("node")
+                    if node is None:
+                        print(f"[ComfyUI] All nodes done for prompt {self.prompt_id}")
+                        self.current_node = None
+                    else:
+                        cls = self.node_class_by_id.get(str(node), "?")
+                        self.current_node = node
+                        self.current_node_started_at = time.time()
+                        print(f"[ComfyUI] Executing node {node} ({cls})")
+                elif mtype == "execution_cached":
+                    cached = data.get("nodes") or []
+                    if cached:
+                        print(f"[ComfyUI] Cached nodes: {cached}")
+                elif mtype == "progress":
+                    node = data.get("node")
+                    value = data.get("value", 0)
+                    maximum = data.get("max", 1) or 1
+                    pct = int(100 * value / maximum)
+                    # Throttle to ~every 10% per node, plus the final tick.
+                    if node != last_pct_node or pct >= last_pct + 10 or pct == 100:
+                        cls = self.node_class_by_id.get(str(node), "?")
+                        print(
+                            f"[ComfyUI] Node {node} ({cls}) progress: "
+                            f"{pct}% ({value}/{maximum})"
+                        )
+                        last_pct_node = node
+                        last_pct = pct
+                elif mtype == "execution_error":
+                    print(
+                        f"[ComfyUI] ERROR in node {data.get('node_id')} "
+                        f"({data.get('node_type')}): "
+                        f"{data.get('exception_type')}: "
+                        f"{data.get('exception_message')}"
+                    )
+        finally:
+            try:
+                ws.close()
+            except Exception:
+                pass
 
 
 def _extract_workflow_error(entry: dict) -> str:
@@ -252,8 +371,11 @@ def _extract_workflow_error(entry: dict) -> str:
     return "; ".join(msgs) if msgs else "Unknown error"
 
 
-def poll_until_complete(prompt_id: str) -> dict:
+def poll_until_complete(
+    prompt_id: str, progress: WorkflowProgressLogger | None = None
+) -> dict:
     start_time = time.time()
+    next_heartbeat = start_time + 30
 
     while True:
         elapsed = time.time() - start_time
@@ -283,8 +405,11 @@ def poll_until_complete(prompt_id: str) -> dict:
 
         time.sleep(2)
 
-        if int(elapsed) % 30 == 0 and elapsed > 0:
-            print(f"[ComfyUI] Still running... ({elapsed:.0f}s elapsed)")
+        if time.time() >= next_heartbeat:
+            suffix = progress.heartbeat_suffix() if progress else ""
+            tail = f" {suffix}" if suffix else ""
+            print(f"[ComfyUI] Still running... ({elapsed:.0f}s elapsed{tail})")
+            next_heartbeat += 30
 
 
 def find_output_video(history_entry: dict) -> str | None:
@@ -365,7 +490,17 @@ def handler(job: dict) -> dict:
         prompt_id = queue_prompt(workflow)
 
         print("[Step 4] Waiting for execution...")
-        history_entry = poll_until_complete(prompt_id)
+        node_class_by_id = {
+            nid: node.get("class_type", "?")
+            for nid, node in workflow.items()
+            if isinstance(node, dict)
+        }
+        progress = WorkflowProgressLogger(prompt_id, node_class_by_id)
+        progress.start()
+        try:
+            history_entry = poll_until_complete(prompt_id, progress)
+        finally:
+            progress.stop()
 
         print("[Step 5] Locating output video...")
         video_path = find_output_video(history_entry)
