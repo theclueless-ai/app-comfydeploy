@@ -63,6 +63,8 @@ RUN cd ${COMFYUI_DIR}/custom_nodes \
     && git clone --depth 1 https://github.com/theclueless-ai/video_concat_node.git \
     && git clone --depth 1 https://github.com/theclueless-ai/comfyui-seedance-nodes.git \
     && git clone --depth 1 https://github.com/theclueless-ai/comfyui-seed-1.5-utilidades.git \
+    && git clone --depth 1 https://github.com/theclueless-ai/comfyui-video-concat-9.git \
+    && git clone --depth 1 https://github.com/theclueless-ai/spech-to-speach-elevenlabs-node.git \
     && git clone --depth 1 https://github.com/theclueless-ai/ComfyUI-AudioDuration.git
 
 RUN for dir in ComfyUI-Custom-Scripts ComfyUI-Easy-Use ComfyUI-VideoHelperSuite \

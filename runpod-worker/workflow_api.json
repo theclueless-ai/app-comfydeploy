@@ -1,7 +1,7 @@
 {
   "19": {
     "inputs": {
-      "image": "CARA OFICIAL.png"
+      "image": "prueba_final_audio_00001.png"
     },
     "class_type": "LoadImage",
     "_meta": {
@@ -10,7 +10,7 @@
   },
   "21": {
     "inputs": {
-      "audio": "2403-Alex-laine-emiratos.mp3",
+      "audio": "1.mp3",
       "start_time": 0,
       "duration": 0
     },
@@ -37,7 +37,7 @@
   },
   "23": {
     "inputs": {
-      "text_0": "",
+      "text_0": "First up, Chappell Road, custom nipple ring bearing Muggler, referencing a 1998 archival piece, like, this isn't an al-",
       "text": [
         "22",
         0
@@ -67,7 +67,7 @@
   },
   "100": {
     "inputs": {
-      "text": "The woman looks at the camera and says:"
+      "text": "The woman speaks to the camera with a warm, natural expression, in a relaxed conversational tone with subtle pauses, as if talking casually to someone close:"
     },
     "class_type": "Text _O",
     "_meta": {
@@ -120,7 +120,7 @@
   },
   "118": {
     "inputs": {
-      "text_0": "",
+      "text_0": "it, this is a fashion jumpscare in the best way. She walked in and the carpet turned into a boss fight.",
       "text": [
         "117",
         0
@@ -294,22 +294,6 @@
       "title": "Audio Duration (INT)"
     }
   },
-  "237": {
-    "inputs": {
-      "filename_prefix": "video/prueba final",
-      "format": "auto",
-      "codec": "auto",
-      "video-preview": "",
-      "video": [
-        "356",
-        0
-      ]
-    },
-    "class_type": "SaveVideo",
-    "_meta": {
-      "title": "Guardar video"
-    }
-  },
   "240": {
     "inputs": {
       "expression": "a * (a >= 4)",
@@ -351,7 +335,7 @@
   },
   "243": {
     "inputs": {
-      "text": "2",
+      "text": "0",
       "anything": [
         "190",
         0
@@ -390,7 +374,7 @@
   },
   "247": {
     "inputs": {
-      "text": "10",
+      "text": "7",
       "anything": [
         "144",
         0
@@ -416,7 +400,7 @@
   },
   "249": {
     "inputs": {
-      "text": "10",
+      "text": "7",
       "anything": [
         "248",
         0
@@ -984,7 +968,7 @@
   },
   "318": {
     "inputs": {
-      "api_key": "",
+      "api_key": "43db4758-52b0-4b3b-87f5-a7eaf416ef98",
       "prompt": [
         "25",
         0
@@ -1021,7 +1005,7 @@
   },
   "320": {
     "inputs": {
-      "api_key": "",
+      "api_key": "43db4758-52b0-4b3b-87f5-a7eaf416ef98",
       "prompt": [
         "120",
         0
@@ -1048,11 +1032,7 @@
       "ref_url_3": "",
       "ref_url_4": "",
       "reference_video_url": "",
-      "reference_audio_url": "",
-      "first_frame": [
-        "318",
-        1
-      ]
+      "reference_audio_url": ""
     },
     "class_type": "SeedanceVideoGenerator",
     "_meta": {
@@ -1061,7 +1041,7 @@
   },
   "321": {
     "inputs": {
-      "api_key": "",
+      "api_key": "43db4758-52b0-4b3b-87f5-a7eaf416ef98",
       "prompt": [
         "193",
         0
@@ -1088,11 +1068,7 @@
       "ref_url_3": "",
       "ref_url_4": "",
       "reference_video_url": "",
-      "reference_audio_url": "",
-      "first_frame": [
-        "320",
-        1
-      ]
+      "reference_audio_url": ""
     },
     "class_type": "SeedanceVideoGenerator",
     "_meta": {
@@ -1101,7 +1077,7 @@
   },
   "322": {
     "inputs": {
-      "api_key": "",
+      "api_key": "43db4758-52b0-4b3b-87f5-a7eaf416ef98",
       "prompt": [
         "194",
         0
@@ -1128,11 +1104,7 @@
       "ref_url_3": "",
       "ref_url_4": "",
       "reference_video_url": "",
-      "reference_audio_url": "",
-      "first_frame": [
-        "321",
-        1
-      ]
+      "reference_audio_url": ""
     },
     "class_type": "SeedanceVideoGenerator",
     "_meta": {
@@ -1141,7 +1113,7 @@
   },
   "323": {
     "inputs": {
-      "api_key": "",
+      "api_key": "43db4758-52b0-4b3b-87f5-a7eaf416ef98",
       "prompt": [
         "264",
         0
@@ -1168,11 +1140,7 @@
       "ref_url_3": "",
       "ref_url_4": "",
       "reference_video_url": "",
-      "reference_audio_url": "",
-      "first_frame": [
-        "322",
-        1
-      ]
+      "reference_audio_url": ""
     },
     "class_type": "SeedanceVideoGenerator",
     "_meta": {
@@ -1181,7 +1149,7 @@
   },
   "324": {
     "inputs": {
-      "api_key": "",
+      "api_key": "43db4758-52b0-4b3b-87f5-a7eaf416ef98",
       "prompt": [
         "266",
         0
@@ -1208,11 +1176,7 @@
       "ref_url_3": "",
       "ref_url_4": "",
       "reference_video_url": "",
-      "reference_audio_url": "",
-      "first_frame": [
-        "323",
-        1
-      ]
+      "reference_audio_url": ""
     },
     "class_type": "SeedanceVideoGenerator",
     "_meta": {
@@ -1221,7 +1185,7 @@
   },
   "325": {
     "inputs": {
-      "api_key": "",
+      "api_key": "43db4758-52b0-4b3b-87f5-a7eaf416ef98",
       "prompt": [
         "265",
         0
@@ -1261,7 +1225,7 @@
   },
   "326": {
     "inputs": {
-      "api_key": "",
+      "api_key": "43db4758-52b0-4b3b-87f5-a7eaf416ef98",
       "prompt": [
         "267",
         0
@@ -1288,11 +1252,7 @@
       "ref_url_3": "",
       "ref_url_4": "",
       "reference_video_url": "",
-      "reference_audio_url": "",
-      "first_frame": [
-        "325",
-        1
-      ]
+      "reference_audio_url": ""
     },
     "class_type": "SeedanceVideoGenerator",
     "_meta": {
@@ -1301,7 +1261,7 @@
   },
   "327": {
     "inputs": {
-      "api_key": "",
+      "api_key": "43db4758-52b0-4b3b-87f5-a7eaf416ef98",
       "prompt": [
         "309",
         0
@@ -1328,11 +1288,7 @@
       "ref_url_3": "",
       "ref_url_4": "",
       "reference_video_url": "",
-      "reference_audio_url": "",
-      "first_frame": [
-        "326",
-        1
-      ]
+      "reference_audio_url": ""
     },
     "class_type": "SeedanceVideoGenerator",
     "_meta": {
@@ -1492,9 +1448,59 @@
       "title": "Duration Gate Video (Seed 1.5)"
     }
   },
-  "356": {
+  "359": {
     "inputs": {
-      "filename_prefix": "video_concat",
+      "api_key": "14d1718f6c6f0db512ea818c07f4beb4c45cc2406b267973c75e31303d9422f6",
+      "voice_id": "3uFrOtrqJ3noo6kBOJDp",
+      "model_id": "eleven_multilingual_sts_v2",
+      "output_format": "mp3_44100_128",
+      "remove_background_noise": false,
+      "audio": [
+        "363",
+        1
+      ]
+    },
+    "class_type": "ElevenLabsVoiceChanger",
+    "_meta": {
+      "title": "ElevenLabs Voice Changer"
+    }
+  },
+  "360": {
+    "inputs": {
+      "video_start_time": "0:00",
+      "video_end_time": "",
+      "audio": [
+        "359",
+        0
+      ],
+      "video": [
+        "363",
+        2
+      ]
+    },
+    "class_type": "AudioVideoCombine",
+    "_meta": {
+      "title": "AudioVideoCombine"
+    }
+  },
+  "361": {
+    "inputs": {
+      "filename_prefix": "video/Final-ok",
+      "format": "auto",
+      "codec": "auto",
+      "video": [
+        "360",
+        0
+      ]
+    },
+    "class_type": "SaveVideo",
+    "_meta": {
+      "title": "Guardar video"
+    }
+  },
+  "363": {
+    "inputs": {
+      "force_reencode": false,
       "video_1": [
         "345",
         0
@@ -1532,9 +1538,9 @@
         0
       ]
     },
-    "class_type": "VideoConcat",
+    "class_type": "VideoConcat9",
     "_meta": {
-      "title": "Video Concat (2-9 videos)"
+      "title": "🎬 Video Concat (9 videos)"
     }
   }
 }
