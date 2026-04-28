@@ -93,6 +93,12 @@ RUN pip install --no-cache-dir \
 COPY rp_handler.py ${COMFYUI_DIR}/rp_handler.py
 COPY workflow_api.json ${COMFYUI_DIR}/workflow_api.json
 COPY start.sh /start.sh
+COPY patch_seedance_download.py /tmp/patch_seedance_download.py
+
+# ---- Patch comfyui-seedance-nodes download_video with retry+resume ----
+# Without this, a single CDN hiccup in the middle of downloading a generated
+# video aborts the whole prompt and wastes 10+ minutes of upstream generation.
+RUN python3 /tmp/patch_seedance_download.py && rm /tmp/patch_seedance_download.py
 
 RUN dos2unix /start.sh ${COMFYUI_DIR}/rp_handler.py \
     && chmod +x /start.sh
