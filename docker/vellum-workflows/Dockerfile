@@ -198,10 +198,9 @@ RUN git clone https://github.com/sysL-padawan/comfyui-elevenlabs-integration.git
     cd comfyui-elevenlabs-integration && \
     if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; fi
 
-# NOTE: FancyTimerNode (node 73 "Execution Timer") is a tiny stats node.
-# If this node fails to resolve at runtime it will be a hard error — in that
-# case, delete node 73 from video-translate.json or install the provider
-# package. Leaving it in the workflow as delivered by the user.
+# NOTE: FancyTimerNode (the "Execution Timer" stats node) is not installed
+# here — it was a no-op leaf node, so we removed node #73 from
+# video-translate.json instead of pulling in another custom-node package.
 
 # =============================================================================
 # FIX: Re-pin transformers after all custom nodes (they may upgrade it).

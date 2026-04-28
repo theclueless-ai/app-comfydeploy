@@ -83,13 +83,6 @@
       "title": "Deep Translator Text Node"
     }
   },
-  "73": {
-    "inputs": {},
-    "class_type": "FancyTimerNode",
-    "_meta": {
-      "title": "Execution Timer"
-    }
-  },
   "82": {
     "inputs": {
       "video": "output.mp4",
