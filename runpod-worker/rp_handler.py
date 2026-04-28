@@ -220,6 +220,38 @@ def queue_prompt(workflow: dict) -> str:
     return prompt_id
 
 
+def _extract_workflow_error(entry: dict) -> str:
+    """
+    Pull the real failure reason out of a ComfyUI history entry.
+
+    ComfyUI surfaces per-node failures via `status.messages`, a list of
+    `[event_type, payload]` pairs. The payload for `execution_error` carries
+    `exception_type`, `exception_message`, and the failing `node_type`/`node_id`.
+    The previous implementation only inspected `outputs[*]["errors"]` (rarely
+    populated), so any custom-node failure showed up as "Unknown error".
+    """
+    msgs = []
+    for event in entry.get("status", {}).get("messages", []):
+        if not (isinstance(event, (list, tuple)) and len(event) == 2):
+            continue
+        event_type, payload = event
+        if event_type != "execution_error" or not isinstance(payload, dict):
+            continue
+        exc_type = payload.get("exception_type", "")
+        exc_msg = payload.get("exception_message", "")
+        node_type = payload.get("node_type", "")
+        node_id = payload.get("node_id", "")
+        msgs.append(
+            f"Node {node_id} ({node_type}): {exc_type}: {exc_msg}".strip(": ")
+        )
+
+    for node_id, node_info in entry.get("outputs", {}).items():
+        if isinstance(node_info, dict) and "errors" in node_info:
+            msgs.append(f"Node {node_id}: {node_info['errors']}")
+
+    return "; ".join(msgs) if msgs else "Unknown error"
+
+
 def poll_until_complete(prompt_id: str) -> dict:
     start_time = time.time()
 
@@ -242,12 +274,8 @@ def poll_until_complete(prompt_id: str) -> dict:
                     return entry
 
                 if status.get("status_str") == "error":
-                    error_msgs = []
-                    for node_id, node_info in entry.get("outputs", {}).items():
-                        if "errors" in node_info:
-                            error_msgs.append(f"Node {node_id}: {node_info['errors']}")
                     raise RuntimeError(
-                        f"Workflow failed: {'; '.join(error_msgs) or 'Unknown error'}"
+                        f"Workflow failed: {_extract_workflow_error(entry)}"
                     )
 
         except requests.exceptions.ConnectionError:

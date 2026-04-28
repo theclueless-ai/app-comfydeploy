@@ -71,11 +71,16 @@ RUN for dir in ComfyUI-Custom-Scripts ComfyUI-Easy-Use ComfyUI-VideoHelperSuite 
     audio-separation-nodes-comfyui ComfyUI-QualityOfLifeSuit_Omar92 \
     ComfyUI-Whisper-Translator video_concat_node \
     comfyui-seedance-nodes comfyui-seed-1.5-utilidades \
+    comfyui-video-concat-9 spech-to-speach-elevenlabs-node \
     ComfyUI-AudioDuration; do \
     if [ -f "${COMFYUI_DIR}/custom_nodes/$dir/requirements.txt" ]; then \
-        pip install --no-cache-dir -r "${COMFYUI_DIR}/custom_nodes/$dir/requirements.txt" 2>/dev/null || true; \
+        pip install --no-cache-dir -r "${COMFYUI_DIR}/custom_nodes/$dir/requirements.txt"; \
     fi; \
     done
+
+# ---- Belt & braces: ensure elevenlabs node deps are present even if the
+#      custom_nodes layer above fails silently ----
+RUN pip install --no-cache-dir elevenlabs miniaudio
 
 # ---- RunPod handler dependencies ----
 RUN pip install --no-cache-dir \
