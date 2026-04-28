@@ -89,6 +89,35 @@ check_model "$COMFYUI_DIR/models/loras/Qwen/Qwen-Image-Edit-2511-Lightning-4step
 echo ""
 
 # =============================================================================
+# 2.5 SEED VIDEO-TRANSLATE PLACEHOLDERS
+# The video-translate workflow has a switch (node 88) selecting between
+# VHS_LoadVideo (node 82) and LoadAudio (node 89). ComfyUI validates BOTH
+# branches before queuing — the dead branch's file must exist AND match the
+# loader's extension filter. Seed silent .mp3 / blank .mp4 placeholders so
+# the handler can point the inactive branch at them.
+# =============================================================================
+mkdir -p "$COMFYUI_DIR/input"
+PLACEHOLDER_AUDIO="$COMFYUI_DIR/input/video_translate_placeholder.mp3"
+PLACEHOLDER_VIDEO="$COMFYUI_DIR/input/video_translate_placeholder.mp4"
+
+if [ ! -f "$PLACEHOLDER_AUDIO" ]; then
+    echo "[placeholders] Generating $PLACEHOLDER_AUDIO"
+    ffmpeg -hide_banner -loglevel error -y \
+        -f lavfi -i anullsrc=channel_layout=mono:sample_rate=22050 \
+        -t 1 -q:a 9 -acodec libmp3lame "$PLACEHOLDER_AUDIO" \
+        || echo "[placeholders] WARN: failed to generate silent mp3"
+fi
+
+if [ ! -f "$PLACEHOLDER_VIDEO" ]; then
+    echo "[placeholders] Generating $PLACEHOLDER_VIDEO"
+    ffmpeg -hide_banner -loglevel error -y \
+        -f lavfi -i color=size=64x64:rate=1:color=black \
+        -f lavfi -i anullsrc=channel_layout=mono:sample_rate=22050 \
+        -t 1 -pix_fmt yuv420p -shortest "$PLACEHOLDER_VIDEO" \
+        || echo "[placeholders] WARN: failed to generate blank mp4"
+fi
+
+# =============================================================================
 # 3. START COMFYUI SERVER
 # Optimized for RTX 4090 (24GB VRAM):
 #   --highvram        : Keep models in VRAM (24GB is enough)

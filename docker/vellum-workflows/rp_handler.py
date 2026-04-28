@@ -88,6 +88,13 @@ VIDEO_TRANSLATE_LOAD_AUDIO = "89"  # LoadAudio: audio filename in ComfyUI input 
 VIDEO_TRANSLATE_SWITCH = "88"      # ComfySwitchNode: false=video (82), true=audio (89)
 VIDEO_TRANSLATE_SAVE_AUDIO = "33"  # SaveAudio: output audio node (filename_prefix="audio/ComfyUI")
 
+# Placeholders for the dead branch of the video-translate switch. ComfyUI
+# validates both LoadVideo and LoadAudio against the input dir's filtered
+# dropdown, so the unused branch needs a real file with the right extension.
+# Created in start.sh before ComfyUI boots.
+VIDEO_TRANSLATE_PLACEHOLDER_VIDEO = "video_translate_placeholder.mp4"
+VIDEO_TRANSLATE_PLACEHOLDER_AUDIO = "video_translate_placeholder.mp3"
+
 # Audio file extensions we may get from SaveAudio (ComfyUI defaults to .flac)
 AUDIO_EXTS = (".flac", ".wav", ".mp3", ".ogg", ".m4a")
 
@@ -196,33 +203,40 @@ def prepare_workflow(
         # Video Translate routes the audio source through ComfySwitchNode (node 88):
         #   switch=False -> uses VHS_LoadVideo (node 82) audio output
         #   switch=True  -> uses LoadAudio (node 89) audio output
+        # ComfyUI validates BOTH branches before queuing — the dead branch's
+        # filename must (a) exist in /comfyui/input and (b) match the loader's
+        # extension filter (LoadAudio: wav/mp3/ogg/flac; VHS_LoadVideo: video
+        # extensions). start.sh seeds VIDEO_TRANSLATE_PLACEHOLDER_AUDIO and
+        # VIDEO_TRANSLATE_PLACEHOLDER_VIDEO at container startup for this.
         media_type = extra_params.get("media_type", "video")
 
         if VIDEO_TRANSLATE_SWITCH not in workflow:
             raise ValueError(
                 f"Node {VIDEO_TRANSLATE_SWITCH} (ComfySwitchNode) not found in video-translate workflow"
             )
+        if VIDEO_TRANSLATE_LOAD_VIDEO not in workflow:
+            raise ValueError(
+                f"Node {VIDEO_TRANSLATE_LOAD_VIDEO} (VHS_LoadVideo) not found in video-translate workflow"
+            )
+        if VIDEO_TRANSLATE_LOAD_AUDIO not in workflow:
+            raise ValueError(
+                f"Node {VIDEO_TRANSLATE_LOAD_AUDIO} (LoadAudio) not found in video-translate workflow"
+            )
 
         if media_type == "audio":
             audio_filename = extra_params.get("audio_filename")
             if not audio_filename:
                 raise ValueError("video-translate (audio) workflow requires an audio filename")
-            if VIDEO_TRANSLATE_LOAD_AUDIO not in workflow:
-                raise ValueError(
-                    f"Node {VIDEO_TRANSLATE_LOAD_AUDIO} (LoadAudio) not found in video-translate workflow"
-                )
             workflow[VIDEO_TRANSLATE_LOAD_AUDIO]["inputs"]["audio"] = audio_filename
+            workflow[VIDEO_TRANSLATE_LOAD_VIDEO]["inputs"]["video"] = VIDEO_TRANSLATE_PLACEHOLDER_VIDEO
             workflow[VIDEO_TRANSLATE_SWITCH]["inputs"]["switch"] = True
             print(f"[handler] Injected audio '{audio_filename}' into node {VIDEO_TRANSLATE_LOAD_AUDIO}, switch=True")
         else:
             video_filename = extra_params.get("video_filename")
             if not video_filename:
                 raise ValueError("video-translate (video) workflow requires a video filename")
-            if VIDEO_TRANSLATE_LOAD_VIDEO not in workflow:
-                raise ValueError(
-                    f"Node {VIDEO_TRANSLATE_LOAD_VIDEO} (VHS_LoadVideo) not found in video-translate workflow"
-                )
             workflow[VIDEO_TRANSLATE_LOAD_VIDEO]["inputs"]["video"] = video_filename
+            workflow[VIDEO_TRANSLATE_LOAD_AUDIO]["inputs"]["audio"] = VIDEO_TRANSLATE_PLACEHOLDER_AUDIO
             workflow[VIDEO_TRANSLATE_SWITCH]["inputs"]["switch"] = False
             print(f"[handler] Injected video '{video_filename}' into node {VIDEO_TRANSLATE_LOAD_VIDEO}, switch=False")
 
