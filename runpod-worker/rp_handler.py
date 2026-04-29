@@ -157,6 +157,9 @@ def prepare_workflow(workflow: dict, inputs: dict) -> dict:
                                   309 (string_a). Falls back to the values
                                   baked into the workflow JSON.
       - resolution (str)       -> nodes 318-327 resolution (default "1080p")
+      - voice_id (str)         -> ElevenLabs voice id on node 359
+                                  (ElevenLabsVoiceChanger). Falls back to the
+                                  voice baked into the workflow JSON.
     """
     if not SEEDANCE_API_KEY:
         raise ValueError("SEEDANCE_API_KEY environment variable is not set")
@@ -199,9 +202,14 @@ def prepare_workflow(workflow: dict, inputs: dict) -> dict:
         if resolution:
             node_inputs["resolution"] = resolution
 
+    # --- ElevenLabs Voice Changer (node 359): optional voice_id override ---
+    voice_id = inputs.get("voice_id")
+    if voice_id and "359" in workflow:
+        workflow["359"]["inputs"]["voice_id"] = voice_id
+
     print(
         f"[Workflow] Prepared | image={image_filename} audio={audio_filename} "
-        f"resolution={resolution or 'default'}"
+        f"resolution={resolution or 'default'} voice_id={voice_id or 'default'}"
     )
     return workflow
 
@@ -466,7 +474,8 @@ def handler(job: dict) -> dict:
         "input_image": "base64",     -- required: character face
         "input_audio": "base64",     -- required: audio (mp3/wav)
         "prompt_prefix": "text",     -- optional: applied to both nodes 100 and 309
-        "resolution": "1080p"        -- optional: Seedance resolution
+        "resolution": "1080p",       -- optional: Seedance resolution
+        "voice_id": "..."            -- optional: ElevenLabs voice id on node 359
     }
     """
     start_time = time.time()
@@ -478,6 +487,7 @@ def handler(job: dict) -> dict:
     print(f"  Has image: {bool(job_input.get('input_image'))}")
     print(f"  Has audio: {bool(job_input.get('input_audio'))}")
     print(f"  Resolution override: {job_input.get('resolution', '-')}")
+    print(f"  Voice id override: {job_input.get('voice_id', '-')}")
 
     try:
         print("\n[Step 1] Loading workflow...")

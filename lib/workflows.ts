@@ -500,6 +500,14 @@ export const workflows: WorkflowConfig[] = [
         defaultValue: "1080p",
         options: ["480p", "720p", "1080p"],
       },
+      {
+        id: "voice_id",
+        name: "voice_id",
+        type: "voice-select",
+        label: "Select Voice",
+        description: "ElevenLabs voice used by the Voice Changer node in the workflow.",
+        required: false,
+      },
     ],
   },
 ];

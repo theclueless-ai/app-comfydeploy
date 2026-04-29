@@ -44,11 +44,13 @@ export async function POST(request: NextRequest) {
 
     const promptPrefix = readOptionalString("prompt_prefix");
     const resolution = readOptionalString("resolution");
+    const voiceId = readOptionalString("voice_id");
 
     console.log("=== AI Talk RunPod Request ===");
     console.log("Image:", imageFile.name, imageFile.type, imageFile.size);
     console.log("Audio:", audioFile.name, audioFile.type, audioFile.size);
     console.log("Resolution:", resolution || "default");
+    console.log("Voice id:", voiceId || "default");
 
     const imageBase64 = await runpodFileToBase64(imageFile);
     const audioBase64 = await runpodFileToBase64(audioFile);
@@ -62,6 +64,7 @@ export async function POST(request: NextRequest) {
     };
     if (promptPrefix) payload.prompt_prefix = promptPrefix;
     if (resolution) payload.resolution = resolution;
+    if (voiceId) payload.voice_id = voiceId;
 
     const result = await runAiTalkWorkflowAsync(payload);
 

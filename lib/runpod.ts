@@ -1341,6 +1341,7 @@ export interface AiTalkWorkflowInput {
   input_audio: string;          // Base64 data URI of the audio (node 21)
   prompt_prefix?: string;       // Prefix applied to BOTH node 100 text and node 309 string_a
   resolution?: string;          // Seedance resolution (nodes 318-327), e.g. "480p" | "720p" | "1080p"
+  voice_id?: string;            // ElevenLabs voice id for the Voice Changer node (359)
 }
 
 /**
@@ -1377,11 +1378,13 @@ export async function runAiTalkWorkflowAsync(
   };
   if (input.prompt_prefix) payload.input.prompt_prefix = input.prompt_prefix;
   if (input.resolution) payload.input.resolution = input.resolution;
+  if (input.voice_id) payload.input.voice_id = input.voice_id;
 
   console.log("=== RunPod AI Talk API Call (async) ===");
   console.log("URL:", url);
   console.log("Endpoint ID:", endpointId);
   console.log("Resolution:", input.resolution || "default");
+  console.log("Voice id:", input.voice_id || "default");
   console.log("Has image:", !!input.input_image);
   console.log("Has audio:", !!input.input_audio);
 
