@@ -82,6 +82,11 @@ RUN for dir in ComfyUI-Custom-Scripts ComfyUI-Easy-Use ComfyUI-VideoHelperSuite 
 #      custom_nodes layer above fails silently ----
 RUN pip install --no-cache-dir elevenlabs miniaudio
 
+# audio-separation-nodes-comfyui AudioVideoCombine raises ValueError on
+# MoviePy 2.x when end_time equals video.duration up to float precision.
+# 1.0.3 clamps silently. Pin after custom_nodes requirements so it overrides.
+RUN pip install --no-cache-dir --force-reinstall "moviepy==1.0.3"
+
 # ---- RunPod handler dependencies ----
 RUN pip install --no-cache-dir \
     runpod \
